@@ -1,0 +1,32 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch OOPGames",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/OOPGames/OOPGames/bin/Debug/net6.0-windows/OOPGames.exe",
+            "args": [],
+            "cwd": "${workspaceFolder}/OOPGames/OOPGames",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Launch HouseExample",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-house",
+            "program": "${workspaceFolder}/HouseExample/HouseExample/bin/Debug/net6.0/HouseExample.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/HouseExample/HouseExample",
+            "stopAtEntry": false
+        },
+        {
+            "name": "Launch MLBattle",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/MLBattle/MLBattleArena.py",
+            "console": "integratedTerminal"
+        }
+    ]
+}

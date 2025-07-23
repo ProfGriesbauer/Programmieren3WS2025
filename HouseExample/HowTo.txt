@@ -1,0 +1,9 @@
+1. BITTE legt hier ein Verzeichnis der Form "EuerName_HouseExample" an.
+
+2. Legt in diesem Verzeichnis ein einfach Projekt an (VSCode Verzechnis öffnen; Console in diesem Verzechnis mit "dotnet new console" ausführen).
+
+3. Fügt dieses dann zum Git-Repository hinzu (VSCode Source Control, etc.).
+
+4. Comitted/Pushed dieses erste Projekt und öffnet anschließend (File->Open Folder) eueren Ordner EuerName_HouseExample frisch in VSCode
+
+5. Entwickelt und Spielt in diesem Projekt und Comitted/Pushed immer wieder um mit OOP und Git nach und nach "Freundschaft zu schließen".
