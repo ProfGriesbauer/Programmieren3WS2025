@@ -18,7 +18,7 @@ namespace OOPGames
     /// <summary>
     /// Interaktionslogik für MainWindow.xaml
     /// </summary>
-    /// Kommentar zu GitHub
+    /// Kommentar zu GitHub Desktop
     public partial class MainWindow : Window
     {
         IGamePlayer _CurrentPlayer = null;
