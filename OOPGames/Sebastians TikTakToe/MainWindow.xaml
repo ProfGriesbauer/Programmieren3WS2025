@@ -1,0 +1,43 @@
+<Window x:Class="SebastiansTikTacToe.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Sebastian's TicTacToe" Height="420" Width="640"
+        WindowStartupLocation="CenterScreen">
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="410"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Game board -->
+        <Border Grid.Column="0" CornerRadius="8" BorderThickness="2" BorderBrush="#FF444444" Background="#FFF8F8F8" Padding="10">
+            <UniformGrid Rows="3" Columns="3" x:Name="BoardGrid" HorizontalAlignment="Center" VerticalAlignment="Center" Width="360" Height="360">
+                <Button x:Name="Btn00" FontSize="48" Click="Cell_Click"/>
+                <Button x:Name="Btn01" FontSize="48" Click="Cell_Click"/>
+                <Button x:Name="Btn02" FontSize="48" Click="Cell_Click"/>
+                <Button x:Name="Btn10" FontSize="48" Click="Cell_Click"/>
+                <Button x:Name="Btn11" FontSize="48" Click="Cell_Click"/>
+                <Button x:Name="Btn12" FontSize="48" Click="Cell_Click"/>
+                <Button x:Name="Btn20" FontSize="48" Click="Cell_Click"/>
+                <Button x:Name="Btn21" FontSize="48" Click="Cell_Click"/>
+                <Button x:Name="Btn22" FontSize="48" Click="Cell_Click"/>
+            </UniformGrid>
+        </Border>
+
+        <!-- Controls -->
+        <StackPanel Grid.Column="1" Margin="12" VerticalAlignment="Top">
+            <TextBlock x:Name="StatusText" FontSize="16" FontWeight="Bold" Text="Welcome to TicTacToe" Margin="0,6,0,12"/>
+            <Button x:Name="NewGameButton" Content="New Game" Click="NewGameButton_Click" Margin="0,0,0,8"/>
+            <CheckBox x:Name="ComputerCheck" IsChecked="True" Content="Play vs Computer" Margin="0,0,0,12"/>
+            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                <TextBlock Text="Starting Player: " VerticalAlignment="Center" Margin="0,0,6,0"/>
+                <ComboBox x:Name="StartPlayerCombo" Width="120">
+                    <ComboBoxItem Content="Player X (You)" IsSelected="True"/>
+                    <ComboBoxItem Content="Player O (Computer)"/>
+                </ComboBox>
+            </StackPanel>
+            <TextBlock Text="Instructions:" FontWeight="Bold" Margin="0,16,0,6"/>
+            <TextBlock TextWrapping="Wrap">Click a cell to place your mark. If playing vs computer, the computer will respond. Enjoy a clean, responsive UI.</TextBlock>
+        </StackPanel>
+    </Grid>
+</Window>
