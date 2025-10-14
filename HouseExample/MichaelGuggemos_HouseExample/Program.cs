@@ -7,4 +7,4 @@ instHaus.Laenge = 20;
 
 instHaus.Breite = 30;
 Console.WriteLine(instHaus.Breite + " " + instHaus.Laenge);
-Console.WriteLine("Fläche: " + instHaus.BerechneFlaeche);
+Console.WriteLine("Fläche: " + instHaus.BerechneFlaeche());
