@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +9,7 @@ namespace GeileVilla
     {
         float _laenge = 20;
         float _breite = 10;
-        readonly List<Raum> _raeume = new();
+        readonly List<Raum> _raeume = new List<Raum>();
 
         public float GetLänge()
         {
@@ -64,7 +65,7 @@ namespace GeileVilla
 
         public float GesamtflächeRaeume => _raeume.Sum(r => r.Fläche);
 
-        public float FreieFläche => MathF.Max(0, Fläche - GesamtflächeRaeume);
+        public float FreieFläche => (float)Math.Max(0.0, Fläche - GesamtflächeRaeume);
 
         public Raum AddSchönerRaum(
             string name = "Wohnzimmer",
@@ -80,7 +81,7 @@ namespace GeileVilla
 
         public void Furchtbareexception()
         {
-            throw new Exception("Du Dussel");
+            throw new Exception("Der ganze Busch is hi");
         }
     }
 }

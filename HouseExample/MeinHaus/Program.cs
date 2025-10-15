@@ -15,3 +15,11 @@ catch (Exception ex)
 {
     Console.WriteLine($"Isch Kaputt ah: {ex.Message}");
 }
+GeileVilla.Raum Wohnzimmer = new GeileVilla.Raum("Wohnzimmer", 5, 4, 2, "Blau");
+Console.WriteLine(Wohnzimmer);
+GeileVilla.Raum Küche = new GeileVilla.Raum("Küche", 3, 4, 1, "Weiß");
+Console.WriteLine(Küche);
+GeileVilla.Raum Esszimmer = new GeileVilla.Raum("Esszimmer", 4, 4, 1, "Gelb");
+Console.WriteLine(Esszimmer);
+GeileVilla.Raum Bad = new GeileVilla.Raum("Bad", 2, 3, 0, "Weiß");
+Console.WriteLine(Bad);
