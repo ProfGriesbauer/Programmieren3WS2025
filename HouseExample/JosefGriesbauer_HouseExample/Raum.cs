@@ -10,24 +10,38 @@ namespace HouseExample
 
     public interface ISetableRoom
     {
-        string Name { get; set; }
+        string Name { get; }
         int FensterAnzahl { get; set; }
 
         double BerechneFlaeche();
     }
 
-    public class NassRaum : IRoom
+    public class NassRaum : Raum, IRoom
     {
-        private string name = "Nassraum";
+        int anzahlDuschen;
 
-        public string Name { get => name; set => name = value; }
-        public int FensterAnzahl { get; set; }
+        public NassRaum(string name, double flaeche, int fensterAnzahl, int anzahlDuschen) : base(name, flaeche, fensterAnzahl)
+        {
+            this.anzahlDuschen = anzahlDuschen;
+        }
 
-        public double BerechneFlaeche()
+        public new int FensterAnzahl { get; set; }
+
+        public new double BerechneFlaeche()
         {
             // Implementiere die spezifische Logik für Nassräume
-            return 0;
+            return base.BerechneFlaeche() * 1.1; // Beispiel: Nassräume haben 10% mehr Fläche
         }
+
+        public new string Name
+        {
+            get
+            {
+                return "Normaler Nassraum";
+            }
+        }
+
+        public int AnzahlDuschen { get => anzahlDuschen; }
     }
 
     public class ArbeitsRaum : Raum, IRoom, ISetableRoom
@@ -35,13 +49,22 @@ namespace HouseExample
         public ArbeitsRaum(string name, double flaeche, int fensterAnzahl) : base(name, flaeche, fensterAnzahl)
         {
         }
+
+        public new string Name
+        {
+            get
+            {
+                return "Normaler Arbeitsraum";
+            }
+        }
+
+        int ISetableRoom.FensterAnzahl { get => FensterAnzahl; set => base.fensterAnzahl = value; }
     }
 
     public class Raum : IRoom
     {
-        private string name;
         private double flaeche;
-        private int fensterAnzahl;
+        protected int fensterAnzahl;
 
         public double BerechneFlaeche()
         {
@@ -52,19 +75,14 @@ namespace HouseExample
         {
             get
             {
-                return name;
-            }
-            set
-            {
-                name = value;
+                return "Normaler Raum";
             }
         }
         public double Flaeche { get => flaeche; set => flaeche = value; }
-        public int FensterAnzahl { get; set; }
+        public int FensterAnzahl { get; }
 
         public Raum(string name, double flaeche, int fensterAnzahl)
         {
-            Name = name;
             Flaeche = flaeche;
             FensterAnzahl = fensterAnzahl;
         }
