@@ -8,7 +8,7 @@ namespace HouseExample
     {
         Raum room1 = new Raum("Wohnzimmer", 30.5, 2);
         ArbeitsRaum arbeitsRaum = new ArbeitsRaum("Arbeitszimmer", 15.0, 1);
-        NassRaum nassRaum = new NassRaum();
+        NassRaum nassRaum = new NassRaum("Badezimmer", 10.0, 1, 1);
 
         List<IRoom> rooms = new List<IRoom>();
 
@@ -17,7 +17,6 @@ namespace HouseExample
 
         public Haus()
         {
-            room1.FensterAnzahl = 3;
             nassRaum.FensterAnzahl = 1;
 
             rooms.Add(room1);

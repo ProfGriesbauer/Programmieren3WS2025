@@ -48,10 +48,10 @@ namespace OOPGames
 
             _PaintTimer = new System.Windows.Threading.DispatcherTimer();
             _PaintTimer.Interval = new TimeSpan(0, 0, 0, 0, 40);
-            _PaintTimer.Tick += _PaintTimer_Tick;
+            _PaintTimer.Tick += _PaintTimer_Tick; 
             _PaintTimer.Start();
         }
-
+        /// Halllo
         private void _PaintTimer_Tick(object sender, EventArgs e)
         {
             if (_CurrentPainter != null &&
