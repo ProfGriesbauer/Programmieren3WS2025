@@ -1,2 +1,3 @@
 ﻿// See https://aka.ms/new-console-template for more information
-Console.WriteLine("Hello, World!");
+Huan.Nutte nutte = new Huan.Nutte();
+Console.WriteLine(nutte.NuttenWerte());
