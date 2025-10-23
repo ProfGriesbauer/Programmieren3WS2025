@@ -237,6 +237,8 @@ namespace OOPGames
 
         public override IX_TicTacToeMove GetMove(IX_TicTacToeField field)
         {
+            //Ein intelligenter Algorithmus wäre hier besser...
+            // Hier könnte man z.B. Minimax oder Alpha-Beta-Pruning implementieren
             Random rand = new Random();
             int f = rand.Next(0, 8);
             for (int i = 0; i < 9; i++)
