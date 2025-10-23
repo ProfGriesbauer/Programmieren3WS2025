@@ -1,4 +1,4 @@
-namespace HouseExample
+namespace HouseExample.Josef
 {
     public interface IRoom
     {
