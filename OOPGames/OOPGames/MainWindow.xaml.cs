@@ -213,7 +213,7 @@ namespace OOPGames
                         _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
                         Status.Text = "Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
                     }
-
+                    //Restart Logic for Gruppe A4 :)
                     DoComputerMoves();
                     winner = _CurrentRules.CheckIfPLayerWon();
                     if (winner > 0)
