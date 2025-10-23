@@ -1,7 +1,7 @@
 using System.Diagnostics;
 
 
-namespace HouseExample
+namespace HouseExample.Josef
 {
     
     public class Haus
