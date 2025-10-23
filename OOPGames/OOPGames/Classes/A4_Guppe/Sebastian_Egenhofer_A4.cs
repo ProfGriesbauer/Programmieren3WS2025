@@ -3,29 +3,31 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using System.Windows;
 
 namespace OOPGames
 {
-    public class X_TicTacToePaint : X_BaseTicTacToePaint
+    // A4 group implementations for TicTacToe: Painter, Rules (+ Field/Move), Human Player
+    public class A4_TicTacToePaint : X_BaseTicTacToePaint
     {
-        public override string Name { get { return "GriesbauerTicTacToePaint"; } }
+        public override string Name { get { return "A4_TicTacToePaint"; } }
 
         public override void PaintTicTacToeField(Canvas canvas, IX_TicTacToeField currentField)
         {
             canvas.Children.Clear();
-            Color bgColor = Color.FromRgb(255, 255, 255);
+            Color bgColor = Color.FromRgb(240, 240, 240);
             canvas.Background = new SolidColorBrush(bgColor);
-            Color lineColor = Color.FromRgb(255, 0, 0);
+            Color lineColor = Color.FromRgb(80, 80, 80);
             Brush lineStroke = new SolidColorBrush(lineColor);
-            Color XColor = Color.FromRgb(0, 255, 0);
+            Color XColor = Color.FromRgb(200, 20, 20);
             Brush XStroke = new SolidColorBrush(XColor);
-            Color OColor = Color.FromRgb(0, 0, 255);
+            Color OColor = Color.FromRgb(20, 50, 200);
             Brush OStroke = new SolidColorBrush(OColor);
 
+            // Draw grid
             Line l1 = new Line() { X1 = 120, Y1 = 20, X2 = 120, Y2 = 320, Stroke = lineStroke, StrokeThickness = 3.0 };
             canvas.Children.Add(l1);
             Line l2 = new Line() { X1 = 220, Y1 = 20, X2 = 220, Y2 = 320, Stroke = lineStroke, StrokeThickness = 3.0 };
@@ -35,20 +37,21 @@ namespace OOPGames
             Line l4 = new Line() { X1 = 20, Y1 = 220, X2 = 320, Y2 = 220, Stroke = lineStroke, StrokeThickness = 3.0 };
             canvas.Children.Add(l4);
 
+            // Draw marks
             for (int i = 0; i < 3; i++)
             {
                 for (int j = 0; j < 3; j++)
                 {
                     if (currentField[i, j] == 1)
                     {
-                        Line X1 = new Line() { X1 = 20 + (j * 100), Y1 = 20 + (i * 100), X2 = 120 + (j * 100), Y2 = 120 + (i * 100), Stroke = XStroke, StrokeThickness = 3.0 };
+                        Line X1 = new Line() { X1 = 20 + (j * 100), Y1 = 20 + (i * 100), X2 = 120 + (j * 100), Y2 = 120 + (i * 100), Stroke = XStroke, StrokeThickness = 4.0 };
                         canvas.Children.Add(X1);
-                        Line X2 = new Line() { X1 = 20 + (j * 100), Y1 = 120 + (i * 100), X2 = 120 + (j * 100), Y2 = 20 + (i * 100), Stroke = XStroke, StrokeThickness = 3.0 };
+                        Line X2 = new Line() { X1 = 20 + (j * 100), Y1 = 120 + (i * 100), X2 = 120 + (j * 100), Y2 = 20 + (i * 100), Stroke = XStroke, StrokeThickness = 4.0 };
                         canvas.Children.Add(X2);
                     }
                     else if (currentField[i, j] == 2)
                     {
-                        Ellipse OE = new Ellipse() { Margin = new Thickness(20 + (j * 100), 20 + (i * 100), 0, 0), Width = 100, Height = 100, Stroke = OStroke, StrokeThickness = 3.0 };
+                        Ellipse OE = new Ellipse() { Margin = new Thickness(20 + (j * 100), 20 + (i * 100), 0, 0), Width = 100, Height = 100, Stroke = OStroke, StrokeThickness = 4.0 };
                         canvas.Children.Add(OE);
                     }
                 }
@@ -56,15 +59,15 @@ namespace OOPGames
         }
     }
 
-    public class X_TicTacToeRules : X_BaseTicTacToeRules
+    public class A4_TicTacToeRules : X_BaseTicTacToeRules
     {
-        X_TicTacToeField _Field = new X_TicTacToeField();
+        A4_TicTacToeField _Field = new A4_TicTacToeField();
 
         public override IX_TicTacToeField TicTacToeField { get { return _Field; } }
 
-        public override bool MovesPossible 
-        { 
-            get 
+        public override bool MovesPossible
+        {
+            get
             {
                 for (int i = 0; i < 3; i++)
                 {
@@ -77,11 +80,11 @@ namespace OOPGames
                     }
                 }
 
-                return false; 
-            } 
+                return false;
+            }
         }
 
-        public override string Name { get { return "GriesbauerTicTacToeRules"; } }
+        public override string Name { get { return "A4_TicTacToeRules"; } }
 
         public override int CheckIfPLayerWon()
         {
@@ -129,9 +132,9 @@ namespace OOPGames
         }
     }
 
-    public class X_TicTacToeField : X_BaseTicTacToeField
+    public class A4_TicTacToeField : X_BaseTicTacToeField
     {
-        int[,] _Field = new int[3, 3] { { 0, 0 , 0}, { 0, 0, 0 }, { 0, 0, 0 } };
+        int[,] _Field = new int[3, 3] { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } };
 
         public override int this[int r, int c]
         {
@@ -157,13 +160,13 @@ namespace OOPGames
         }
     }
 
-    public class X_TicTacToeMove : IX_TicTacToeMove
+    public class A4_TicTacToeMove : IX_TicTacToeMove
     {
         int _Row = 0;
         int _Column = 0;
         int _PlayerNumber = 0;
 
-        public X_TicTacToeMove (int row, int column, int playerNumber)
+        public A4_TicTacToeMove(int row, int column, int playerNumber)
         {
             _Row = row;
             _Column = column;
@@ -177,26 +180,25 @@ namespace OOPGames
         public int PlayerNumber { get { return _PlayerNumber; } }
     }
 
-    public class X_TicTacToeHumanPlayer : X_BaseHumanTicTacToePlayer
+    public class A4_TicTacToeHumanPlayer : X_BaseHumanTicTacToePlayer
     {
         int _PlayerNumber = 0;
 
-        public override string Name { get { return "GriesbauerHumanTicTacToePlayer"; } }
+        public override string Name { get { return "A4_HumanTicTacToePlayer"; } }
 
         public override int PlayerNumber { get { return _PlayerNumber; } }
 
         public override IGamePlayer Clone()
         {
-            X_TicTacToeHumanPlayer ttthp = new X_TicTacToeHumanPlayer();
-            ttthp.SetPlayerNumber(_PlayerNumber);
-            return ttthp;
+            A4_TicTacToeHumanPlayer p = new A4_TicTacToeHumanPlayer();
+            p.SetPlayerNumber(_PlayerNumber);
+            return p;
         }
 
         public override IX_TicTacToeMove GetMove(IMoveSelection selection, IX_TicTacToeField field)
         {
-            if (selection is IClickSelection)
+            if (selection is IClickSelection sel)
             {
-                IClickSelection sel = (IClickSelection)selection;
                 for (int i = 0; i < 3; i++)
                 {
                     for (int j = 0; j < 3; j++)
@@ -205,53 +207,9 @@ namespace OOPGames
                             sel.YClickPos > 20 + (i * 100) && sel.YClickPos < 120 + (i * 100) &&
                             field[i, j] <= 0)
                         {
-                            return new X_TicTacToeMove(i, j, _PlayerNumber);
+                            return new A4_TicTacToeMove(i, j, _PlayerNumber);
                         }
                     }
-                }
-            }
-
-            return null;
-        }
-
-        public override void SetPlayerNumber(int playerNumber)
-        {
-            _PlayerNumber = playerNumber;
-        }
-    }
-
-    public class X_TicTacToeComputerPlayer : X_BaseComputerTicTacToePlayer
-    {
-        int _PlayerNumber = 0;
-
-        public override string Name { get { return "GriesbauerComputerTicTacToePlayer"; } }
-
-        public override int PlayerNumber { get { return _PlayerNumber; } }
-
-        public override IGamePlayer Clone()
-        {
-            X_TicTacToeComputerPlayer ttthp = new X_TicTacToeComputerPlayer();
-            ttthp.SetPlayerNumber(_PlayerNumber);
-            return ttthp;
-        }
-
-        public override IX_TicTacToeMove GetMove(IX_TicTacToeField field)
-        {
-            //Ein intelligenter Algorithmus wäre hier besser...
-            // Hier könnte man z.B. Minimax oder Alpha-Beta-Pruning implementieren
-            Random rand = new Random();
-            int f = rand.Next(0, 8);
-            for (int i = 0; i < 9; i++)
-            {
-                int c = f % 3;
-                int r = ((f - c) / 3) % 3;
-                if (field[r, c] <= 0)
-                {
-                    return new X_TicTacToeMove(r, c, _PlayerNumber);
-                }
-                else
-                {
-                    f++;
                 }
             }
 
