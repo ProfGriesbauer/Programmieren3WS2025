@@ -8,5 +8,7 @@ namespace OOPGames
 {
     public class B2_XXX
     {
+        // Platzhalter-Klasse für Gruppe B2.
+        // Hier können Methoden und Felder implementiert werden.
     }
 }
