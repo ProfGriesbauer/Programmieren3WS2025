@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace HouseExample
 {
     public interface IRoom
@@ -16,7 +18,7 @@ namespace HouseExample
         double BerechneFlaeche();
     }
 
-    public class NassRaum : Raum, IRoom
+    public class NassRaum : Raum, IRoom, IComparable
     {
         int anzahlDuschen;
 
@@ -25,12 +27,56 @@ namespace HouseExample
             this.anzahlDuschen = anzahlDuschen;
         }
 
+        public override bool Equals(object? obj)
+        {
+            if (obj is NassRaum)
+            {
+                NassRaum otherNassRaum = (NassRaum)obj;
+                return this.Flaeche == otherNassRaum.Flaeche &&
+                       this.FensterAnzahl == otherNassRaum.FensterAnzahl &&
+                       this.anzahlDuschen == otherNassRaum.anzahlDuschen;
+            }
+            return false;
+        }
+
         public new int FensterAnzahl { get; set; }
 
         public new double BerechneFlaeche()
         {
             // Implementiere die spezifische Logik für Nassräume
             return base.BerechneFlaeche() * 1.1; // Beispiel: Nassräume haben 10% mehr Fläche
+        }
+
+        public int CompareTo(NassRaum? other)
+        {
+            //benutze den Namen zum Vergleichen
+            if (other == null) return 1;
+            return this.Name.CompareTo(other.Name);
+        }
+
+        public int CompareTo(object? obj)
+        {
+            if (obj == null) return 1;
+            if (obj is NassRaum otherNassRaum)
+            {
+                return CompareTo(otherNassRaum);
+            }
+            else
+            {
+                throw new ArgumentException("Objekt ist kein NassRaum");
+            }
+        }
+
+        public static bool operator <(NassRaum a, NassRaum b)
+        {
+            if (ReferenceEquals(a, null)) return !ReferenceEquals(b, null);
+            return a.CompareTo(b) < 0;
+        }
+
+        public static bool operator >(NassRaum a, NassRaum b)
+        {
+            if (ReferenceEquals(a, null)) return false;
+            return a.CompareTo(b) > 0;
         }
 
         public new string Name
