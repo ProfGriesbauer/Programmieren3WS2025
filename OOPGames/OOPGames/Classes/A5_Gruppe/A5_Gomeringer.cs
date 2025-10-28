@@ -18,13 +18,15 @@ namespace OOPGames
             A5_Paint painter = new A5_Paint();
             A5_Rules rules = new A5_Rules();
             A5_Player player = new A5_Player();
-            A5_ComputerPlayer computer = new A5_ComputerPlayer();
+            A5_ComputerExtreme computerExtreme = new A5_ComputerExtreme();
+            A5_ComputerEasy computerEasy = new A5_ComputerEasy();
 
             // Registriere beim OOPGamesManager
             OOPGamesManager.Singleton.RegisterPainter(painter);
             OOPGamesManager.Singleton.RegisterRules(rules);
             OOPGamesManager.Singleton.RegisterPlayer(player);
-            OOPGamesManager.Singleton.RegisterPlayer(computer);
+            OOPGamesManager.Singleton.RegisterPlayer(computerExtreme);
+            OOPGamesManager.Singleton.RegisterPlayer(computerEasy);
         }
     }
 }
