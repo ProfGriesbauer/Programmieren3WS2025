@@ -32,6 +32,10 @@ namespace OOPGames
         public MainWindow()
         {
             //REGISTER YOUR CLASSES HERE
+            //Register A5 Classes first
+            A5_Gomeringer register = new A5_Gomeringer();
+            register.Register();
+
             //Painters
             OOPGamesManager.Singleton.RegisterPainter(new X_TicTacToePaint());
             //Rules
@@ -44,6 +48,10 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterPainter(new A4_TicTacToePaint());
             OOPGamesManager.Singleton.RegisterRules(new A4_TicTacToeRules());
             OOPGamesManager.Singleton.RegisterPlayer(new A4_TicTacToeHumanPlayer());
+
+            //A2 Painters
+            OOPGamesManager.Singleton.RegisterPainter(new A2_Painter());
+            OOPGamesManager.Singleton.RegisterActiveRules(new A2_Rules());
 
 
             InitializeComponent();
