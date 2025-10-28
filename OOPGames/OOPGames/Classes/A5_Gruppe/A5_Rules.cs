@@ -47,7 +47,8 @@ namespace OOPGames
             }
         }
 
-        public string Name { get { return "A5 TicTacToe"; } }
+    // Display name shown in the UI dropdowns
+    public string Name { get { return "A5 Rules"; } }
 
         public IGameField CurrentField { get { return _field; } }
 

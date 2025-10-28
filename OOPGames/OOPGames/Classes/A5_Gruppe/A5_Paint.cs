@@ -11,7 +11,8 @@ namespace OOPGames
     public class A5_Paint : IX_PaintTicTacToe
     {
 
-        public string Name { get { return "A5 TicTacToe Painter"; } }
+    // Display name shown in the UI dropdowns
+    public string Name { get { return "A5 Painter"; } }
 
         public void PaintGameField(Canvas canvas, IGameField currentField)
         {

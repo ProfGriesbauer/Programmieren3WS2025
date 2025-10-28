@@ -9,7 +9,8 @@ namespace OOPGames
         private int _PlayerNumber = 0;
         private static Random _rand = new Random();
 
-        public override string Name { get { return "A5 Simple Computer"; } }
+    // Display name shown in the UI dropdowns
+    public override string Name { get { return "A5 Computer Player"; } }
 
         public override int PlayerNumber { get { return _PlayerNumber; } }
 
