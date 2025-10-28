@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 
 namespace OOPGames
 {
-    public class A1_XXX
+    public class A1_XXX: X_TicTacToePaint
     {
+        
     }
 }
+//23ß09482ß0924ß02;
