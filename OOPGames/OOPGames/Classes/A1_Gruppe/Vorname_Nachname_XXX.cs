@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Markup.Localizer;
 
 namespace OOPGames
 {
-    public class A1_XXX: X_TicTacToePaint
+    public class A1_XXX : X_TicTacToePaint
     {
-        
+
     }
 }
-//23ß09482ß0924ß02;
+//blabla
