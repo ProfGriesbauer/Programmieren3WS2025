@@ -7,9 +7,7 @@ using System.Windows.Markup.Localizer;
 
 namespace OOPGames
 {
-    public class A1_XXX : X_TicTacToePaint
+    public class A1_XXX
     {
-
     }
 }
-//blabla
