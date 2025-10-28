@@ -40,6 +40,12 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterPlayer(new X_TicTacToeHumanPlayer());
             OOPGamesManager.Singleton.RegisterPlayer(new X_TicTacToeComputerPlayer());
 
+            //A4 Painters
+            OOPGamesManager.Singleton.RegisterPainter(new A4_TicTacToePaint());
+            OOPGamesManager.Singleton.RegisterRules(new A4_TicTacToeRules());
+            OOPGamesManager.Singleton.RegisterPlayer(new A4_TicTacToeHumanPlayer());
+
+
             InitializeComponent();
             PaintList.ItemsSource = OOPGamesManager.Singleton.Painters;
             Player1List.ItemsSource = OOPGamesManager.Singleton.Players;
@@ -48,10 +54,10 @@ namespace OOPGames
 
             _PaintTimer = new System.Windows.Threading.DispatcherTimer();
             _PaintTimer.Interval = new TimeSpan(0, 0, 0, 0, 40);
-            _PaintTimer.Tick += _PaintTimer_Tick;
+            _PaintTimer.Tick += _PaintTimer_Tick; 
             _PaintTimer.Start();
         }
-
+        /// Halllo
         private void _PaintTimer_Tick(object sender, EventArgs e)
         {
             if (_CurrentPainter != null &&
@@ -120,6 +126,7 @@ namespace OOPGames
             if (winner > 0)
             {
                 Status.Text = "Player " + winner + " Won!";
+                ScheduleRestartIfNeeded();
             }
             else
             {
@@ -140,6 +147,7 @@ namespace OOPGames
                     if (winner > 0)
                     {
                         Status.Text = "Player " + winner + " Won!";
+                        ScheduleRestartIfNeeded();
                     }
                 }
             }
@@ -168,6 +176,12 @@ namespace OOPGames
                     }
 
                     DoComputerMoves();
+                    // If the human move caused a win, schedule restart von Gruppe A4 :)
+                    winner = _CurrentRules.CheckIfPLayerWon();
+                    if (winner > 0)
+                    {
+                        ScheduleRestartIfNeeded();
+                    }
                 }
             }
         }
@@ -199,9 +213,58 @@ namespace OOPGames
                         _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
                         Status.Text = "Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
                     }
-
+                    //Restart Logic for Gruppe A4 :)
                     DoComputerMoves();
+                    winner = _CurrentRules.CheckIfPLayerWon();
+                    if (winner > 0)
+                    {
+                        ScheduleRestartIfNeeded();
+                    }
                 }
+            }
+        }
+
+        // Schedule a restart after 3 seconds if the AutoRestart checkbox is checked
+        private void ScheduleRestartIfNeeded()
+        {
+            try
+            {
+                if (AutoRestartCheck != null && AutoRestartCheck.IsChecked == true)
+                {
+                    var timer = new System.Windows.Threading.DispatcherTimer();
+                    timer.Interval = TimeSpan.FromSeconds(3);
+                    timer.Tick += (s, e) =>
+                    {
+                        timer.Stop();
+                        RestartGame();
+                    };
+                    timer.Start();
+                }
+            }
+            catch
+            {
+                // ignore scheduling errors
+            }
+        }
+
+        // Restarts the current game: clears the rules field, repaints and resets the status and current player
+        private void RestartGame()
+        {
+            if (_CurrentRules == null || _CurrentPainter == null) return;
+
+            _CurrentRules.ClearField();
+            // repaint
+            _CurrentPainter.PaintGameField(PaintCanvas, _CurrentRules.CurrentField);
+
+            // Reset current player to player1 if available
+            if (_CurrentPlayer1 != null)
+            {
+                _CurrentPlayer = _CurrentPlayer1;
+                Status.Text = "Game restarted! Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
+            }
+            else
+            {
+                Status.Text = "Game restarted!";
             }
         }
     }

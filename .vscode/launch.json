@@ -27,6 +27,26 @@
             "request": "launch",
             "program": "${workspaceFolder}/MLBattle/MLBattleArena.py",
             "console": "integratedTerminal"
+        },
+        {
+            "name": "Launch MeinHaus",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-house",
+            "program": "${workspaceFolder}/HouseExample/MeinHaus/bin/Debug/net6.0/MeinHaus.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/HouseExample/MeinHaus",
+            "stopAtEntry": false
+        }
+        ,
+        {
+            "name": "Launch Sebastians TicTacToe",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceFolder}/OOPGames/Sebastians TikTacToe/bin/Debug/net6.0-windows/SebastiansTikTacToe.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/OOPGames/Sebastians TikTacToe",
+            "stopAtEntry": false
         }
     ]
 }
