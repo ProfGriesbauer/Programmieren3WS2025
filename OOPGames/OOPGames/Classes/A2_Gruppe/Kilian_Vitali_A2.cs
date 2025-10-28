@@ -24,6 +24,27 @@ namespace OOPGames
         public A2_Rules()
         {
         }
+
+        string IGameRules.Name => throw new NotImplementedException();
+
+        IGameField IGameRules.CurrentField => throw new NotImplementedException();
+
+        bool IGameRules.MovesPossible => throw new NotImplementedException();
+
+        int IGameRules.CheckIfPLayerWon()
+        {
+            throw new NotImplementedException();
+        }
+
+        void IGameRules.ClearField()
+        {
+            throw new NotImplementedException();
+        }
+
+        void IGameRules.DoMove(IPlayMove move)
+        {
+            throw new NotImplementedException();
+        }
     }
 
 }
