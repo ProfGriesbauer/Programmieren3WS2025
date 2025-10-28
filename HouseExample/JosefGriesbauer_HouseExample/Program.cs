@@ -16,14 +16,25 @@ catch (Exception ex)
     Console.WriteLine("Fehler aufgetreten: " + ex.Message);
 }
 
+
 Raum arbeit = new ArbeitsRaum("Neuer Arbeitsraum", 12.5, 2);
-Raum nass = new NassRaum("Neuer Nassraum", 8.0, 1, 2);
-Raum nass2 = new NassRaum("Noch ein Nassraum", 9.0, 1, 3);
+NassRaum nass = new NassRaum("Neuer Nassraum", 8.0, 1, 2);
+NassRaum nass2 = new NassRaum("Noch ein Nassraum", 9.0, 1, 3);
 Raum normal = new Raum("Normaler Raum", 20.0, 3);
 instHaus.Rooms.Add(arbeit);
 instHaus.Rooms.Add(nass);
 instHaus.Rooms.Add(nass2);
 instHaus.Rooms.Add(normal);
+
+if (nass < nass2)
+{
+    Console.WriteLine("Die beiden Nassräume sind gleich.");
+}
+else
+{
+    Console.WriteLine("Die beiden Nassräume sind unterschiedlich.");
+}
+
 nass.BerechneFlaeche();
 Console.WriteLine("Anzahl Duschen im Nassraum: " + ((NassRaum)nass).AnzahlDuschen);
 
