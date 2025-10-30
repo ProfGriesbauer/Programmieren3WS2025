@@ -5,7 +5,7 @@ namespace OOPGames
 {
     public class A5_SnakeRules : IGameRules2
     {
-        public string Name => "A5 Snake Game";
+        public string Name => "A5 Rules Snake";
         private A5_SnakeField _field;
 
         public A5_SnakeRules()

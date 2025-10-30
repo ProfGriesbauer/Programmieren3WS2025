@@ -7,7 +7,7 @@ namespace OOPGames
 {
     public class A5_SnakePaint : IPaintGame2
     {
-        public string Name => "A5 Snake Paint";
+        public string Name => "A5 Paint Snake";
 
         public void PaintGameField(Canvas canvas, IGameField currentField)
         {
