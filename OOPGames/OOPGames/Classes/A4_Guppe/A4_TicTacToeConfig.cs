@@ -6,6 +6,6 @@ namespace OOPGames
     /// </summary>
     public static class A4_TicTacToeConfig
     {
-        public const int N = 3;
+        public const int N = 4;
     }
 }

@@ -194,8 +194,21 @@ namespace OOPGames
                 if (_CurrentRules.MovesPossible &&
                     _CurrentPlayer is IHumanGamePlayer)
                 {
-                    IPlayMove pm = ((IHumanGamePlayer)_CurrentPlayer).GetMove(new ClickSelection((int)e.GetPosition(PaintCanvas).X, 
-                        (int)e.GetPosition(PaintCanvas).Y, (int)e.ChangedButton), _CurrentRules.CurrentField);
+                    // Create an A4-specific click selection (with canvas size) only for A4 group players.
+                    IClickSelection sel;
+                    var px = (int)e.GetPosition(PaintCanvas).X;
+                    var py = (int)e.GetPosition(PaintCanvas).Y;
+                    var btn = (int)e.ChangedButton;
+                    if (_CurrentPlayer != null && _CurrentPlayer.GetType().Name.StartsWith("A4_"))
+                    {
+                        sel = new A4_ClickSelection(px, py, btn, (int)PaintCanvas.ActualWidth, (int)PaintCanvas.ActualHeight);
+                    }
+                    else
+                    {
+                        sel = new ClickSelection(px, py, btn);
+                    }
+
+                    IPlayMove pm = ((IHumanGamePlayer)_CurrentPlayer).GetMove(sel, _CurrentRules.CurrentField);
                     if (pm != null)
                     {
                         _CurrentRules.DoMove(pm);
