@@ -12,7 +12,7 @@ namespace OOPGames
     {
 
     // Display name shown in the UI dropdowns
-    public string Name { get { return "A5 Painter"; } }
+    public string Name { get { return "A5 TicTacToe Paint"; } }
 
         public void PaintGameField(Canvas canvas, IGameField currentField)
         {
