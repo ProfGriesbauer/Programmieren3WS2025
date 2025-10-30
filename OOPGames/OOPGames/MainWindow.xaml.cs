@@ -36,6 +36,9 @@ namespace OOPGames
             A5_Gomeringer register = new A5_Gomeringer();
             register.Register();
 
+            //Register Snake Game
+            A5_Main.Register(OOPGamesManager.Singleton);
+
             //Painters
             OOPGamesManager.Singleton.RegisterPainter(new X_TicTacToePaint());
             //Rules
@@ -129,6 +132,7 @@ namespace OOPGames
                 Status.Text = "Game startet!";
                 Status.Text = "Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
                 _CurrentRules.ClearField();
+                PaintCanvas.Focus();
                 _CurrentPainter.PaintGameField(PaintCanvas, _CurrentRules.CurrentField);
                 DoComputerMoves();
             }
