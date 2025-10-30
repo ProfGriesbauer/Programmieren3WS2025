@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
+using System.Windows;
 
 namespace OOPGames
 {
@@ -130,5 +131,19 @@ namespace OOPGames
                 return null;
             }
         }
+    }
+
+    /**************************************************************************
+     * MARK-KLASSEN - Objektorientierte Darstellung von X und O
+     **************************************************************************/
+    public abstract class A3_LEA_TicTacToeMark : IA3_LEA_TicTacToeMark
+    {
+        public abstract double X { get; }
+        public abstract double Y { get; }
+        public abstract double Size { get; }
+        public abstract double Margin { get; }
+
+        // Erzeugt das UI-Element (X oder O) an der gegebenen Position
+        public abstract UIElement BuildElement();
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
@@ -52,54 +53,106 @@ namespace OOPGames
                     
                     if (cellValue == 1) // Spieler 1: X
                     {
-                        // X zeichnen (zwei Linien)
                         double x = offset + (col * cellSize);
                         double y = offset + (row * cellSize);
                         double margin = cellSize * 0.1;
-
-                        Line line1 = new Line()
-                        {
-                            X1 = x + margin,
-                            Y1 = y + margin,
-                            X2 = x + cellSize - margin,
-                            Y2 = y + cellSize - margin,
-                            Stroke = Brushes.Blue,
-                            StrokeThickness = 3
-                        };
-                        canvas.Children.Add(line1);
-
-                        Line line2 = new Line()
-                        {
-                            X1 = x + cellSize - margin,
-                            Y1 = y + margin,
-                            X2 = x + margin,
-                            Y2 = y + cellSize - margin,
-                            Stroke = Brushes.Blue,
-                            StrokeThickness = 3
-                        };
-                        canvas.Children.Add(line2);
+                        var xMark = new A3_LEA_TicTacToeXMark(x, y, cellSize, margin);
+                        canvas.Children.Add(xMark.BuildElement());
                     }
                     else if (cellValue == 2) // Spieler 2: O
                     {
-                        // O zeichnen (Kreis)
                         double x = offset + (col * cellSize);
                         double y = offset + (row * cellSize);
                         double margin = cellSize * 0.1;
-                        double diameter = cellSize - (2 * margin);
-
-                        Ellipse ellipse = new Ellipse()
-                        {
-                            Width = diameter,
-                            Height = diameter,
-                            Stroke = Brushes.Red,
-                            StrokeThickness = 3
-                        };
-                        Canvas.SetLeft(ellipse, x + margin);
-                        Canvas.SetTop(ellipse, y + margin);
-                        canvas.Children.Add(ellipse);
+                        var oMark = new A3_LEA_TicTacToeOMark(x, y, cellSize, margin);
+                        canvas.Children.Add(oMark.BuildElement());
                     }
                 }
             }
+        }
+    }
+
+    
+
+    public class A3_LEA_TicTacToeXMark : A3_LEA_TicTacToeMark
+    {
+        private double cellSize;
+
+        public A3_LEA_TicTacToeXMark(double x, double y, double cellSize, double margin)
+        {
+            X = x;
+            Y = y;
+            this.cellSize = cellSize;
+            Margin = margin;
+        }
+
+        public override double X { get; }
+        public override double Y { get; }
+        public override double Size { get; }
+        public override double Margin { get; }
+
+        public override UIElement BuildElement()
+        {
+            // X als zwei Linien mit Blau
+            var stroke = Brushes.Blue;
+
+            Line line1 = new Line()
+            {
+                X1 = X + Margin,
+                Y1 = Y + Margin,
+                X2 = X + Size - Margin,
+                Y2 = Y + Size - Margin,
+                Stroke = stroke,
+                StrokeThickness = 3
+            };
+
+            Line line2 = new Line()
+            {
+                X1 = X + Size - Margin,
+                Y1 = Y + Margin,
+                X2 = X + Margin,
+                Y2 = Y + Size - Margin,
+                Stroke = stroke,
+                StrokeThickness = 3
+            };
+
+            var container = new Canvas();
+            container.Children.Add(line1);
+            container.Children.Add(line2);
+            return container;
+        }
+    }
+
+    public class A3_LEA_TicTacToeOMark : A3_LEA_TicTacToeMark
+    {
+        private double cellSize;
+
+        public A3_LEA_TicTacToeOMark(double x, double y, double cellSize, double margin)
+        {
+            X = x;
+            Y = y;
+            this.cellSize = cellSize;
+            Margin = margin;
+        }
+
+        public override double X { get; }
+        public override double Y { get; }
+        public override double Size { get; }
+        public override double Margin { get; }
+        public override UIElement BuildElement()
+        {
+            // O als Ellipse mit Rot
+            double diameter = Size - (2 * Margin);
+            Ellipse ellipse = new Ellipse()
+            {
+                Width = diameter,
+                Height = diameter,
+                Stroke = Brushes.Red,
+                StrokeThickness = 3
+            };
+            Canvas.SetLeft(ellipse, X + Margin);
+            Canvas.SetTop(ellipse, Y + Margin);
+            return ellipse;
         }
     }
 

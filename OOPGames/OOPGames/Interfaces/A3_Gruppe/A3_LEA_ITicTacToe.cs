@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Windows.Controls;
+using System.Windows;
 
 namespace OOPGames
 {
@@ -55,5 +56,14 @@ namespace OOPGames
     public interface IA3_LEA_ComputerTicTacToePlayer : IComputerGamePlayer
     {
         IA3_LEA_TicTacToeMove GetMove(IA3_LEA_TicTacToeField field);
+    }
+    public interface IA3_LEA_TicTacToeMark
+    {
+        double X { get; }
+        double Y { get; }
+        double Size { get; }
+        double Margin { get; }
+
+        UIElement BuildElement();
     }
 }
