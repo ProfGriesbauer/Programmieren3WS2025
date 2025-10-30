@@ -12,11 +12,11 @@ namespace OOPGames
     /**************************************************************************
      * PAINTER - Zeichnet das TicTacToe Spielfeld
      **************************************************************************/
-    public class A3_LEA_TicTacToePaint : X_BaseTicTacToePaint
+    public class A3_LEA_TicTacToePaint : A3_LEA_BaseTicTacToePaint
     {
         public override string Name { get { return "A3 LEA TicTacToe"; } }
 
-        public override void PaintTicTacToeField(Canvas canvas, IX_TicTacToeField currentField)
+        public override void PaintTicTacToeField(Canvas canvas, IA3_LEA_TicTacToeField currentField)
         {
             // Canvas leeren
             canvas.Children.Clear();
@@ -106,7 +106,7 @@ namespace OOPGames
     /**************************************************************************
      * FIELD - Das 3x3 Spielfeld
      **************************************************************************/
-    public class A3_LEA_TicTacToeField : X_BaseTicTacToeField
+    public class A3_LEA_TicTacToeField : A3_LEA_BaseTicTacToeField
     {
         private int[,] _field = new int[3, 3];
 
@@ -120,7 +120,7 @@ namespace OOPGames
     /**************************************************************************
      * RULES - Spielregeln und Logik
      **************************************************************************/
-    public class A3_LEA_TicTacToeRules : X_BaseTicTacToeRules
+    public class A3_LEA_TicTacToeRules : A3_LEA_BaseTicTacToeRules
     {
         private A3_LEA_TicTacToeField _field;
         private int _currentPlayerNumber = 1;
@@ -131,7 +131,7 @@ namespace OOPGames
             ClearField();
         }
 
-        public override IX_TicTacToeField TicTacToeField { get { return _field; } }
+        public override IA3_LEA_TicTacToeField TicTacToeField { get { return _field; } }
 
         public override string Name { get { return "A3 LEA TicTacToe Rules"; } }
 
@@ -163,7 +163,7 @@ namespace OOPGames
             _currentPlayerNumber = 1;
         }
 
-        public override void DoTicTacToeMove(IX_TicTacToeMove move)
+        public override void DoTicTacToeMove(IA3_LEA_TicTacToeMove move)
         {
             if (move == null) return;
 
@@ -220,7 +220,7 @@ namespace OOPGames
     /**************************************************************************
      * MOVE - Ein Spielzug (Zeile, Spalte)
      **************************************************************************/
-    public class A3_LEA_TicTacToeMove : IX_TicTacToeMove
+    public class A3_LEA_TicTacToeMove : IA3_LEA_TicTacToeMove
     {
         private int _row;
         private int _column;
@@ -241,7 +241,7 @@ namespace OOPGames
     /**************************************************************************
      * HUMAN PLAYER - Menschlicher Spieler
      **************************************************************************/
-    public class A3_LEA_TicTacToeHumanPlayer : X_BaseHumanTicTacToePlayer
+    public class A3_LEA_TicTacToeHumanPlayer : A3_LEA_BaseHumanTicTacToePlayer
     {
         private int _playerNumber = 0;
 
@@ -254,7 +254,7 @@ namespace OOPGames
             _playerNumber = playerNumber;
         }
 
-        public override IX_TicTacToeMove GetMove(IMoveSelection selection, IX_TicTacToeField field)
+        public override IA3_LEA_TicTacToeMove GetMove(IMoveSelection selection, IA3_LEA_TicTacToeField field)
         {
             if (selection == null) return null;
 
@@ -301,7 +301,7 @@ namespace OOPGames
     /**************************************************************************
      * COMPUTER PLAYER - Unschlagbarer KI-Spieler mit Minimax-Algorithmus
      **************************************************************************/
-    public class A3_LEA_TicTacToeComputerPlayer : X_BaseComputerTicTacToePlayer
+    public class A3_LEA_TicTacToeComputerPlayer : A3_LEA_BaseComputerTicTacToePlayer
     {
         private int _playerNumber = 0;
         private Random _random = new Random();
@@ -315,11 +315,11 @@ namespace OOPGames
             _playerNumber = playerNumber;
         }
 
-        public override IX_TicTacToeMove GetMove(IX_TicTacToeField field)
+        public override IA3_LEA_TicTacToeMove GetMove(IA3_LEA_TicTacToeField field)
         {
             // Verwende Minimax-Algorithmus für den besten Zug
             int bestScore = int.MinValue;
-            IX_TicTacToeMove bestMove = null;
+            IA3_LEA_TicTacToeMove bestMove = null;
 
             // Alle möglichen Züge durchgehen
             for (int row = 0; row < 3; row++)
@@ -357,7 +357,7 @@ namespace OOPGames
         /// <param name="depth">Aktuelle Tiefe im Spielbaum</param>
         /// <param name="isMaximizing">true = Computer ist dran, false = Gegner ist dran</param>
         /// <returns>Score des besten Zugs</returns>
-        private int Minimax(IX_TicTacToeField field, int depth, bool isMaximizing)
+        private int Minimax(IA3_LEA_TicTacToeField field, int depth, bool isMaximizing)
         {
             // Prüfe, ob das Spiel vorbei ist
             int winner = CheckWinner(field);
@@ -425,7 +425,7 @@ namespace OOPGames
         /// <summary>
         /// Prüft, ob noch Züge möglich sind
         /// </summary>
-        private bool HasMovesLeft(IX_TicTacToeField field)
+        private bool HasMovesLeft(IA3_LEA_TicTacToeField field)
         {
             for (int row = 0; row < 3; row++)
             {
@@ -442,7 +442,7 @@ namespace OOPGames
         /// Prüft, ob jemand gewonnen hat
         /// </summary>
         /// <returns>Spielernummer des Gewinners, 0 wenn niemand gewonnen hat</returns>
-        private int CheckWinner(IX_TicTacToeField field)
+        private int CheckWinner(IA3_LEA_TicTacToeField field)
         {
             // Prüfe Zeilen
             for (int row = 0; row < 3; row++)
