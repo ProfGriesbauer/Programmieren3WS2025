@@ -9,6 +9,8 @@ namespace OOPGames
         private int[,] _field;
         public List<Position> Snake { get; private set; }
         public Position Direction { get; set; }
+        private System.Windows.Threading.DispatcherTimer gameTimer;
+        private bool isGameRunning = false;
 
         public class Position
         {
@@ -32,6 +34,13 @@ namespace OOPGames
             _field = new int[FIELD_SIZE, FIELD_SIZE];
             Snake = new List<Position>();
             InitializeSnake();
+            
+            // Timer für automatische Bewegung
+            gameTimer = new System.Windows.Threading.DispatcherTimer();
+            gameTimer.Tick += GameTimer_Tick;
+            gameTimer.Interval = TimeSpan.FromMilliseconds(200); // Geschwindigkeit der Schlange
+            gameTimer.Start();
+            isGameRunning = true;
         }
 
         private void InitializeSnake()
@@ -103,6 +112,14 @@ namespace OOPGames
         public bool IsValidPosition(int x, int y)
         {
             return x >= 0 && x < FIELD_SIZE && y >= 0 && y < FIELD_SIZE;
+        }
+
+        private void GameTimer_Tick(object sender, EventArgs e)
+        {
+            if (isGameRunning)
+            {
+                MoveSnake();
+            }
         }
 
         public int GetPosition(int x, int y)
