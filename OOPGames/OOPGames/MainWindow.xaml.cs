@@ -48,6 +48,9 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterPainter(new A4_TicTacToePaint());
             OOPGamesManager.Singleton.RegisterRules(new A4_TicTacToeRules());
             OOPGamesManager.Singleton.RegisterPlayer(new A4_TicTacToeHumanPlayer());
+            // Register A4 computer players so they appear in the Player dropdowns
+            OOPGamesManager.Singleton.RegisterPlayer(new A4_ComputerNormal());
+            OOPGamesManager.Singleton.RegisterPlayer(new A4_ComputerUnbeatable());
 
             //A2 Painters
             OOPGamesManager.Singleton.RegisterPainter(new A2_Painter());
@@ -164,6 +167,14 @@ namespace OOPGames
                         ScheduleRestartIfNeeded();
                     }
                 }
+
+                // If the board is full and there's no winner, it's a draw — schedule restart as well
+                //A4 Restart Logic
+                if (!_CurrentRules.MovesPossible && winner <= 0)
+                {
+                    Status.Text = "Draw!";
+                    ScheduleRestartIfNeeded();
+                }
             }
         }
 
@@ -275,6 +286,8 @@ namespace OOPGames
             {
                 _CurrentPlayer = _CurrentPlayer1;
                 Status.Text = "Game restarted! Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
+                // If the first player is a computer, let it make its move(s)
+                DoComputerMoves();
             }
             else
             {
