@@ -12,7 +12,7 @@ namespace OOPGames
         private static Random _rand = new Random();
 
         // Display name shown in the UI dropdowns
-        public override string Name { get { return "A5 Computer (Easy)"; } }
+        public override string Name { get { return "A5 Computer (Easy) TicTacToe"; } }
         public override int PlayerNumber { get { return _PlayerNumber; } }
 
         public override IGamePlayer Clone()

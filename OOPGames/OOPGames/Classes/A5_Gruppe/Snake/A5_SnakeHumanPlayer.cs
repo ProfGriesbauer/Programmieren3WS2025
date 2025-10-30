@@ -7,7 +7,7 @@ namespace OOPGames
     {
         private int _playerNumber = 1;
 
-        public string Name => "A5 Snake Human Player";
+        public string Name => "A5 Player Snake";
 
         public int PlayerNumber => _playerNumber;
 

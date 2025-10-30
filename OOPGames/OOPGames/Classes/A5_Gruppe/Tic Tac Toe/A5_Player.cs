@@ -9,7 +9,7 @@ namespace OOPGames
     {
         private int _playerNumber;
         
-        public string Name { get { return "A5 Human Player"; } }
+        public string Name { get { return "A5 Player TicTacToe"; } }
 
         public int PlayerNumber { get { return _playerNumber; } }
 
