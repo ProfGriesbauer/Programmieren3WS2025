@@ -21,20 +21,27 @@ namespace OOPGames
         {
             if (move is A5_SnakeMove snakeMove)
             {
-                switch (snakeMove.Direction)
+                try
                 {
-                    case "W":
-                        _field.ChangeDirection(0, -1);  // Nach oben
-                        break;
-                    case "S":
-                        _field.ChangeDirection(0, 1);   // Nach unten
-                        break;
-                    case "A":
-                        _field.ChangeDirection(-1, 0);  // Nach links
-                        break;
-                    case "D":
-                        _field.ChangeDirection(1, 0);   // Nach rechts
-                        break;
+                    switch (snakeMove.Direction)
+                    {
+                        case "W":
+                            _field.ChangeDirection(0, -1);  // Nach oben
+                            break;
+                        case "S":
+                            _field.ChangeDirection(0, 1);   // Nach unten
+                            break;
+                        case "A":
+                            _field.ChangeDirection(-1, 0);  // Nach links
+                            break;
+                        case "D":
+                            _field.ChangeDirection(1, 0);   // Nach rechts
+                            break;
+                    }
+                }
+                catch (Exception)
+                {
+                    // Fehlerbehandlung für ungültige Bewegungen
                 }
             }
         }
