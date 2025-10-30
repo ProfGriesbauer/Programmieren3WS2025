@@ -28,6 +28,24 @@ namespace OOPGames
             double cellSize = 100.0;
             double offset = 20.0;
 
+            // Prüfe Spielstatus
+            int winner = CheckWinner(currentField);
+            bool isDraw = (winner == -1);
+            bool hasWinner = (winner == 1 || winner == 2);
+
+            if (hasWinner)
+            {
+                // Zeige Gewinner-Bild über das komplette Spielfeld
+                ShowWinner(canvas, winner, offset, cellSize);
+                return;
+            }
+            else if (isDraw)
+            {
+                // Zeige beide Smileys nebeneinander bei Unentschieden
+                ShowDraw(canvas, offset, cellSize);
+                return;
+            }
+
             // Gitterlinien zeichnen
             Color lineColor = Color.FromRgb(0, 0, 0);
             Brush lineStroke = new SolidColorBrush(lineColor);
@@ -70,6 +88,155 @@ namespace OOPGames
                 }
             }
         }
+
+        private void ShowWinner(Canvas canvas, int winner, double offset, double cellSize)
+        {
+            // Großes Gewinner-Bild über das komplette Spielfeld
+            double fieldSize = 3 * cellSize;
+            
+            var winnerImage = new System.Windows.Controls.Image();
+            var bitmap = new System.Windows.Media.Imaging.BitmapImage();
+            bitmap.BeginInit();
+            
+            if (winner == 1)
+            {
+                bitmap.UriSource = new Uri(@"C:\Users\shemu\Documents\Hochschule_Kempten\3.Fachsemester\Programmieren_3\Programmieren3WS2025\OOPGames\OOPGames\Classes\A3_Gruppe\Bilder\Smiley1.jpg", UriKind.Absolute);
+            }
+            else
+            {
+                bitmap.UriSource = new Uri(@"C:\Users\shemu\Documents\Hochschule_Kempten\3.Fachsemester\Programmieren_3\Programmieren3WS2025\OOPGames\OOPGames\Classes\A3_Gruppe\Bilder\Smiley2.jpg", UriKind.Absolute);
+            }
+            
+            bitmap.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+            bitmap.EndInit();
+            
+            winnerImage.Source = bitmap;
+            winnerImage.Width = fieldSize;
+            winnerImage.Height = fieldSize;
+            
+            Canvas.SetLeft(winnerImage, offset);
+            Canvas.SetTop(winnerImage, offset);
+            canvas.Children.Add(winnerImage);
+            
+            // "WINNER!" Text darunter
+            var winnerText = new System.Windows.Controls.TextBlock
+            {
+                Text = "WINNER!",
+                FontSize = 48,
+                FontWeight = FontWeights.Bold,
+                Foreground = Brushes.Red,
+                TextAlignment = TextAlignment.Center
+            };
+            
+            Canvas.SetLeft(winnerText, offset);
+            Canvas.SetTop(winnerText, offset + fieldSize + 10);
+            canvas.Children.Add(winnerText);
+        }
+
+        private void ShowDraw(Canvas canvas, double offset, double cellSize)
+        {
+            // Beide Smileys nebeneinander
+            double fieldSize = 3 * cellSize;
+            double smileySize = fieldSize / 2 - 20;
+            
+            // Smiley 1
+            var smiley1 = new System.Windows.Controls.Image();
+            var bitmap1 = new System.Windows.Media.Imaging.BitmapImage();
+            bitmap1.BeginInit();
+            bitmap1.UriSource = new Uri(@"C:\Users\shemu\Documents\Hochschule_Kempten\3.Fachsemester\Programmieren_3\Programmieren3WS2025\OOPGames\OOPGames\Classes\A3_Gruppe\Bilder\Smiley1.jpg", UriKind.Absolute);
+            bitmap1.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+            bitmap1.EndInit();
+            
+            smiley1.Source = bitmap1;
+            smiley1.Width = smileySize;
+            smiley1.Height = smileySize;
+            
+            Canvas.SetLeft(smiley1, offset + 20);
+            Canvas.SetTop(smiley1, offset + 50);
+            canvas.Children.Add(smiley1);
+            
+            // Smiley 2
+            var smiley2 = new System.Windows.Controls.Image();
+            var bitmap2 = new System.Windows.Media.Imaging.BitmapImage();
+            bitmap2.BeginInit();
+            bitmap2.UriSource = new Uri(@"C:\Users\shemu\Documents\Hochschule_Kempten\3.Fachsemester\Programmieren_3\Programmieren3WS2025\OOPGames\OOPGames\Classes\A3_Gruppe\Bilder\Smiley2.jpg", UriKind.Absolute);
+            bitmap2.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+            bitmap2.EndInit();
+            
+            smiley2.Source = bitmap2;
+            smiley2.Width = smileySize;
+            smiley2.Height = smileySize;
+            
+            Canvas.SetLeft(smiley2, offset + fieldSize / 2 + 10);
+            Canvas.SetTop(smiley2, offset + 50);
+            canvas.Children.Add(smiley2);
+            
+            // "München ist ROT!" Text darunter
+            var drawText = new System.Windows.Controls.TextBlock
+            {
+                Text = "München ist ROT!",
+                FontSize = 36,
+                FontWeight = FontWeights.Bold,
+                Foreground = Brushes.Red,
+                TextAlignment = TextAlignment.Center
+            };
+            
+            Canvas.SetLeft(drawText, offset);
+            Canvas.SetTop(drawText, offset + 50 + smileySize + 20);
+            canvas.Children.Add(drawText);
+        }
+
+        private int CheckWinner(IA3_LEA_TicTacToeField field)
+        {
+            // Zeilen prüfen
+            for (int r = 0; r < 3; r++)
+            {
+                if (field[r, 0] != 0 && field[r, 0] == field[r, 1] && field[r, 1] == field[r, 2])
+                {
+                    return field[r, 0];
+                }
+            }
+
+            // Spalten prüfen
+            for (int c = 0; c < 3; c++)
+            {
+                if (field[0, c] != 0 && field[0, c] == field[1, c] && field[1, c] == field[2, c])
+                {
+                    return field[0, c];
+                }
+            }
+
+            // Diagonalen prüfen
+            if (field[0, 0] != 0 && field[0, 0] == field[1, 1] && field[1, 1] == field[2, 2])
+            {
+                return field[0, 0];
+            }
+
+            if (field[0, 2] != 0 && field[0, 2] == field[1, 1] && field[1, 1] == field[2, 0])
+            {
+                return field[0, 2];
+            }
+
+            // Prüfe auf Unentschieden (alle Felder belegt, kein Gewinner)
+            bool allFilled = true;
+            for (int r = 0; r < 3; r++)
+            {
+                for (int c = 0; c < 3; c++)
+                {
+                    if (field[r, c] == 0)
+                    {
+                        allFilled = false;
+                        break;
+                    }
+                }
+                if (!allFilled) break;
+            }
+
+            if (allFilled)
+                return -1; // Unentschieden
+
+            return 0; // Spiel läuft noch
+        }
     }
 
     
@@ -88,38 +255,31 @@ namespace OOPGames
 
         public override double X { get; }
         public override double Y { get; }
-        public override double Size { get; }
+        public override double Size { get { return cellSize; } }
         public override double Margin { get; }
 
         public override UIElement BuildElement()
         {
-            // X als zwei Linien mit Blau
-            var stroke = Brushes.Blue;
-
-            Line line1 = new Line()
-            {
-                X1 = X + Margin,
-                Y1 = Y + Margin,
-                X2 = X + Size - Margin,
-                Y2 = Y + Size - Margin,
-                Stroke = stroke,
-                StrokeThickness = 3
-            };
-
-            Line line2 = new Line()
-            {
-                X1 = X + Size - Margin,
-                Y1 = Y + Margin,
-                X2 = X + Margin,
-                Y2 = Y + Size - Margin,
-                Stroke = stroke,
-                StrokeThickness = 3
-            };
-
-            var container = new Canvas();
-            container.Children.Add(line1);
-            container.Children.Add(line2);
-            return container;
+            // Spieler 1: Smiley mit ausgestreckter Zunge (Smiley1.jpg)
+            var image = new System.Windows.Controls.Image();
+            
+            var bitmap = new System.Windows.Media.Imaging.BitmapImage();
+            bitmap.BeginInit();
+            bitmap.UriSource = new Uri(@"C:\Users\shemu\Documents\Hochschule_Kempten\3.Fachsemester\Programmieren_3\Programmieren3WS2025\OOPGames\OOPGames\Classes\A3_Gruppe\Bilder\Smiley1.jpg", UriKind.Absolute);
+            bitmap.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+            bitmap.EndInit();
+            
+            image.Source = bitmap;
+            
+            // Smiley mittig im Kästchen positionieren
+            double smileySize = cellSize - (2 * Margin);
+            image.Width = smileySize;
+            image.Height = smileySize;
+            
+            Canvas.SetLeft(image, X + Margin);
+            Canvas.SetTop(image, Y + Margin);
+            
+            return image;
         }
     }
 
@@ -137,22 +297,31 @@ namespace OOPGames
 
         public override double X { get; }
         public override double Y { get; }
-        public override double Size { get; }
+        public override double Size { get { return cellSize; } }
         public override double Margin { get; }
+        
         public override UIElement BuildElement()
         {
-            // O als Ellipse mit Rot
-            double diameter = Size - (2 * Margin);
-            Ellipse ellipse = new Ellipse()
-            {
-                Width = diameter,
-                Height = diameter,
-                Stroke = Brushes.Red,
-                StrokeThickness = 3
-            };
-            Canvas.SetLeft(ellipse, X + Margin);
-            Canvas.SetTop(ellipse, Y + Margin);
-            return ellipse;
+            // Spieler 2: Cooler Smiley mit Sonnenbrille (Smiley2.jpg)
+            var image = new System.Windows.Controls.Image();
+            
+            var bitmap = new System.Windows.Media.Imaging.BitmapImage();
+            bitmap.BeginInit();
+            bitmap.UriSource = new Uri(@"C:\Users\shemu\Documents\Hochschule_Kempten\3.Fachsemester\Programmieren_3\Programmieren3WS2025\OOPGames\OOPGames\Classes\A3_Gruppe\Bilder\Smiley2.jpg", UriKind.Absolute);
+            bitmap.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+            bitmap.EndInit();
+            
+            image.Source = bitmap;
+            
+            // Smiley mittig im Kästchen positionieren
+            double smileySize = cellSize - (2 * Margin);
+            image.Width = smileySize;
+            image.Height = smileySize;
+            
+            Canvas.SetLeft(image, X + Margin);
+            Canvas.SetTop(image, Y + Margin);
+            
+            return image;
         }
     }
 
