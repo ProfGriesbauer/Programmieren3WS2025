@@ -59,6 +59,11 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterPlayer(new A3_LEA_TicTacToeHumanPlayer());
             OOPGamesManager.Singleton.RegisterPlayer(new A3_LEA_TicTacToeComputerPlayer());
 
+            //A3_LEA IQ Puzzle
+            OOPGamesManager.Singleton.RegisterPainter(new A3_LEA_IQPuzzlePaint());
+            OOPGamesManager.Singleton.RegisterRules(new A3_LEA_IQPuzzleRules());
+            OOPGamesManager.Singleton.RegisterPlayer(new A3_LEA_IQPuzzleHumanPlayer());
+
 
             InitializeComponent();
             PaintList.ItemsSource = OOPGamesManager.Singleton.Painters;
