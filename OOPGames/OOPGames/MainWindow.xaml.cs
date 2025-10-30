@@ -36,6 +36,9 @@ namespace OOPGames
             A5_Gomeringer register = new A5_Gomeringer();
             register.Register();
 
+            //Register Snake Game
+            A5_Main.Register(OOPGamesManager.Singleton);
+
             //Painters
             OOPGamesManager.Singleton.RegisterPainter(new X_TicTacToePaint());
             //Rules
@@ -48,6 +51,9 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterPainter(new A4_TicTacToePaint());
             OOPGamesManager.Singleton.RegisterRules(new A4_TicTacToeRules());
             OOPGamesManager.Singleton.RegisterPlayer(new A4_TicTacToeHumanPlayer());
+            // Register A4 computer players so they appear in the Player dropdowns
+            OOPGamesManager.Singleton.RegisterPlayer(new A4_ComputerNormal());
+            OOPGamesManager.Singleton.RegisterPlayer(new A4_ComputerUnbeatable());
 
             //A2 Painters
             OOPGamesManager.Singleton.RegisterPainter(new A2_Painter());
@@ -134,6 +140,7 @@ namespace OOPGames
                 Status.Text = "Game startet!";
                 Status.Text = "Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
                 _CurrentRules.ClearField();
+                PaintCanvas.Focus();
                 _CurrentPainter.PaintGameField(PaintCanvas, _CurrentRules.CurrentField);
                 DoComputerMoves();
             }
@@ -169,6 +176,14 @@ namespace OOPGames
                         ScheduleRestartIfNeeded();
                     }
                 }
+
+                // If the board is full and there's no winner, it's a draw — schedule restart as well
+                //A4 Restart Logic
+                if (!_CurrentRules.MovesPossible && winner <= 0)
+                {
+                    Status.Text = "Draw!";
+                    ScheduleRestartIfNeeded();
+                }
             }
         }
 
@@ -184,8 +199,21 @@ namespace OOPGames
                 if (_CurrentRules.MovesPossible &&
                     _CurrentPlayer is IHumanGamePlayer)
                 {
-                    IPlayMove pm = ((IHumanGamePlayer)_CurrentPlayer).GetMove(new ClickSelection((int)e.GetPosition(PaintCanvas).X, 
-                        (int)e.GetPosition(PaintCanvas).Y, (int)e.ChangedButton), _CurrentRules.CurrentField);
+                    // Create an A4-specific click selection (with canvas size) only for A4 group players.
+                    IClickSelection sel;
+                    var px = (int)e.GetPosition(PaintCanvas).X;
+                    var py = (int)e.GetPosition(PaintCanvas).Y;
+                    var btn = (int)e.ChangedButton;
+                    if (_CurrentPlayer != null && _CurrentPlayer.GetType().Name.StartsWith("A4_"))
+                    {
+                        sel = new A4_ClickSelection(px, py, btn, (int)PaintCanvas.ActualWidth, (int)PaintCanvas.ActualHeight);
+                    }
+                    else
+                    {
+                        sel = new ClickSelection(px, py, btn);
+                    }
+
+                    IPlayMove pm = ((IHumanGamePlayer)_CurrentPlayer).GetMove(sel, _CurrentRules.CurrentField);
                     if (pm != null)
                     {
                         _CurrentRules.DoMove(pm);
@@ -280,6 +308,8 @@ namespace OOPGames
             {
                 _CurrentPlayer = _CurrentPlayer1;
                 Status.Text = "Game restarted! Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
+                // If the first player is a computer, let it make its move(s)
+                DoComputerMoves();
             }
             else
             {

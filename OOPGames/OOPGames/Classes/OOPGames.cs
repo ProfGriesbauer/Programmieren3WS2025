@@ -104,6 +104,8 @@ namespace OOPGames
 
     }
 
+    
+
     public class ClickSelection : IClickSelection
     {
         int _ClickX;
@@ -126,23 +128,19 @@ namespace OOPGames
         public int ChangedButton { get { return _ChangedButton; } } 
     }
 
+    // Simple key selection implementation used when a key is pressed
     public class KeySelection : IKeySelection
     {
-        Key _Key;
-        int _ClickX = 0;
-        int _ClickY = 0;
+        Key _key;
 
         public KeySelection(Key key)
         {
-            _Key = key;
+            _key = key;
         }
 
-        public int XClickPos { get { return _ClickX; } }
-
-        public int YClickPos { get { return _ClickY; } }
-
-        public Key Key { get { return _Key; } }
-
         public MoveType MoveType { get { return MoveType.key; } }
+
+        public Key Key { get { return _key; } }
     }
+
 }
