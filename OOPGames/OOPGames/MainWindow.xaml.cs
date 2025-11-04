@@ -70,6 +70,12 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterRules(new A3_LEA_IQPuzzleRules());
             OOPGamesManager.Singleton.RegisterPlayer(new A3_LEA_IQPuzzleHumanPlayer());
 
+            // B1 group TicTacToe (our implementation)
+            OOPGamesManager.Singleton.RegisterPainter(new B1_TicTacToePaint());
+            OOPGamesManager.Singleton.RegisterRules(new B1_TicTacToeRules());
+            OOPGamesManager.Singleton.RegisterPlayer(new B1_TicTacToeHumanPlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new B1_TicTacToeComputerPlayer());
+
 
             InitializeComponent();
             PaintList.ItemsSource = OOPGamesManager.Singleton.Painters;
