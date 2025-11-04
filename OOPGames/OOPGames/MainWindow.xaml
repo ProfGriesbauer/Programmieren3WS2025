@@ -5,7 +5,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:OOPGames"
         mc:Ignorable="d"
-        Title="OOP Games" ResizeMode="CanResizeWithGrip" MinWidth="400" MinHeight="300" Closed="Window_Closed" KeyDown="Window_KeyDown">
+        Title="OOP Games" ResizeMode="CanResizeWithGrip" MinWidth="400" MinHeight="300" 
+        Closed="Window_Closed" KeyDown="Window_KeyDown" 
+        FocusManager.FocusedElement="{Binding ElementName=PaintCanvas}"
+        Focusable="True">
     
     <Window.Resources>
         <Style TargetType="Button">
@@ -23,14 +26,21 @@
                 <RowDefinition Height="1*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            <Canvas x:Name="PaintCanvas" Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="5,5,5,5" MouseDown="PaintCanvas_MouseDown"/>
+            <Canvas x:Name="PaintCanvas" Grid.Row="0" 
+                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch" 
+                    Margin="5,5,5,5" MouseDown="PaintCanvas_MouseDown"
+                    Focusable="True"
+                    KeyboardNavigation.TabNavigation="None"/>
             <Grid Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="1*"/>
                 </Grid.ColumnDefinitions>
                 <Button x:Name="StartGame" Grid.Column="0" Content="Start New Game" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="5,5,5,5" Click="StartGame_Click"/>
-                <TextBox x:Name="Status" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="5,5,5,5" FontSize="18"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="5,5,5,5">
+                    <TextBox x:Name="Status" Width="250" HorizontalAlignment="Stretch" VerticalAlignment="Center" FontSize="18"/>
+                    <CheckBox x:Name="AutoRestartCheck" Content="Auto-Restart (3s)" Margin="10,0,0,0" IsChecked="True" VerticalAlignment="Center"/>
+                </StackPanel>
             </Grid>
         </Grid>
         <Grid Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
