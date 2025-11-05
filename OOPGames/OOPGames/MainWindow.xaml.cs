@@ -41,17 +41,19 @@ namespace OOPGames
 
             //Painters
             OOPGamesManager.Singleton.RegisterPainter(new X_TicTacToePaint());
-            OOPGamesManager.Singleton.RegisterPainter(new B5_TicTacToePaint());
-            OOPGamesManager.Singleton.RegisterPainter(new B5_TicTacToeAnimatedPaint());
+            //OOPGamesManager.Singleton.RegisterPainter(new B5_TicTacToePaint());
+            //OOPGamesManager.Singleton.RegisterPainter(new B5_TicTacToeAnimatedPaint());
+
             //Rules
             OOPGamesManager.Singleton.RegisterRules(new X_TicTacToeRules());
-            OOPGamesManager.Singleton.RegisterRules(new B5_TicTacToeRules());
+            //OOPGamesManager.Singleton.RegisterRules(new B5_TicTacToeRules());
+            
             //Players
             OOPGamesManager.Singleton.RegisterPlayer(new X_TicTacToeHumanPlayer());
             OOPGamesManager.Singleton.RegisterPlayer(new X_TicTacToeComputerPlayer());
-            OOPGamesManager.Singleton.RegisterPlayer(new B5_TicTacToeHumanPlayer());
-            OOPGamesManager.Singleton.RegisterPlayer(new B5_TicTacToeComputerPlayer());
-            OOPGamesManager.Singleton.RegisterPlayer(new B5_TicTacToeSmartComputerPlayer());
+            //OOPGamesManager.Singleton.RegisterPlayer(new B5_TicTacToeHumanPlayer());
+            //OOPGamesManager.Singleton.RegisterPlayer(new B5_TicTacToeComputerPlayer());
+            //OOPGamesManager.Singleton.RegisterPlayer(new B5_TicTacToeSmartComputerPlayer());
 
             //A4 Painters
             OOPGamesManager.Singleton.RegisterPainter(new A4_TicTacToePaint());
@@ -63,7 +65,9 @@ namespace OOPGames
 
             //A2 Painters
             OOPGamesManager.Singleton.RegisterPainter(new A2_Painter());
-            OOPGamesManager.Singleton.RegisterActiveRules(new A2_Rules());
+            OOPGamesManager.Singleton.RegisterRules(new A2_Rules());
+            OOPGamesManager.Singleton.RegisterPlayer(new A2_HumanPlayer());  
+              
 
             //A3_LEA TicTacToe
             OOPGamesManager.Singleton.RegisterPainter(new A3_LEA_TicTacToePaint());
