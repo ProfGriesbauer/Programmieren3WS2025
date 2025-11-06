@@ -57,7 +57,7 @@ namespace OOPGames
         }
     }
 
-    public abstract class B4_BaseHumanTicTacToePlayer_01 : IB4_HumanTicTacToePlayer
+    public abstract class B4_BaseHumanTicTacToePlayer : IB4_HumanTicTacToePlayer
     {
         public abstract string Name { get; }
 
@@ -87,35 +87,6 @@ namespace OOPGames
         }
     }
 
-    public abstract class B4_BaseHumanTicTacToePlayer_02 : IB4_HumanTicTacToePlayer
-    {
-        public abstract string Name { get; }
-
-        public abstract int PlayerNumber { get; }
-
-        public abstract IB4_TicTacToeMove GetMove(IMoveSelection selection, IB4_TicTacToeField field);
-
-        public abstract void SetPlayerNumber(int playerNumber);
-
-        public abstract IGamePlayer Clone();
-
-        public bool CanBeRuledBy(IGameRules rules)
-        {
-            return rules is IB4_TicTacToeRules;
-        }
-
-        public IPlayMove GetMove(IMoveSelection selection, IGameField field)
-        {
-            if (field is IB4_TicTacToeField)
-            {
-                return GetMove(selection, (IB4_TicTacToeField)field);
-            }
-            else
-            {
-                return null;
-            }
-        }
-    }
 
     public abstract class B4_BaseComputerTicTacToePlayer : IB4_ComputerTicTacToePlayer
     {
