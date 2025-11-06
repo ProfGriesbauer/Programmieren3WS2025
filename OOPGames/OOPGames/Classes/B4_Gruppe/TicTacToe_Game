@@ -1,203 +1,266 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
 
 namespace OOPGames
 {
-    //Player for TicTacToe
-    public class B4_XXX_TicTacToeHumanPlayer : IHumanGamePlayer
+    public class B4_TicTacToePaint : B4_BaseTicTacToePaint
     {
-        int _playerNumber = 1;
-        public string Name { get => "B4_XXX Human Player"; }
+        public override string Name { get { return "GriesbauerTicTacToePaint"; } }
 
-        public int PlayerNumber => _playerNumber;
-
-        public void SetPlayerNumber(int number)
+        public override void PaintTicTacToeField(Canvas canvas, IB4_TicTacToeField currentField)
         {
-            _playerNumber = number;
-        }
+            canvas.Children.Clear();
+            Color bgColor = Color.FromRgb(255, 255, 255);
+            canvas.Background = new SolidColorBrush(bgColor);
+            Color lineColor = Color.FromRgb(255, 0, 0);
+            Brush lineStroke = new SolidColorBrush(lineColor);
+            Color XColor = Color.FromRgb(0, 255, 0);
+            Brush XStroke = new SolidColorBrush(XColor);
+            Color OColor = Color.FromRgb(0, 0, 255);
+            Brush OStroke = new SolidColorBrush(OColor);
 
-        public IGamePlayer Clone()
-        {
-            return new B4_XXX_TicTacToeHumanPlayer();
-        }
-
-        public IPlayMove GetMove(IClickSelection selection, IGameField field)
-        {
-            if (selection is ClickSelection click)
-            {
-                int row = (int)(click.Y / (300 / 3));
-                int col = (int)(click.X / (300 / 3));
-
-                if (row >= 0 && row < 3 && col >= 0 && col < 3)
-                {
-                    return new B4_XXX_TicTacToeMove(row, col, _playerNumber);
-                }
-            }
-            return null;
-        }
-
-        public IPlayMove GetMove(IKeySelection selection, IGameField field)
-        {
-            return null; // Keine Tastatureingabe nötig
-        }
-    }
-
-    //Move 
-    public class B4_XXX_TicTacToeMove : IPlayMove
-    {
-        public int Row { get; }
-        public int Col { get; }
-        public int PlayerNumber { get; }
-
-        public B4_XXX_TicTacToeMove(int row, int col, int player)
-        {
-            Row = row;
-            Col = col;
-            PlayerNumber = player;
-        }
-    }
-
-    //playground / field
-    public class B4_XXX_TicTacToeField : IGameField
-    {
-        public int[,] Cells = new int[3, 3];
-
-        public bool CanBePaintedBy(IPaintGame painter)
-        {
-            return painter is B4_XXX_TicTacToePaint;
-        }
-
-        public object Clone()
-        {
-            var copy = new B4_XXX_TicTacToeField();
-            Array.Copy(Cells, copy.Cells, Cells.Length);
-            return copy;
-        }
-    }
-
-    //Rules
-    public class B4_XXX_TicTacToeRules : IGameRules
-    {
-        public string Name { get => "B4_XXX TicTacToe Rules"; }
-
-        public IGameField CurrentField { get; private set; } = new B4_XXX_TicTacToeField();
-
-        public bool MovesPossible
-        {
-            get
-            {
-                var f = (B4_XXX_TicTacToeField)CurrentField;
-                foreach (var cell in f.Cells)
-                    if (cell == 0) return true;
-                return false;
-            }
-        }
-
-        public void ClearField()
-        {
-            CurrentField = new B4_XXX_TicTacToeField();
-        }
-
-        public void DoMove(IPlayMove move)
-        {
-            if (move is B4_XXX_TicTacToeMove m)
-            {
-                var f = (B4_XXX_TicTacToeField)CurrentField;
-                if (f.Cells[m.Row, m.Col] == 0)
-                {
-                    f.Cells[m.Row, m.Col] = m.PlayerNumber;
-                }
-            }
-        }
-
-        public int CheckIfPLayerWon()
-        {
-            var f = (B4_XXX_TicTacToeField)CurrentField;
-            int[,] b = f.Cells;
+            Line l1 = new Line() { X1 = 120, Y1 = 20, X2 = 120, Y2 = 320, Stroke = lineStroke, StrokeThickness = 3.0 };
+            canvas.Children.Add(l1);
+            Line l2 = new Line() { X1 = 220, Y1 = 20, X2 = 220, Y2 = 320, Stroke = lineStroke, StrokeThickness = 3.0 };
+            canvas.Children.Add(l2);
+            Line l3 = new Line() { X1 = 20, Y1 = 120, X2 = 320, Y2 = 120, Stroke = lineStroke, StrokeThickness = 3.0 };
+            canvas.Children.Add(l3);
+            Line l4 = new Line() { X1 = 20, Y1 = 220, X2 = 320, Y2 = 220, Stroke = lineStroke, StrokeThickness = 3.0 };
+            canvas.Children.Add(l4);
 
             for (int i = 0; i < 3; i++)
             {
-                if (b[i, 0] != 0 && b[i, 0] == b[i, 1] && b[i, 1] == b[i, 2]) return b[i, 0];
-                if (b[0, i] != 0 && b[0, i] == b[1, i] && b[1, i] == b[2, i]) return b[0, i];
-            }
-            if (b[0, 0] != 0 && b[0, 0] == b[1, 1] && b[1, 1] == b[2, 2]) return b[0, 0];
-            if (b[0, 2] != 0 && b[0, 2] == b[1, 1] && b[1, 1] == b[2, 0]) return b[0, 2];
-
-            return 0;
-        }
-    }
-
-    //Field Painter
-    public class B4_XXX_TicTacToePaint : IPaintGame
-    {
-        public string Name { get => "B4_XXX TicTacToe Painter"; }
-
-        public void PaintGameField(Canvas canvas, IGameField field)
-        {
-            canvas.Children.Clear();
-            var f = (B4_XXX_TicTacToeField)field;
-            double cellSize = Math.Min(canvas.ActualWidth, canvas.ActualHeight) / 3;
-
-            // Rasterlinien
-            for (int i = 1; i < 3; i++)
-            {
-                var vLine = new Line()
+                for (int j = 0; j < 3; j++)
                 {
-                    X1 = i * cellSize,
-                    X2 = i * cellSize,
-                    Y1 = 0,
-                    Y2 = 3 * cellSize,
-                    Stroke = Brushes.Black,
-                    StrokeThickness = 2
-                };
-                canvas.Children.Add(vLine);
-
-                var hLine = new Line()
-                {
-                    X1 = 0,
-                    X2 = 3 * cellSize,
-                    Y1 = i * cellSize,
-                    Y2 = i * cellSize,
-                    Stroke = Brushes.Black,
-                    StrokeThickness = 2
-                };
-                canvas.Children.Add(hLine);
-            }
-
-            // Zeichen (X / O)
-            for (int r = 0; r < 3; r++)
-            {
-                for (int c = 0; c < 3; c++)
-                {
-                    int player = f.Cells[r, c];
-                    if (player == 1)
+                    if (currentField[i, j] == 1)
                     {
-                        TextBlock xText = new TextBlock()
-                        {
-                            Text = "X",
-                            FontSize = 60,
-                            Foreground = Brushes.Blue
-                        };
-                        Canvas.SetLeft(xText, c * cellSize + 20);
-                        Canvas.SetTop(xText, r * cellSize + 5);
-                        canvas.Children.Add(xText);
+                        Line X1 = new Line() { X1 = 20 + (j * 100), Y1 = 20 + (i * 100), X2 = 120 + (j * 100), Y2 = 120 + (i * 100), Stroke = XStroke, StrokeThickness = 3.0 };
+                        canvas.Children.Add(X1);
+                        Line X2 = new Line() { X1 = 20 + (j * 100), Y1 = 120 + (i * 100), X2 = 120 + (j * 100), Y2 = 20 + (i * 100), Stroke = XStroke, StrokeThickness = 3.0 };
+                        canvas.Children.Add(X2);
                     }
-                    else if (player == 2)
+                    else if (currentField[i, j] == 2)
                     {
-                        TextBlock oText = new TextBlock()
-                        {
-                            Text = "O",
-                            FontSize = 60,
-                            Foreground = Brushes.Red
-                        };
-                        Canvas.SetLeft(oText, c * cellSize + 20);
-                        Canvas.SetTop(oText, r * cellSize + 5);
-                        canvas.Children.Add(oText);
+                        Ellipse OE = new Ellipse() { Margin = new Thickness(20 + (j * 100), 20 + (i * 100), 0, 0), Width = 100, Height = 100, Stroke = OStroke, StrokeThickness = 3.0 };
+                        canvas.Children.Add(OE);
                     }
                 }
             }
+        }
+    }
+
+    public class B4_TicTacToeRules : B4_BaseTicTacToeRules
+    {
+        B4_TicTacToeField _Field = new B4_TicTacToeField();
+
+        public override IB4_TicTacToeField TicTacToeField { get { return _Field; } }
+
+        public override bool MovesPossible 
+        { 
+            get 
+            {
+                for (int i = 0; i < 3; i++)
+                {
+                    for (int j = 0; j < 3; j++)
+                    {
+                        if (_Field[i, j] == 0)
+                        {
+                            return true;
+                        }
+                    }
+                }
+
+                return false; 
+            } 
+        }
+
+        public override string Name { get { return "GriesbauerTicTacToeRules"; } }
+
+        public override int CheckIfPLayerWon()
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                if (_Field[i, 0] > 0 && _Field[i, 0] == _Field[i, 1] && _Field[i, 1] == _Field[i, 2])
+                {
+                    return _Field[i, 0];
+                }
+                else if (_Field[0, i] > 0 && _Field[0, i] == _Field[1, i] && _Field[1, i] == _Field[2, i])
+                {
+                    return _Field[0, i];
+                }
+            }
+
+            if (_Field[0, 0] > 0 && _Field[0, 0] == _Field[1, 1] && _Field[1, 1] == _Field[2, 2])
+            {
+                return _Field[0, 0];
+            }
+            else if (_Field[0, 2] > 0 && _Field[0, 2] == _Field[1, 1] && _Field[1, 1] == _Field[2, 0])
+            {
+                return _Field[0, 2];
+            }
+
+            return -1;
+        }
+
+        public override void ClearField()
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                for (int j = 0; j < 3; j++)
+                {
+                    _Field[i, j] = 0;
+                }
+            }
+        }
+
+        public override void DoTicTacToeMove(IB4_TicTacToeMove move)
+        {
+            if (move.Row >= 0 && move.Row < 3 && move.Column >= 0 && move.Column < 3)
+            {
+                _Field[move.Row, move.Column] = move.PlayerNumber;
+            }
+        }
+    }
+
+    public class B4_TicTacToeField : B4_BaseTicTacToeField
+    {
+        int[,] _Field = new int[3, 3] { { 0, 0 , 0}, { 0, 0, 0 }, { 0, 0, 0 } };
+
+        public override int this[int r, int c]
+        {
+            get
+            {
+                if (r >= 0 && r < 3 && c >= 0 && c < 3)
+                {
+                    return _Field[r, c];
+                }
+                else
+                {
+                    return -1;
+                }
+            }
+
+            set
+            {
+                if (r >= 0 && r < 3 && c >= 0 && c < 3)
+                {
+                    _Field[r, c] = value;
+                }
+            }
+        }
+    }
+
+    public class B4_TicTacToeMove : IB4_TicTacToeMove
+    {
+        int _Row = 0;
+        int _Column = 0;
+        int _PlayerNumber = 0;
+
+        public X_TicTacToeMove (int row, int column, int playerNumber)
+        {
+            _Row = row;
+            _Column = column;
+            _PlayerNumber = playerNumber;
+        }
+
+        public int Row { get { return _Row; } }
+
+        public int Column { get { return _Column; } }
+
+        public int PlayerNumber { get { return _PlayerNumber; } }
+    }
+
+    public class B4_TicTacToeHumanPlayer : B4_BaseHumanTicTacToePlayer
+    {
+        int _PlayerNumber = 0;
+
+        public override string Name { get { return "GriesbauerHumanTicTacToePlayer"; } }
+
+        public override int PlayerNumber { get { return _PlayerNumber; } }
+
+        public override IGamePlayer Clone()
+        {
+            B4_TicTacToeHumanPlayer ttthp = new B4_TicTacToeHumanPlayer();
+            ttthp.SetPlayerNumber(_PlayerNumber);
+            return ttthp;
+        }
+
+        public override IB4_TicTacToeMove GetMove(IMoveSelection selection, IB4_TicTacToeField field)
+        {
+            if (selection is IClickSelection)
+            {
+                IClickSelection sel = (IClickSelection)selection;
+                for (int i = 0; i < 3; i++)
+                {
+                    for (int j = 0; j < 3; j++)
+                    {
+                        if (sel.XClickPos > 20 + (j * 100) && sel.XClickPos < 120 + (j * 100) &&
+                            sel.YClickPos > 20 + (i * 100) && sel.YClickPos < 120 + (i * 100) &&
+                            field[i, j] <= 0)
+                        {
+                            return new B4_TicTacToeMove(i, j, _PlayerNumber);
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        public override void SetPlayerNumber(int playerNumber)
+        {
+            _PlayerNumber = playerNumber;
+        }
+    }
+
+    public class B4_TicTacToeComputerPlayer : B4_BaseComputerTicTacToePlayer
+    {
+        int _PlayerNumber = 0;
+
+        public override string Name { get { return "GriesbauerComputerTicTacToePlayer"; } }
+
+        public override int PlayerNumber { get { return _PlayerNumber; } }
+
+        public override IGamePlayer Clone()
+        {
+            B4_TicTacToeComputerPlayer ttthp = new B4_TicTacToeComputerPlayer();
+            ttthp.SetPlayerNumber(_PlayerNumber);
+            return ttthp;
+        }
+
+        public override IB4_TicTacToeMove GetMove(IB4_TicTacToeField field)
+        {
+            //Ein intelligenter Algorithmus wäre hier besser...
+            // Hier könnte man z.B. Minimax oder Alpha-Beta-Pruning implementieren
+            Random rand = new Random();
+            int f = rand.Next(0, 8);
+            for (int i = 0; i < 9; i++)
+            {
+                int c = f % 3;
+                int r = ((f - c) / 3) % 3;
+                if (field[r, c] <= 0)
+                {
+                    return new B4_TicTacToeMove(r, c, _PlayerNumber);
+                }
+                else
+                {
+                    f++;
+                }
+            }
+
+            return null;
+        }
+
+        public override void SetPlayerNumber(int playerNumber)
+        {
+            _PlayerNumber = playerNumber;
         }
     }
 }

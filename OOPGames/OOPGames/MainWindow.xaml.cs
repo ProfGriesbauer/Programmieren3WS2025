@@ -86,10 +86,10 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterPlayer(new B2_HumanTicTacToePlayer());
             OOPGamesManager.Singleton.RegisterPlayer(new B2_ComputerTicTacToePlayer());
 
-            // === B4 TicTacToe ===
-            OOPGamesManager.Singleton.RegisterPainter(new B4_XXX_TicTacToePaint());
-            OOPGamesManager.Singleton.RegisterRules(new B4_XXX_TicTacToeRules());
-            OOPGamesManager.Singleton.RegisterPlayer(new B4_XXX_TicTacToeHumanPlayer());
+            //B4 TicTacToe (Justus_Lorenz)
+            OOPGamesManager.Singleton.RegisterPainter(new B4_TicTacToePaint());
+            OOPGamesManager.Singleton.RegisterRules(new B4_TicTacToeRules());
+            OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeHumanPlayer());
 
 
 
