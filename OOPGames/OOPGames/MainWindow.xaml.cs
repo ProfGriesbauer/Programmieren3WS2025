@@ -80,20 +80,16 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterRules(new A3_LEA_IQPuzzleRules());
             OOPGamesManager.Singleton.RegisterPlayer(new A3_LEA_IQPuzzleHumanPlayer());
 
-            // B2 group (Moritz & Tobias)
-            OOPGamesManager.Singleton.RegisterPainter(new B2_TicTacToePainter());
-            OOPGamesManager.Singleton.RegisterRules(new B2_TicTacToeRules());
-            OOPGamesManager.Singleton.RegisterPlayer(new B2_HumanTicTacToePlayer());
-            OOPGamesManager.Singleton.RegisterPlayer(new B2_ComputerTicTacToePlayer());
+            // B3 Mika Röder TicTacToe
+            OOPGamesManager.Singleton.RegisterPainter(new B3_Mika_Roeder_Paint());
+            OOPGamesManager.Singleton.RegisterRules(new B3_Mika_Roeder_Rules());
+            OOPGamesManager.Singleton.RegisterPlayer(new B3_Mika_Roeder_HumanPlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new B3_Mika_Roeder_ComputerPlayer());
 
             //B4 TicTacToe (Justus_Lorenz)
             OOPGamesManager.Singleton.RegisterPainter(new B4_TicTacToePaint());
             OOPGamesManager.Singleton.RegisterRules(new B4_TicTacToeRules());
             OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeHumanPlayer());
-            OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeComputerPlayer());
-            //B4_TicTacToePaint painter = new B4_TicTacToePaint();
-            //painter.SetPlayerSymbol(1, PlayerSymbol.Triangle);  // Spieler 1 bekommt ein Dreieck
-            //painter.SetPlayerSymbol(2, PlayerSymbol.Rectangle); // Spieler 2 bekommt ein Rechteck
 
 
 
