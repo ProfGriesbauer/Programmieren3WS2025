@@ -86,6 +86,13 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterPlayer(new B1_TicTacToeHumanPlayer());
             OOPGamesManager.Singleton.RegisterPlayer(new B1_TicTacToeComputerPlayer());
 
+            // B1 group: Mensch Ärgere Dich Nicht
+            OOPGamesManager.Singleton.RegisterPainter(new OOPGames.B1_Gruppe.MenschAergereDichNicht.B1_MAN_Paint());
+            // register rules with a fresh board (default 4 players) so it appears in list
+            OOPGamesManager.Singleton.RegisterRules(new OOPGames.B1_Gruppe.MenschAergereDichNicht.B1_MAN_Rules(new OOPGames.B1_Gruppe.MenschAergereDichNicht.B1_MAN_Board()));
+            OOPGamesManager.Singleton.RegisterPlayer(new OOPGames.B1_Gruppe.MenschAergereDichNicht.B1_MAN_HumanPlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new OOPGames.B1_Gruppe.MenschAergereDichNicht.B1_MAN_ComputerPlayer());
+
 
             InitializeComponent();
             PaintList.ItemsSource = OOPGamesManager.Singleton.Painters;
@@ -181,7 +188,18 @@ namespace OOPGames
                     {
                         _CurrentRules.DoMove(pm);
                         _CurrentPainter.PaintGameField(PaintCanvas, _CurrentRules.CurrentField);
-                        _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
+
+                        bool keepTurn = false;
+                        if (_CurrentRules is OOPGames.B1_Gruppe.MenschAergereDichNicht.B1_MAN_Rules manRules)
+                        {
+                            keepTurn = manRules.LastMoveGivesExtraTurn;
+                        }
+
+                        if (!keepTurn)
+                        {
+                            _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
+                        }
+
                         Status.Text = "Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
                     }
 
@@ -220,7 +238,9 @@ namespace OOPGames
                     var px = (int)e.GetPosition(PaintCanvas).X;
                     var py = (int)e.GetPosition(PaintCanvas).Y;
                     var btn = (int)e.ChangedButton;
-                    if (_CurrentPlayer != null && _CurrentPlayer.GetType().Name.StartsWith("A4_"))
+                    if (_CurrentPlayer != null && (
+                        _CurrentPlayer.GetType().Name.StartsWith("A4_") ||
+                        _CurrentPlayer.GetType().Name.StartsWith("B1_MAN_")))
                     {
                         sel = new A4_ClickSelection(px, py, btn, (int)PaintCanvas.ActualWidth, (int)PaintCanvas.ActualHeight);
                     }
@@ -234,7 +254,18 @@ namespace OOPGames
                     {
                         _CurrentRules.DoMove(pm);
                         _CurrentPainter.PaintGameField(PaintCanvas, _CurrentRules.CurrentField);
-                        _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
+
+                        bool keepTurn = false;
+                        if (_CurrentRules is OOPGames.B1_Gruppe.MenschAergereDichNicht.B1_MAN_Rules manRules)
+                        {
+                            keepTurn = manRules.LastMoveGivesExtraTurn;
+                        }
+
+                        if (!keepTurn)
+                        {
+                            _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
+                        }
+
                         Status.Text = "Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
                     }
 
@@ -273,7 +304,18 @@ namespace OOPGames
                     if (pm != null)
                     {
                         _CurrentRules.DoMove(pm);
-                        _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
+
+                        bool keepTurn = false;
+                        if (_CurrentRules is OOPGames.B1_Gruppe.MenschAergereDichNicht.B1_MAN_Rules manRules)
+                        {
+                            keepTurn = manRules.LastMoveGivesExtraTurn;
+                        }
+
+                        if (!keepTurn)
+                        {
+                            _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
+                        }
+
                         Status.Text = "Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
                     }
                     //Restart Logic for Gruppe A4 :)
