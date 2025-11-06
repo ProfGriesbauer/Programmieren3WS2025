@@ -12,7 +12,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using OOPGames.B2_Gruppe;
 
 namespace OOPGames
 {
@@ -86,17 +85,8 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterPainter(new A3_LEA_IQPuzzlePaint());
             OOPGamesManager.Singleton.RegisterRules(new A3_LEA_IQPuzzleRules());
             OOPGamesManager.Singleton.RegisterPlayer(new A3_LEA_IQPuzzleHumanPlayer());
-            
-            //A3_LEA Schiffe Versenken
-            OOPGamesManager.Singleton.RegisterPainter(new A3_LEA_SchiffePaint());
-            OOPGamesManager.Singleton.RegisterRules(new A3_LEA_SchiffeRules());
-            OOPGamesManager.Singleton.RegisterPlayer(new A3_LEA_HumanSchiffePlayer());
-            
-            
-            // B3 Jarde_Roeder
-            b3Fishing = new B3_Jarde_Roeder();
-            OOPGamesManager.Singleton.RegisterPainter(b3Fishing);
-            OOPGamesManager.Singleton.RegisterRules(b3Fishing);
+
+            // B3 Mika Röder TicTacToe
             OOPGamesManager.Singleton.RegisterPainter(new B3_Mika_Roeder_Paint());
             OOPGamesManager.Singleton.RegisterRules(new B3_Mika_Roeder_Rules());
             OOPGamesManager.Singleton.RegisterPlayer(new B3_Mika_Roeder_HumanPlayer());
@@ -105,49 +95,22 @@ namespace OOPGames
             //B4 TicTacToe (Justus_Lorenz)
             OOPGamesManager.Singleton.RegisterPainter(new B4_TicTacToePaint());
             OOPGamesManager.Singleton.RegisterRules(new B4_TicTacToeRules());
-            OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeHumanPlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeHumanPlayer_01());
+            OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeHumanPlayer_02());
             OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeComputerPlayer());
-            OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeHardComputer());
-            OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeMediumComputer());
-            
-            FlappyBird flappy = new FlappyBird();
-            flappy.Register();
 
-            FroggoGame froggo = new FroggoGame();
-            froggo.Register();
-
-
-            // B2 group (Moritz & Tobias) - TicTacToe
+            // B2 group (Moritz & Tobias)
             OOPGamesManager.Singleton.RegisterPainter(new B2_TicTacToePainter());
             OOPGamesManager.Singleton.RegisterRules(new B2_TicTacToeRules());
             OOPGamesManager.Singleton.RegisterPlayer(new B2_HumanTicTacToePlayer());
             OOPGamesManager.Singleton.RegisterPlayer(new B2_ComputerTicTacToePlayer());
-            OOPGamesManager.Singleton.RegisterPlayer(new B2_SmartComputerTicTacToePlayer());
-
-            // B2 group (Moritz & Tobias) - Maze Game (2 Players)
-            OOPGamesManager.Singleton.RegisterPainter(new B2_MazePainter2Player());
-            OOPGamesManager.Singleton.RegisterRules(new B2_MazeRules());
-            OOPGamesManager.Singleton.RegisterPlayer(new B2_MazeHumanPlayer());
-
-            //b5 TicTacToe (Felix_Anton)
-            OOPGamesManager.Singleton.RegisterPainter(new B5_TicTacToe_Painter());
-            OOPGamesManager.Singleton.RegisterRules(new B5_TicTacToe_Rules());
-            OOPGamesManager.Singleton.RegisterPlayer(new B5_TicTacToe_HumanPlayer());
-            OOPGamesManager.Singleton.RegisterPlayer(new B5_TicTacToe_ComputerPlayer());
-
-            //b5 Shellshock (Felix_Anton)
-            OOPGamesManager.Singleton.RegisterPainter(new B5_Shellshock_Painter());
-            OOPGamesManager.Singleton.RegisterRules(new B5_Shellshock_Rules());
-            OOPGamesManager.Singleton.RegisterPlayer(new B5_Shellshock_HumanPlayer());
 
 
-            // B5 group (Anton & Felix)
-            OOPGamesManager.Singleton.RegisterPainter(new B5_TicTacToePaint());
-            OOPGamesManager.Singleton.RegisterRules(new B5_GameRules());
-            //OOPGamesManager.Singleton.RegisterPlayer(new B5_HumanPlayer());
-            OOPGamesManager.Singleton.RegisterPlayer(new B5_TicTacToePlayer());
-            OOPGamesManager.Singleton.RegisterPlayer(new B5_TicTacToeComputerPlayer());
-            
+            InitializeComponent();
+            PaintList.ItemsSource = OOPGamesManager.Singleton.Painters;
+            Player1List.ItemsSource = OOPGamesManager.Singleton.Players;
+            Player2List.ItemsSource = OOPGamesManager.Singleton.Players;
+            RulesList.ItemsSource = OOPGamesManager.Singleton.Rules;
 
             
             _PaintTimer = new System.Windows.Threading.DispatcherTimer();
@@ -302,9 +265,39 @@ namespace OOPGames
             }
             else
             {
-                // For non-B2 players use the A4 click mapping which needs canvas size
-                sel = new A4_ClickSelection(px, py, btn, (int)PaintCanvas.ActualWidth, (int)PaintCanvas.ActualHeight);
-                Console.WriteLine($"DEBUG MainWindow: Using A4_ClickSelection");
+                if (_CurrentRules.MovesPossible &&
+                    _CurrentPlayer is IHumanGamePlayer)
+                {
+                    // Create an A4-specific click selection (with canvas size) only for A4 group players.
+                    IClickSelection sel;
+                    var px = (int)e.GetPosition(PaintCanvas).X;
+                    var py = (int)e.GetPosition(PaintCanvas).Y;
+                    var btn = (int)e.ChangedButton;
+                    // Always include canvas dimensions in the click selection so
+                    // human players can map clicks to cells consistently.
+                    sel = new A4_ClickSelection(px, py, btn, (int)PaintCanvas.ActualWidth, (int)PaintCanvas.ActualHeight);
+
+                    IPlayMove pm = null;
+
+                    // Let the player's GetMove method handle the click mapping
+                    pm = ((IHumanGamePlayer)_CurrentPlayer).GetMove(sel, _CurrentRules.CurrentField);
+                    
+                    if (pm != null)
+                    {
+                        _CurrentRules.DoMove(pm);
+                        _CurrentPainter.PaintGameField(PaintCanvas, _CurrentRules.CurrentField);
+                        _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
+                        Status.Text = "Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
+                    }
+
+                    DoComputerMoves();
+                    // If the human move caused a win, schedule restart von Gruppe A4 :)
+                    winner = _CurrentRules.CheckIfPLayerWon();
+                    if (winner > 0)
+                    {
+                        ScheduleRestartIfNeeded();
+                    }
+                }
             }
 
             Console.WriteLine($"DEBUG MainWindow: Click at ({px},{py}), ActualSize=({PaintCanvas.ActualWidth},{PaintCanvas.ActualHeight})");
