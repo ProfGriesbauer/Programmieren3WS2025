@@ -292,7 +292,7 @@ namespace OOPGames
     {
         int _PlayerNumber = 0;
 
-        public override string Name { get { return "B4_ComputerPlayer"; } }
+        public override string Name { get { return "B4_TicTacToeEasyComputer"; } }
 
         public override int PlayerNumber { get { return _PlayerNumber; } }
 
