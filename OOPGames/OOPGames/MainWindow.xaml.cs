@@ -70,6 +70,18 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterRules(new A3_LEA_IQPuzzleRules());
             OOPGamesManager.Singleton.RegisterPlayer(new A3_LEA_IQPuzzleHumanPlayer());
 
+            // B3 Mika Röder TicTacToe
+            OOPGamesManager.Singleton.RegisterPainter(new B3_Mika_Roeder_Paint());
+            OOPGamesManager.Singleton.RegisterRules(new B3_Mika_Roeder_Rules());
+            OOPGamesManager.Singleton.RegisterPlayer(new B3_Mika_Roeder_HumanPlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new B3_Mika_Roeder_ComputerPlayer());
+
+            // B3 Mika Röder Tron
+            OOPGamesManager.Singleton.RegisterPainter(new B3_Mika_Roeder_Tron_Paint());
+            OOPGamesManager.Singleton.RegisterRules(new B3_Mika_Roeder_Tron_Rules());
+            OOPGamesManager.Singleton.RegisterPlayer(new B3_Mika_Roeder_Tron_HumanPlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new B3_Mika_Roeder_Tron_ComputerPlayer());
+
 
             InitializeComponent();
             PaintList.ItemsSource = OOPGamesManager.Singleton.Painters;
