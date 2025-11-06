@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using OOPGames.B2_Gruppe;
 
 namespace OOPGames
 {
@@ -36,6 +37,7 @@ namespace OOPGames
 
         public MainWindow()
         {
+            InitializeComponent();
             //REGISTER YOUR CLASSES HERE
             
             //Register A5 Classes first

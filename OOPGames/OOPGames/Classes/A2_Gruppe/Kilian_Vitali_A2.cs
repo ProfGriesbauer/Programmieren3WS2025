@@ -550,29 +550,4 @@ namespace OOPGames
     }
 
     
-    // Minimal human player implementation for A2 group so the project can register it.
-    public class A2_HumanPlayer : IHumanGamePlayer
-    {
-        public string Name { get; private set; } = "A2 - Human";
-
-        public int PlayerNumber { get; private set; }
-
-        public void SetPlayerNumber(int playerNumber) => PlayerNumber = playerNumber;
-
-        // Accept any rules by default; specialize if needed later.
-        public bool CanBeRuledBy(IGameRules rules) => true;
-
-        public IGamePlayer Clone()
-        {
-            return new A2_HumanPlayer() { Name = this.Name };
-        }
-
-        // Minimal implementation: return null (no automatic move). The UI will create
-        // click selections and call GetMove; real logic can be implemented later.
-        public IPlayMove GetMove(IMoveSelection selection, IGameField field)
-        {
-            return null;
-        }
-    }
-
 }

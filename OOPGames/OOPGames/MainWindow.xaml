@@ -26,7 +26,6 @@
                 <RowDefinition Height="1*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-<<<<<<< HEAD
             <Grid Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="5,5,5,5">
                 <!-- Back canvas for painting game content -->
                 <Canvas x:Name="PaintCanvas"
@@ -44,7 +43,6 @@
                         HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                         Panel.ZIndex="100" />
             </Grid>
->>>>>>> e8a9283 (nichts)
             <Grid Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
