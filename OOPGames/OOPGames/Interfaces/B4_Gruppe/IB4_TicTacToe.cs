@@ -12,7 +12,7 @@ namespace OOPGames
     {
         int Row { get; }
         int Column { get; }
-        int PlayerNumber { get; }
+        new int PlayerNumber { get; }
     }
 
     public interface IB4_TicTacToeRules : IGameRules

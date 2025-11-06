@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 
-namespace OOPGames
+namespace OOPGamess
 {
     public abstract class B4_BaseTicTacToePaint : IB4_PaintTicTacToe
     {

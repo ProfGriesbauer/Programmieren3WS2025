@@ -90,6 +90,10 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterPainter(new B4_TicTacToePaint());
             OOPGamesManager.Singleton.RegisterRules(new B4_TicTacToeRules());
             OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeHumanPlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeComputerPlayer());
+            //B4_TicTacToePaint painter = new B4_TicTacToePaint();
+            //painter.SetPlayerSymbol(1, PlayerSymbol.Triangle);  // Spieler 1 bekommt ein Dreieck
+            //painter.SetPlayerSymbol(2, PlayerSymbol.Rectangle); // Spieler 2 bekommt ein Rechteck
 
 
 
