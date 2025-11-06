@@ -1,0 +1,203 @@
+using System;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Shapes;
+
+namespace OOPGames
+{
+    //Player for TicTacToe
+    public class B4_XXX_TicTacToeHumanPlayer : IHumanGamePlayer
+    {
+        int _playerNumber = 1;
+        public string Name { get => "B4_XXX Human Player"; }
+
+        public int PlayerNumber => _playerNumber;
+
+        public void SetPlayerNumber(int number)
+        {
+            _playerNumber = number;
+        }
+
+        public IGamePlayer Clone()
+        {
+            return new B4_XXX_TicTacToeHumanPlayer();
+        }
+
+        public IPlayMove GetMove(IClickSelection selection, IGameField field)
+        {
+            if (selection is ClickSelection click)
+            {
+                int row = (int)(click.Y / (300 / 3));
+                int col = (int)(click.X / (300 / 3));
+
+                if (row >= 0 && row < 3 && col >= 0 && col < 3)
+                {
+                    return new B4_XXX_TicTacToeMove(row, col, _playerNumber);
+                }
+            }
+            return null;
+        }
+
+        public IPlayMove GetMove(IKeySelection selection, IGameField field)
+        {
+            return null; // Keine Tastatureingabe nötig
+        }
+    }
+
+    //Move 
+    public class B4_XXX_TicTacToeMove : IPlayMove
+    {
+        public int Row { get; }
+        public int Col { get; }
+        public int PlayerNumber { get; }
+
+        public B4_XXX_TicTacToeMove(int row, int col, int player)
+        {
+            Row = row;
+            Col = col;
+            PlayerNumber = player;
+        }
+    }
+
+    //playground / field
+    public class B4_XXX_TicTacToeField : IGameField
+    {
+        public int[,] Cells = new int[3, 3];
+
+        public bool CanBePaintedBy(IPaintGame painter)
+        {
+            return painter is B4_XXX_TicTacToePaint;
+        }
+
+        public object Clone()
+        {
+            var copy = new B4_XXX_TicTacToeField();
+            Array.Copy(Cells, copy.Cells, Cells.Length);
+            return copy;
+        }
+    }
+
+    //Rules
+    public class B4_XXX_TicTacToeRules : IGameRules
+    {
+        public string Name { get => "B4_XXX TicTacToe Rules"; }
+
+        public IGameField CurrentField { get; private set; } = new B4_XXX_TicTacToeField();
+
+        public bool MovesPossible
+        {
+            get
+            {
+                var f = (B4_XXX_TicTacToeField)CurrentField;
+                foreach (var cell in f.Cells)
+                    if (cell == 0) return true;
+                return false;
+            }
+        }
+
+        public void ClearField()
+        {
+            CurrentField = new B4_XXX_TicTacToeField();
+        }
+
+        public void DoMove(IPlayMove move)
+        {
+            if (move is B4_XXX_TicTacToeMove m)
+            {
+                var f = (B4_XXX_TicTacToeField)CurrentField;
+                if (f.Cells[m.Row, m.Col] == 0)
+                {
+                    f.Cells[m.Row, m.Col] = m.PlayerNumber;
+                }
+            }
+        }
+
+        public int CheckIfPLayerWon()
+        {
+            var f = (B4_XXX_TicTacToeField)CurrentField;
+            int[,] b = f.Cells;
+
+            for (int i = 0; i < 3; i++)
+            {
+                if (b[i, 0] != 0 && b[i, 0] == b[i, 1] && b[i, 1] == b[i, 2]) return b[i, 0];
+                if (b[0, i] != 0 && b[0, i] == b[1, i] && b[1, i] == b[2, i]) return b[0, i];
+            }
+            if (b[0, 0] != 0 && b[0, 0] == b[1, 1] && b[1, 1] == b[2, 2]) return b[0, 0];
+            if (b[0, 2] != 0 && b[0, 2] == b[1, 1] && b[1, 1] == b[2, 0]) return b[0, 2];
+
+            return 0;
+        }
+    }
+
+    //Field Painter
+    public class B4_XXX_TicTacToePaint : IPaintGame
+    {
+        public string Name { get => "B4_XXX TicTacToe Painter"; }
+
+        public void PaintGameField(Canvas canvas, IGameField field)
+        {
+            canvas.Children.Clear();
+            var f = (B4_XXX_TicTacToeField)field;
+            double cellSize = Math.Min(canvas.ActualWidth, canvas.ActualHeight) / 3;
+
+            // Rasterlinien
+            for (int i = 1; i < 3; i++)
+            {
+                var vLine = new Line()
+                {
+                    X1 = i * cellSize,
+                    X2 = i * cellSize,
+                    Y1 = 0,
+                    Y2 = 3 * cellSize,
+                    Stroke = Brushes.Black,
+                    StrokeThickness = 2
+                };
+                canvas.Children.Add(vLine);
+
+                var hLine = new Line()
+                {
+                    X1 = 0,
+                    X2 = 3 * cellSize,
+                    Y1 = i * cellSize,
+                    Y2 = i * cellSize,
+                    Stroke = Brushes.Black,
+                    StrokeThickness = 2
+                };
+                canvas.Children.Add(hLine);
+            }
+
+            // Zeichen (X / O)
+            for (int r = 0; r < 3; r++)
+            {
+                for (int c = 0; c < 3; c++)
+                {
+                    int player = f.Cells[r, c];
+                    if (player == 1)
+                    {
+                        TextBlock xText = new TextBlock()
+                        {
+                            Text = "X",
+                            FontSize = 60,
+                            Foreground = Brushes.Blue
+                        };
+                        Canvas.SetLeft(xText, c * cellSize + 20);
+                        Canvas.SetTop(xText, r * cellSize + 5);
+                        canvas.Children.Add(xText);
+                    }
+                    else if (player == 2)
+                    {
+                        TextBlock oText = new TextBlock()
+                        {
+                            Text = "O",
+                            FontSize = 60,
+                            Foreground = Brushes.Red
+                        };
+                        Canvas.SetLeft(oText, c * cellSize + 20);
+                        Canvas.SetTop(oText, r * cellSize + 5);
+                        canvas.Children.Add(oText);
+                    }
+                }
+            }
+        }
+    }
+}
