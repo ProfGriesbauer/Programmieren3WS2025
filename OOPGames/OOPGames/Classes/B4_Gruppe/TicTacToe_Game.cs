@@ -12,7 +12,7 @@ namespace OOPGames
 {
     public class B4_TicTacToePaint : B4_BaseTicTacToePaint
     {
-        public override string Name { get { return "GriesbauerTicTacToePaint"; } }
+        public override string Name { get { return "B4_TicTacToe_Paint"; } }
 
         public override void PaintTicTacToeField(Canvas canvas, IB4_TicTacToeField currentField)
         {
@@ -81,7 +81,7 @@ namespace OOPGames
             } 
         }
 
-        public override string Name { get { return "GriesbauerTicTacToeRules"; } }
+        public override string Name { get { return "B4_TicTacToe_Rules"; } }
 
         public override int CheckIfPLayerWon()
         {
@@ -181,7 +181,7 @@ namespace OOPGames
     {
         int _PlayerNumber = 0;
 
-        public override string Name { get { return "GriesbauerHumanTicTacToePlayer"; } }
+        public override string Name { get { return "B4_HumanPlayer_01"; } }
 
         public override int PlayerNumber { get { return _PlayerNumber; } }
 
@@ -224,7 +224,7 @@ namespace OOPGames
     {
         int _PlayerNumber = 0;
 
-        public override string Name { get { return "GriesbauerComputerTicTacToePlayer"; } }
+        public override string Name { get { return "B4_HumanPlayer_02"; } }
 
         public override int PlayerNumber { get { return _PlayerNumber; } }
 
