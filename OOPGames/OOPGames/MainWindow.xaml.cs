@@ -91,6 +91,7 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterRules(new B4_TicTacToeRules());
             OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeHumanPlayer());
             OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeComputerPlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeHardComputer());
 
             // B2 group (Moritz & Tobias)
             OOPGamesManager.Singleton.RegisterPainter(new B2_TicTacToePainter());
