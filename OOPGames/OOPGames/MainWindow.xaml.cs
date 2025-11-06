@@ -66,7 +66,7 @@ namespace OOPGames
             //A2 Painters
             OOPGamesManager.Singleton.RegisterPainter(new A2_Painter());
             OOPGamesManager.Singleton.RegisterRules(new A2_Rules());
-            //OOPGamesManager.Singleton.RegisterPlayer(new A2_HumanPlayer());  // Commented out as class is not implemented yet
+            OOPGamesManager.Singleton.RegisterPlayer(new A2_HumanPlayer());  
               
 
             //A3_LEA TicTacToe
@@ -89,9 +89,7 @@ namespace OOPGames
             //B4 TicTacToe (Justus_Lorenz)
             OOPGamesManager.Singleton.RegisterPainter(new B4_TicTacToePaint());
             OOPGamesManager.Singleton.RegisterRules(new B4_TicTacToeRules());
-            OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeHumanPlayer_01());
-            OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeHumanPlayer_02());
-            OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeComputerPlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeHumanPlayer());
 
 
 
@@ -229,16 +227,15 @@ namespace OOPGames
                     var px = (int)e.GetPosition(PaintCanvas).X;
                     var py = (int)e.GetPosition(PaintCanvas).Y;
                     var btn = (int)e.ChangedButton;
-                    if (_CurrentPlayer != null && _CurrentPlayer.GetType().Name.StartsWith("A4_"))
-                    {
-                        sel = new A4_ClickSelection(px, py, btn, (int)PaintCanvas.ActualWidth, (int)PaintCanvas.ActualHeight);
-                    }
-                    else
-                    {
-                        sel = new ClickSelection(px, py, btn);
-                    }
+                    // Always include canvas dimensions in the click selection so
+                    // human players can map clicks to cells consistently.
+                    sel = new A4_ClickSelection(px, py, btn, (int)PaintCanvas.ActualWidth, (int)PaintCanvas.ActualHeight);
 
-                    IPlayMove pm = ((IHumanGamePlayer)_CurrentPlayer).GetMove(sel, _CurrentRules.CurrentField);
+                    IPlayMove pm = null;
+
+                    // Let the player's GetMove method handle the click mapping
+                    pm = ((IHumanGamePlayer)_CurrentPlayer).GetMove(sel, _CurrentRules.CurrentField);
+                    
                     if (pm != null)
                     {
                         _CurrentRules.DoMove(pm);
