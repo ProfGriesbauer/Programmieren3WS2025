@@ -241,7 +241,7 @@ namespace OOPGames
         public int PlayerNumber { get { return _PlayerNumber; } }
     }
 
-    public class B4_TicTacToeHumanPlayer : B4_BaseHumanTicTacToePlayer
+    public class B4_TicTacToeHumanPlayer_01 : B4_BaseHumanTicTacToePlayer_01
     {
         int _PlayerNumber = 0;
 
@@ -251,7 +251,50 @@ namespace OOPGames
 
         public override IGamePlayer Clone()
         {
-            B4_TicTacToeHumanPlayer ttthp = new B4_TicTacToeHumanPlayer();
+            B4_TicTacToeHumanPlayer_01 ttthp = new B4_TicTacToeHumanPlayer_01();
+            ttthp.SetPlayerNumber(_PlayerNumber);
+            return ttthp;
+        }
+
+        public override IB4_TicTacToeMove GetMove(IMoveSelection selection, IB4_TicTacToeField field)
+        {
+            if (selection is IClickSelection)
+            {
+                IClickSelection sel = (IClickSelection)selection;
+                for (int i = 0; i < 3; i++)
+                {
+                    for (int j = 0; j < 3; j++)
+                    {
+                        if (sel.XClickPos > 20 + (j * 100) && sel.XClickPos < 120 + (j * 100) &&
+                            sel.YClickPos > 20 + (i * 100) && sel.YClickPos < 120 + (i * 100) &&
+                            field[i, j] <= 0)
+                        {
+                            return new B4_TicTacToeMove(i, j, _PlayerNumber);
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        public override void SetPlayerNumber(int playerNumber)
+        {
+            _PlayerNumber = playerNumber;
+        }
+    }
+
+    public class B4_TicTacToeHumanPlayer_02 : B4_BaseHumanTicTacToePlayer_02
+    {
+        int _PlayerNumber = 0;
+
+        public override string Name { get { return "B4_HumanPlayer_02"; } }
+
+        public override int PlayerNumber { get { return _PlayerNumber; } }
+
+        public override IGamePlayer Clone()
+        {
+            B4_TicTacToeHumanPlayer_02 ttthp = new B4_TicTacToeHumanPlayer_02();
             ttthp.SetPlayerNumber(_PlayerNumber);
             return ttthp;
         }
