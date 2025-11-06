@@ -66,7 +66,7 @@ namespace OOPGames
             //A2 Painters
             OOPGamesManager.Singleton.RegisterPainter(new A2_Painter());
             OOPGamesManager.Singleton.RegisterRules(new A2_Rules());
-            OOPGamesManager.Singleton.RegisterPlayer(new A2_HumanPlayer());  
+            //OOPGamesManager.Singleton.RegisterPlayer(new A2_HumanPlayer()); // Klasse fehlt
               
 
             //A3_LEA TicTacToe
@@ -80,17 +80,11 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterRules(new A3_LEA_IQPuzzleRules());
             OOPGamesManager.Singleton.RegisterPlayer(new A3_LEA_IQPuzzleHumanPlayer());
 
-            // B3 Mika Röder TicTacToe
-            OOPGamesManager.Singleton.RegisterPainter(new B3_Mika_Roeder_Paint());
-            OOPGamesManager.Singleton.RegisterRules(new B3_Mika_Roeder_Rules());
-            OOPGamesManager.Singleton.RegisterPlayer(new B3_Mika_Roeder_HumanPlayer());
-            OOPGamesManager.Singleton.RegisterPlayer(new B3_Mika_Roeder_ComputerPlayer());
-
-            //B4 TicTacToe (Justus_Lorenz)
-            OOPGamesManager.Singleton.RegisterPainter(new B4_TicTacToePaint());
-            OOPGamesManager.Singleton.RegisterRules(new B4_TicTacToeRules());
-            OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeHumanPlayer());
-
+            // B2 group (Moritz & Tobias)
+            OOPGamesManager.Singleton.RegisterPainter(new B2_TicTacToePainter());
+            OOPGamesManager.Singleton.RegisterRules(new B2_TicTacToeRules());
+            OOPGamesManager.Singleton.RegisterPlayer(new B2_HumanTicTacToePlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new B2_ComputerTicTacToePlayer());
 
 
             InitializeComponent();
