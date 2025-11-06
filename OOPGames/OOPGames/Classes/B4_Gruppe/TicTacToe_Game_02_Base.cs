@@ -7,11 +7,11 @@ using System.Windows.Controls;
 
 namespace OOPGames
 {
-    public abstract class B4_BaseTicTacToePaint : B4_PaintTicTacToe
+    public abstract class B4_BaseTicTacToePaint : IB4_PaintTicTacToe
     {
         public abstract string Name { get; }
 
-        public abstract void PaintTicTacToeField(Canvas canvas, B4_TicTacToeField currentField);
+        public abstract void PaintTicTacToeField(Canvas canvas, IB4_TicTacToeField currentField);
 
         public void PaintGameField(Canvas canvas, IGameField currentField)
         {

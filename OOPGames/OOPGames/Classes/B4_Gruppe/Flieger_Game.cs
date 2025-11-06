@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Drawing;
 
 namespace OOPGames
 {
@@ -110,13 +112,6 @@ namespace OOPGames
         {
             if (e.KeyCode == Keys.Left) leftPressed = false;
             if (e.KeyCode == Keys.Right) rightPressed = false;
-        }
-
-        [STAThread]
-        static void Main()
-        {
-            Application.EnableVisualStyles();
-            Application.Run(new B4_XXX());
         }
     }
 }

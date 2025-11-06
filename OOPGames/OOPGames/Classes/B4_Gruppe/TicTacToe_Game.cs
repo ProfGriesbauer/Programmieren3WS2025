@@ -163,7 +163,7 @@ namespace OOPGames
         int _Column = 0;
         int _PlayerNumber = 0;
 
-        public X_TicTacToeMove (int row, int column, int playerNumber)
+        public B4_TicTacToeMove(int row, int column, int playerNumber)
         {
             _Row = row;
             _Column = column;
