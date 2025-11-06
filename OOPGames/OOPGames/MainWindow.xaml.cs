@@ -80,11 +80,11 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterRules(new A3_LEA_IQPuzzleRules());
             OOPGamesManager.Singleton.RegisterPlayer(new A3_LEA_IQPuzzleHumanPlayer());
 
-            // B1 group TicTacToe (our implementation)
-            OOPGamesManager.Singleton.RegisterPainter(new B1_TicTacToePaint());
-            OOPGamesManager.Singleton.RegisterRules(new B1_TicTacToeRules());
-            OOPGamesManager.Singleton.RegisterPlayer(new B1_TicTacToeHumanPlayer());
-            OOPGamesManager.Singleton.RegisterPlayer(new B1_TicTacToeComputerPlayer());
+            // B2 group (Moritz & Tobias)
+            OOPGamesManager.Singleton.RegisterPainter(new B2_TicTacToePainter());
+            OOPGamesManager.Singleton.RegisterRules(new B2_TicTacToeRules());
+            OOPGamesManager.Singleton.RegisterPlayer(new B2_HumanTicTacToePlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new B2_ComputerTicTacToePlayer());
 
             // === B4 TicTacToe ===
             OOPGamesManager.Singleton.RegisterPainter(new B4_XXX_TicTacToePaint());
@@ -99,6 +99,7 @@ namespace OOPGames
             Player2List.ItemsSource = OOPGamesManager.Singleton.Players;
             RulesList.ItemsSource = OOPGamesManager.Singleton.Rules;
 
+            
             _PaintTimer = new System.Windows.Threading.DispatcherTimer();
             _PaintTimer.Interval = new TimeSpan(0, 0, 0, 0, 40);
             _PaintTimer.Tick += _PaintTimer_Tick; 
