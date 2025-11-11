@@ -1,9 +1,11 @@
 using System;
-using System.IO;
 using System.Windows.Controls;
 using System.Windows.Media;
-using System.Windows.Shapes;
 using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+using System.Windows;
+using IOPath = System.IO.Path;
+using IOFile = System.IO.File;
 
 namespace OOPGames
 {
@@ -14,13 +16,13 @@ namespace OOPGames
         private static ImageBrush _grassBrush;
         private static ImageBrush _snakeBrush;
         private static ImageBrush _tailBrush;
-    private static ImageBrush _foodBrush;
+        private static ImageBrush _foodBrush;
         private static bool _imagesLoaded = false;
 
         private const string GRASS_IMAGE = "grass.png";
         private const string SNAKE_IMAGE = "snake.png";
         private const string TAIL_IMAGE = "tail.png";
-    private const string FOOD_IMAGE = "strawberry.png"; // preferred in Assets/Snake
+        private const string FOOD_IMAGE = "strawberry.png";
 
         private void LoadImages()
         {
@@ -28,29 +30,17 @@ namespace OOPGames
             _imagesLoaded = true;
 
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            string assetsPath = System.IO.Path.Combine(baseDir, "Assets", "Snake");
+            string assetsPath = IOPath.Combine(baseDir, "Assets", "Snake");
 
-            _grassBrush = LoadImageBrush(System.IO.Path.Combine(assetsPath, GRASS_IMAGE));
-            _snakeBrush = LoadImageBrush(System.IO.Path.Combine(assetsPath, SNAKE_IMAGE));
-            _tailBrush = LoadImageBrush(System.IO.Path.Combine(assetsPath, TAIL_IMAGE));
-            _foodBrush = LoadImageBrush(System.IO.Path.Combine(assetsPath, FOOD_IMAGE));
-
-            // Fallback: try the user's Downloads path if asset isn't in project yet
-            if (_foodBrush == null)
-            {
-                try
-                {
-                    string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                    string downloadsPath = System.IO.Path.Combine(userProfile, "Downloads", "Snake_Strawberry_model_32px_1.png");
-                    _foodBrush = LoadImageBrush(downloadsPath);
-                }
-                catch { /* ignore and keep fallback color */ }
-            }
+            _grassBrush = LoadImageBrush(IOPath.Combine(assetsPath, GRASS_IMAGE));
+            _snakeBrush = LoadImageBrush(IOPath.Combine(assetsPath, SNAKE_IMAGE));
+            _tailBrush = LoadImageBrush(IOPath.Combine(assetsPath, TAIL_IMAGE));
+            _foodBrush = LoadImageBrush(IOPath.Combine(assetsPath, FOOD_IMAGE));
         }
 
         private static ImageBrush LoadImageBrush(string imagePath)
         {
-            if (!File.Exists(imagePath)) return null;
+            if (!IOFile.Exists(imagePath)) return null;
 
             try
             {
@@ -85,6 +75,11 @@ namespace OOPGames
             DrawGrassBackground(canvas, scale, offset);
             DrawSnake(canvas, field, scale, offset);
             DrawFood(canvas, field, scale, offset);
+
+            if (field.IsCountingDown)
+            {
+                DrawCountdown(canvas, field, scale, offset);
+            }
         }
 
         private double CalculateScale(Canvas canvas)
@@ -119,18 +114,9 @@ namespace OOPGames
             for (int i = 0; i < field.Snake.Count; i++)
             {
                 var segment = field.Snake[i];
-                Brush fill;
-                
-                if (i == 0)
-                {
-                    // Kopf
-                    fill = _snakeBrush != null ? _snakeBrush : Brushes.Red;
-                }
-                else
-                {
-                    // Schwanz
-                    fill = _tailBrush != null ? _tailBrush : Brushes.DarkRed;
-                }
+                Brush fill = i == 0
+                    ? (_snakeBrush != null ? (Brush)_snakeBrush : Brushes.Red)
+                    : (_tailBrush != null ? (Brush)_tailBrush : Brushes.DarkRed);
 
                 var snakeSegment = CreateRectangle(
                     A5_SnakeField.SNAKE_SIZE * scale,
@@ -168,6 +154,29 @@ namespace OOPGames
             Canvas.SetLeft(rect, left);
             Canvas.SetTop(rect, top);
             return rect;
+        }
+
+        private void DrawCountdown(Canvas canvas, A5_SnakeField field, double scale, (double X, double Y) offset)
+        {
+            if (field.CountdownSeconds <= 0) return;
+
+            var textBlock = new TextBlock
+            {
+                Text = field.CountdownSeconds.ToString(),
+                FontSize = 120,
+                FontWeight = FontWeights.Bold,
+                Foreground = Brushes.Gray,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            double centerX = offset.X + (A5_SnakeField.FIELD_WIDTH * scale / 2);
+            double centerY = offset.Y + (A5_SnakeField.FIELD_HEIGHT * scale / 2);
+
+            Canvas.SetLeft(textBlock, centerX - 60);
+            Canvas.SetTop(textBlock, centerY - 80);
+
+            canvas.Children.Add(textBlock);
         }
 
         public void TickPaintGameField(Canvas canvas, IGameField currentField)
