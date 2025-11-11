@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -40,7 +41,6 @@ namespace OOPGames
             }
         }
 
-        // Score: zählt nur Überquerte obere Hindernisse
         public int Score { get; private set; } = 0;
 
         public void CreateObstacle()
@@ -48,8 +48,8 @@ namespace OOPGames
             double gap = 250;
             double gapY = _rand.Next(50, (int)(FieldHeight - gap - 50));
 
-            Obstacles.Add(new Obstacle(480, 0, 50, gapY, true));   // oberes Rohr mit IsTop = true
-            Obstacles.Add(new Obstacle(480, gapY + gap, 50, FieldHeight - gapY - gap, false)); // unteres Rohr
+            Obstacles.Add(new Obstacle(480, 0, 50, gapY, true));
+            Obstacles.Add(new Obstacle(480, gapY + gap, 50, FieldHeight - gapY - gap, false));
         }
 
         public void UpdateScoreIfPassed()
@@ -74,7 +74,7 @@ namespace OOPGames
     {
         public double X, Y, Width, Height;
         public bool Passed = false;
-        public bool IsTop; // NEU: kennzeichnet oberes Paar
+        public bool IsTop;
 
         public Obstacle(double x, double y, double width, double height, bool isTop)
         {
@@ -91,7 +91,6 @@ namespace OOPGames
         public void PaintGameField(Canvas canvas, IGameField field)
         {
             canvas.Children.Clear();
-
             if (field is FlappyBirdField f)
             {
                 var bg = new Rectangle()
@@ -125,7 +124,7 @@ namespace OOPGames
                     canvas.Children.Add(rect);
                 }
 
-                // Score-Anzeige
+                // Score-Anzeige oben links
                 var scoreText = new TextBlock()
                 {
                     Text = $"Score: {f.Score}",
@@ -142,6 +141,62 @@ namespace OOPGames
         public void TickPaintGameField(Canvas canvas, IGameField currentField)
         {
             PaintGameField(canvas, currentField);
+
+            if (currentField is FlappyBirdField flappyField && FlappyBirdRules.GameOver)
+            {
+                DrawGameOver(canvas);
+                DrawHighscore(canvas);
+            }
+        }
+
+        private void DrawGameOver(Canvas canvas)
+        {
+            var gameOverText = new TextBlock()
+            {
+                Text = "GAME OVER",
+                FontSize = 48,
+                FontWeight = FontWeights.ExtraBold,
+                Foreground = Brushes.Red,
+                TextAlignment = TextAlignment.Center
+            };
+            // Zentrales Positionieren
+            Canvas.SetLeft(gameOverText, (canvas.ActualWidth / 2) - 150);
+            Canvas.SetTop(gameOverText, (canvas.ActualHeight / 2) - 100);
+            canvas.Children.Add(gameOverText);
+        }
+
+        private void DrawHighscore(Canvas canvas)
+        {
+            var hs = FlappyBirdRules.Highscores;
+            var yStart = (canvas.ActualHeight / 2) - 40;
+
+            var title = new TextBlock()
+            {
+                Text = "Highscores",
+                FontSize = 30,
+                FontWeight = FontWeights.Bold,
+                Foreground = Brushes.White,
+                TextAlignment = TextAlignment.Center
+            };
+            Canvas.SetLeft(title, (canvas.ActualWidth / 2) - 60);
+            Canvas.SetTop(title, yStart);
+            canvas.Children.Add(title);
+
+            yStart += 40;
+
+            for (int i = 0; i < hs.Count; i++)
+            {
+                var tb = new TextBlock()
+                {
+                    Text = $"{i + 1}. {hs[i]}",
+                    FontSize = 20,
+                    Foreground = Brushes.White,
+                    TextAlignment = TextAlignment.Center
+                };
+                Canvas.SetLeft(tb, (canvas.ActualWidth / 2) - 40);
+                Canvas.SetTop(tb, yStart + i * 30);
+                canvas.Children.Add(tb);
+            }
         }
     }
 
@@ -158,6 +213,9 @@ namespace OOPGames
         public IGameField CurrentField => _field;
         public bool MovesPossible { get; private set; } = true;
 
+        public static readonly List<int> Highscores = new List<int>();
+        public static bool GameOver = false;
+
         public FlappyBirdRules()
         {
             ClearField();
@@ -168,6 +226,7 @@ namespace OOPGames
             _field = new FlappyBirdField();
             _birdVelocity = 0;
             MovesPossible = true;
+            GameOver = false;
         }
 
         public void DoMove(IPlayMove move)
@@ -212,12 +271,11 @@ namespace OOPGames
                 _field.CreateObstacle();
             }
 
-            // Score aktualisieren (nur für obere Hindernisse)
             _field.UpdateScoreIfPassed();
 
             if (_field.BirdY < 0 || _field.BirdY + _field.BirdSize > _field.FieldHeight)
             {
-                MovesPossible = false;
+                EndGame();
                 return;
             }
 
@@ -226,10 +284,21 @@ namespace OOPGames
             {
                 if (birdRect.IntersectsWith(obs.Rectangle))
                 {
-                    MovesPossible = false;
+                    EndGame();
                     return;
                 }
             }
+        }
+
+        private void EndGame()
+        {
+            MovesPossible = false;
+            GameOver = true;
+
+            Highscores.Add(_field.Score);
+            Highscores.Sort((a, b) => b.CompareTo(a));
+            if (Highscores.Count > 10)
+                Highscores.RemoveAt(Highscores.Count - 1);
         }
     }
 
