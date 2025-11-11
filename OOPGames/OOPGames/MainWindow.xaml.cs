@@ -143,6 +143,7 @@ namespace OOPGames
                     };
                     humanPlayerWithMouse.OnMouseMoved(mouseEventArgs);
                 }
+            }
         }
 
         private void StartGame_Click(object sender, RoutedEventArgs e)
