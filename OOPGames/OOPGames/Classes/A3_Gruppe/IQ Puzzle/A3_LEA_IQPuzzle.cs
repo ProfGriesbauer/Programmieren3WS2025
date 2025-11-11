@@ -89,100 +89,106 @@ namespace OOPGames
         {
             var pieces = new List<IA3_LEA_IQPuzzlePiece>();
 
-            // Piece 1: L-Shape (4 cells)
-            pieces.Add(new A3_LEA_IQPuzzlePiece(1, "L-Shape", Colors.Red, new int[,]
-            {
-                { 1, 0 },
-                { 1, 0 },
-                { 1, 1 }
-            }));
-
-            // Piece 2: T-Shape (4 cells)
-            pieces.Add(new A3_LEA_IQPuzzlePiece(2, "T-Shape", Colors.Orange, new int[,]
+            // Teil 1: Lila - X X X
+            //              X
+            pieces.Add(new A3_LEA_IQPuzzlePiece(1, "Lila", Color.FromRgb(148, 0, 211), new int[,]
             {
                 { 1, 1, 1 },
-                { 0, 1, 0 }
+                { 1, 0, 0 }
             }));
 
-            // Piece 3: Z-Shape (4 cells)
-            pieces.Add(new A3_LEA_IQPuzzlePiece(3, "Z-Shape", Colors.Yellow, new int[,]
+            // Teil 2: Hellgrün - X X X X
+            pieces.Add(new A3_LEA_IQPuzzlePiece(2, "Hellgrün", Color.FromRgb(144, 238, 144), new int[,]
             {
+                { 1, 1, 1, 1 }
+            }));
+
+            // Teil 3: Hautfarben - X X X
+            //                      X X
+            pieces.Add(new A3_LEA_IQPuzzlePiece(3, "Hautfarben", Color.FromRgb(255, 218, 185), new int[,]
+            {
+                { 1, 1, 1 },
+                { 1, 1, 0 }
+            }));
+
+            // Teil 4: Rot - X X
+            //               X
+            //               X X
+            pieces.Add(new A3_LEA_IQPuzzlePiece(4, "Rot", Color.FromRgb(220, 20, 60), new int[,]
+            {
+                { 1, 1 },
+                { 1, 0 },
+                { 1, 1 }
+            }));
+
+            // Teil 5: Weiß - X
+            //                X X
+            //                  X X
+            pieces.Add(new A3_LEA_IQPuzzlePiece(5, "Weiß", Color.FromRgb(240, 240, 240), new int[,]
+            {
+                { 1, 0, 0 },
                 { 1, 1, 0 },
                 { 0, 1, 1 }
             }));
 
-            // Piece 4: Square (4 cells)
-            pieces.Add(new A3_LEA_IQPuzzlePiece(4, "Square", Colors.Green, new int[,]
-            {
-                { 1, 1 },
-                { 1, 1 }
-            }));
-
-            // Piece 5: Long L (5 cells)
-            pieces.Add(new A3_LEA_IQPuzzlePiece(5, "Long-L", Colors.Cyan, new int[,]
-            {
-                { 1, 0 },
-                { 1, 0 },
-                { 1, 0 },
-                { 1, 1 }
-            }));
-
-            // Piece 6: W-Shape (5 cells)
-            pieces.Add(new A3_LEA_IQPuzzlePiece(6, "W-Shape", Colors.Blue, new int[,]
-            {
-                { 1, 0, 0 },
-                { 1, 1, 0 },
-                { 0, 1, 1 }
-            }));
-
-            // Piece 7: P-Shape (5 cells)
-            pieces.Add(new A3_LEA_IQPuzzlePiece(7, "P-Shape", Colors.Purple, new int[,]
-            {
-                { 1, 1 },
-                { 1, 1 },
-                { 1, 0 }
-            }));
-
-            // Piece 8: Y-Shape (5 cells)
-            pieces.Add(new A3_LEA_IQPuzzlePiece(8, "Y-Shape", Colors.Magenta, new int[,]
-            {
-                { 0, 1 },
-                { 1, 1 },
-                { 0, 1 },
-                { 0, 1 }
-            }));
-
-            // Piece 9: U-Shape (5 cells)
-            pieces.Add(new A3_LEA_IQPuzzlePiece(9, "U-Shape", Colors.Pink, new int[,]
-            {
-                { 1, 0, 1 },
-                { 1, 1, 1 }
-            }));
-
-            // Piece 10: I-Shape (5 cells)
-            pieces.Add(new A3_LEA_IQPuzzlePiece(10, "I-Shape", Colors.Brown, new int[,]
-            {
-                { 1 },
-                { 1 },
-                { 1 },
-                { 1 },
-                { 1 }
-            }));
-
-            // Piece 11: V-Shape (5 cells)
-            pieces.Add(new A3_LEA_IQPuzzlePiece(11, "V-Shape", Colors.LightBlue, new int[,]
-            {
-                { 1, 0, 0 },
-                { 1, 0, 0 },
-                { 1, 1, 1 }
-            }));
-
-            // Piece 12: Plus-Shape (5 cells)
-            pieces.Add(new A3_LEA_IQPuzzlePiece(12, "Plus", Colors.LightGreen, new int[,]
+            // Teil 6: Orange -   X
+            //                  X X X
+            //                    X
+            pieces.Add(new A3_LEA_IQPuzzlePiece(6, "Orange", Color.FromRgb(255, 140, 0), new int[,]
             {
                 { 0, 1, 0 },
                 { 1, 1, 1 },
                 { 0, 1, 0 }
+            }));
+
+            // Teil 7: Dunkelblau - X X X
+            //                          X X
+            pieces.Add(new A3_LEA_IQPuzzlePiece(7, "Dunkelblau", Color.FromRgb(0, 0, 139), new int[,]
+            {
+                { 1, 1, 1, 0 },
+                { 0, 0, 1, 1 }
+            }));
+
+            // Teil 8: Hellblau - X X X X
+            //                      X
+            pieces.Add(new A3_LEA_IQPuzzlePiece(8, "Hellblau", Color.FromRgb(135, 206, 250), new int[,]
+            {
+                { 1, 1, 1, 1 },
+                { 0, 1, 0, 0 }
+            }));
+
+            // Teil 9: Dunkelgrün - X X
+            //                      X
+            pieces.Add(new A3_LEA_IQPuzzlePiece(9, "Dunkelgrün", Color.FromRgb(0, 100, 0), new int[,]
+            {
+                { 1, 1 },
+                { 1, 0 }
+            }));
+
+            // Teil 10: Grau - X X X X
+            //                 X
+            pieces.Add(new A3_LEA_IQPuzzlePiece(10, "Grau", Color.FromRgb(169, 169, 169), new int[,]
+            {
+                { 1, 1, 1, 1 },
+                { 1, 0, 0, 0 }
+            }));
+
+            // Teil 11: Gelb - X X X
+            //                 X
+            //                 X
+            pieces.Add(new A3_LEA_IQPuzzlePiece(11, "Gelb", Color.FromRgb(255, 215, 0), new int[,]
+            {
+                { 1, 1, 1 },
+                { 1, 0, 0 },
+                { 1, 0, 0 }
+            }));
+
+            // Teil 12: Pink - X X
+            //                 X X
+            pieces.Add(new A3_LEA_IQPuzzlePiece(12, "Pink", Color.FromRgb(255, 192, 203), new int[,]
+            {
+                { 1, 1 },
+                { 1, 1 }
             }));
 
             return pieces;
