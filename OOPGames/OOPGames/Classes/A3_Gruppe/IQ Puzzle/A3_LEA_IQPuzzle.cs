@@ -595,16 +595,9 @@ namespace OOPGames
             // Zeichne platzierte Stücke
             DrawPlacedPieces(canvas, field);
 
-            // Zeichne Platzierungs-Vorschau (wenn Position gesetzt ist)
-            var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_IQPuzzleRules;
-            // Fallback: Wenn selectedPiece vom BasePainter null ist, verwende Rules-Property
-            var effectiveSelectedPiece = selectedPiece ?? rules?.SelectedPieceForPainting;
-            if (rules != null && effectiveSelectedPiece != null && rules.PreviewX >= 0 && rules.PreviewY >= 0)
-            {
-                DrawPlacementPreview(canvas, field, effectiveSelectedPiece, rules.PreviewX, rules.PreviewY);
-            }
-
             // Zeichne verfügbare Stücke unten (mit aktuellem Rotations-Status!)
+            var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_IQPuzzleRules;
+            var effectiveSelectedPiece = selectedPiece ?? rules?.SelectedPieceForPainting;
             DrawAvailablePieces(canvas, availablePieces, effectiveSelectedPiece);
 
             // Zeichne Anleitung
@@ -794,7 +787,7 @@ namespace OOPGames
         {
             var text = new TextBlock
             {
-                Text = "LEFT CLICK: Select piece/position | ENTER: Place piece | RIGHT CLICK: Remove | R: Rotate | F: Flip | ESC: Cancel",
+                Text = "LEFT CLICK: Select piece | LEFT CLICK on grid: Place piece | RIGHT CLICK: Remove | R: Rotate | F: Flip",
                 FontSize = 10,
                 Foreground = Brushes.DarkGray
             };
@@ -850,10 +843,10 @@ namespace OOPGames
             {
                 var click = (IClickSelection)selection;
                 
-                // Linksklick: Stück auswählen ODER Vorschau-Position setzen
+                // Linksklick
                 if (click.ChangedButton == 0) // Left button
                 {
-                    // Prüfe ob in Piece-Auswahl geklickt wurde
+                    // Prüfe ob in Piece-Auswahl geklickt wurde (unten)
                     if (click.YClickPos > 250)
                     {
                         int pieceIndex = (int)((click.XClickPos - 20) / 60);
@@ -861,39 +854,37 @@ namespace OOPGames
                         {
                             _selectedPiece = availablePieces[pieceIndex];
                             
-                            // Speichere Auswahl auch in den Rules für den Painter
+                            // Speichere Auswahl in Rules für Painter
                             var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_IQPuzzleRules;
                             if (rules != null)
                             {
                                 rules.SelectedPieceForPainting = _selectedPiece;
-                                // Reset Preview-Position bei neuer Auswahl
-                                rules.PreviewX = -1;
-                                rules.PreviewY = -1;
                             }
                             
                             return null; // Nur Auswahl, kein Zug
                         }
                     }
-                    // Setze Vorschau-Position (noch nicht platzieren!)
+                    // Klick auf Spielfeld: Teil sofort platzieren
                     else if (_selectedPiece != null)
                     {
                         int x = (int)((click.XClickPos - 20) / 40);
                         int y = (int)((click.YClickPos - 20) / 40);
 
-                        // Speichere Preview-Position in Rules (auch wenn außerhalb, dann sieht man rot)
-                        var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_IQPuzzleRules;
-                        if (rules != null)
+                        if (field.IsValidPosition(x, y))
                         {
-                            rules.PreviewX = x;
-                            rules.PreviewY = y;
-                            // Stelle sicher, dass der Painter ein ausgewähltes Teil hat
-                            if (rules.SelectedPieceForPainting == null)
+                            // Prüfe ob Platzierung gültig ist
+                            var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_IQPuzzleRules;
+                            if (rules != null && rules.CanPlacePiece(_selectedPiece, x, y))
                             {
-                                rules.SelectedPieceForPainting = _selectedPiece;
+                                var move = new A3_LEA_IQPuzzleMove(_selectedPiece, x, y, _playerNumber);
+                                
+                                // Reset nach Platzierung
+                                _selectedPiece = null;
+                                rules.SelectedPieceForPainting = null;
+                                
+                                return move;
                             }
                         }
-                        
-                        return null; // Nur Preview, kein Zug
                     }
                 }
                 // Rechtsklick: Stück entfernen
@@ -922,40 +913,11 @@ namespace OOPGames
                 var key = (IKeySelection)selection;
                 var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_IQPuzzleRules;
                 
-                // ENTER: Platziere das Teil an der Vorschau-Position
-                if (key.Key == System.Windows.Input.Key.Enter && _selectedPiece != null && rules != null)
-                {
-                    if (rules.PreviewX >= 0 && rules.PreviewY >= 0)
-                    {
-                        // Prüfe ob Platzierung gültig ist
-                        if (rules.CanPlacePiece(_selectedPiece, rules.PreviewX, rules.PreviewY))
-                        {
-                            var move = new A3_LEA_IQPuzzleMove(_selectedPiece, rules.PreviewX, rules.PreviewY, _playerNumber);
-                            
-                            // Reset nach Platzierung
-                            rules.PreviewX = -1;
-                            rules.PreviewY = -1;
-                            _selectedPiece = null;
-                            rules.SelectedPieceForPainting = null;
-                            
-                            return move;
-                        }
-                    }
-                }
-                // ESC: Abbrechen / Vorschau löschen
-                else if (key.Key == System.Windows.Input.Key.Escape && rules != null)
-                {
-                    rules.PreviewX = -1;
-                    rules.PreviewY = -1;
-                    _selectedPiece = null;
-                    rules.SelectedPieceForPainting = null;
-                }
                 // R: Rotate selected piece
-                else if (key.Key == System.Windows.Input.Key.R && _selectedPiece != null)
+                if (key.Key == System.Windows.Input.Key.R && _selectedPiece != null)
                 {
                     _selectedPiece = _selectedPiece.Rotate();
                     
-                    // Update auch in Rules
                     if (rules != null)
                     {
                         rules.SelectedPieceForPainting = _selectedPiece;
@@ -966,35 +928,30 @@ namespace OOPGames
                 {
                     _selectedPiece = _selectedPiece.Flip();
                     
-                    // Update auch in Rules
                     if (rules != null)
                     {
                         rules.SelectedPieceForPainting = _selectedPiece;
                     }
                 }
-                // H: Hint
-                else if (key.Key == System.Windows.Input.Key.H)
+                // ESC: Auswahl abbrechen
+                else if (key.Key == System.Windows.Input.Key.Escape && rules != null)
                 {
-                    if (rules != null)
+                    _selectedPiece = null;
+                    rules.SelectedPieceForPainting = null;
+                }
+                // H: Hint (platziert direkt)
+                else if (key.Key == System.Windows.Input.Key.H && rules != null)
+                {
+                    var hint = rules.GetHint();
+                    if (hint != null)
                     {
-                        var hint = rules.GetHint();
-                        if (hint != null)
-                        {
-                            _selectedPiece = hint.Piece;
-                            rules.SelectedPieceForPainting = _selectedPiece;
-                            rules.PreviewX = hint.X;
-                            rules.PreviewY = hint.Y;
-                            return null; // Zeige nur Preview, platziere nicht automatisch
-                        }
+                        return hint;
                     }
                 }
                 // S: Solve
-                else if (key.Key == System.Windows.Input.Key.S)
+                else if (key.Key == System.Windows.Input.Key.S && rules != null)
                 {
-                    if (rules != null)
-                    {
-                        rules.SolvePuzzle();
-                    }
+                    rules.SolvePuzzle();
                 }
             }
 
