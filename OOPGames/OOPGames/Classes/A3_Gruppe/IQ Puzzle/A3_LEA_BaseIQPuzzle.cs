@@ -14,7 +14,7 @@ namespace OOPGames
     /// <summary>
     /// Abstrakte Basisklasse für IQ Puzzle Painter
     /// </summary>
-    public abstract class A3_LEA_BaseIQPuzzlePaint : IA3_LEA_PaintIQPuzzle
+    public abstract class A3_LEA_BaseIQPuzzlePaint : IA3_LEA_PaintIQPuzzle, IPaintGame2
     {
         public abstract string Name { get; }
 
@@ -44,6 +44,12 @@ namespace OOPGames
 
                 PaintIQPuzzleField(canvas, field, availablePieces, selectedPiece);
             }
+        }
+
+        public void TickPaintGameField(Canvas canvas, IGameField currentField)
+        {
+            // Nutze die gleiche Logik wie PaintGameField, aber mit Live-Updates
+            PaintGameField(canvas, currentField);
         }
     }
 
@@ -105,7 +111,7 @@ namespace OOPGames
     /// <summary>
     /// Abstrakte Basisklasse für menschlichen IQ Puzzle Spieler
     /// </summary>
-    public abstract class A3_LEA_BaseHumanIQPuzzlePlayer : IA3_LEA_HumanIQPuzzlePlayer
+    public abstract class A3_LEA_BaseHumanIQPuzzlePlayer : IA3_LEA_HumanIQPuzzlePlayer, IHumanGamePlayerWithMouse
     {
         public abstract string Name { get; }
         public abstract int PlayerNumber { get; }
@@ -113,6 +119,7 @@ namespace OOPGames
 
         public abstract void SetPlayerNumber(int playerNumber);
         public abstract IGamePlayer Clone();
+        public abstract void OnMouseMoved(System.Windows.Input.MouseEventArgs e);
 
         public abstract IA3_LEA_IQPuzzleMove GetMove(IMoveSelection selection, IA3_LEA_IQPuzzleField field,
             List<IA3_LEA_IQPuzzlePiece> availablePieces);

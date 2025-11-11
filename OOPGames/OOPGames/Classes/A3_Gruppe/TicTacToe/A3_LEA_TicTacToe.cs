@@ -100,11 +100,11 @@ namespace OOPGames
             
             if (winner == 1)
             {
-                bitmap.UriSource = new Uri(@"C:\Users\shemu\Documents\Hochschule_Kempten\3.Fachsemester\Programmieren_3\Programmieren3WS2025\OOPGames\OOPGames\Classes\A3_Gruppe\Bilder\Smiley1.jpg", UriKind.Absolute);
+                bitmap.UriSource = new Uri(@"..\..\..\Classes\A3_Gruppe\Bilder\Smiley1.jpg", UriKind.Relative);
             }
             else
             {
-                bitmap.UriSource = new Uri(@"C:\Users\shemu\Documents\Hochschule_Kempten\3.Fachsemester\Programmieren_3\Programmieren3WS2025\OOPGames\OOPGames\Classes\A3_Gruppe\Bilder\Smiley2.jpg", UriKind.Absolute);
+                bitmap.UriSource = new Uri(@"..\..\..\Classes\A3_Gruppe\Bilder\Smiley2.jpg", UriKind.Relative);
             }
             
             bitmap.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
@@ -143,7 +143,7 @@ namespace OOPGames
             var smiley1 = new System.Windows.Controls.Image();
             var bitmap1 = new System.Windows.Media.Imaging.BitmapImage();
             bitmap1.BeginInit();
-            bitmap1.UriSource = new Uri(@"C:\Users\shemu\Documents\Hochschule_Kempten\3.Fachsemester\Programmieren_3\Programmieren3WS2025\OOPGames\OOPGames\Classes\A3_Gruppe\Bilder\Smiley1.jpg", UriKind.Absolute);
+            bitmap1.UriSource = new Uri(@"..\..\..\Classes\A3_Gruppe\Bilder\Smiley1.jpg", UriKind.Relative);
             bitmap1.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
             bitmap1.EndInit();
             
@@ -159,7 +159,7 @@ namespace OOPGames
             var smiley2 = new System.Windows.Controls.Image();
             var bitmap2 = new System.Windows.Media.Imaging.BitmapImage();
             bitmap2.BeginInit();
-            bitmap2.UriSource = new Uri(@"C:\Users\shemu\Documents\Hochschule_Kempten\3.Fachsemester\Programmieren_3\Programmieren3WS2025\OOPGames\OOPGames\Classes\A3_Gruppe\Bilder\Smiley2.jpg", UriKind.Absolute);
+            bitmap2.UriSource = new Uri(@"..\..\..\Classes\A3_Gruppe\Bilder\Smiley2.jpg", UriKind.Relative);
             bitmap2.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
             bitmap2.EndInit();
             
@@ -265,7 +265,7 @@ namespace OOPGames
             
             var bitmap = new System.Windows.Media.Imaging.BitmapImage();
             bitmap.BeginInit();
-            bitmap.UriSource = new Uri(@"C:\Users\shemu\Documents\Hochschule_Kempten\3.Fachsemester\Programmieren_3\Programmieren3WS2025\OOPGames\OOPGames\Classes\A3_Gruppe\Bilder\Smiley1.jpg", UriKind.Absolute);
+            bitmap.UriSource = new Uri(@"..\..\..\Classes\A3_Gruppe\Bilder\Smiley1.jpg", UriKind.Relative);
             bitmap.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
             bitmap.EndInit();
             
@@ -307,7 +307,8 @@ namespace OOPGames
             
             var bitmap = new System.Windows.Media.Imaging.BitmapImage();
             bitmap.BeginInit();
-            bitmap.UriSource = new Uri(@"C:\Users\shemu\Documents\Hochschule_Kempten\3.Fachsemester\Programmieren_3\Programmieren3WS2025\OOPGames\OOPGames\Classes\A3_Gruppe\Bilder\Smiley2.jpg", UriKind.Absolute);
+            //Relative Pfadangabe auf Bilder/Smiley2.jpg
+            bitmap.UriSource = new Uri(@"..\..\..\Classes\A3_Gruppe\Bilder\Smiley2.jpg", UriKind.Relative);
             bitmap.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
             bitmap.EndInit();
             
