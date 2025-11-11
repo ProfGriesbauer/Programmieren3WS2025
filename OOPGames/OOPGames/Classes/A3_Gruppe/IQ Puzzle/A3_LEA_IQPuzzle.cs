@@ -920,47 +920,74 @@ namespace OOPGames
             if (selection is IClickSelection)
             {
                 var click = (IClickSelection)selection;
-                
+                var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_IQPuzzleRules;
+
                 // Linksklick
                 if (click.ChangedButton == 0) // Left button
                 {
                     // Prüfe ob in Piece-Auswahl geklickt wurde (unten)
                     if (click.YClickPos > 250)
                     {
-                        int pieceIndex = (int)((click.XClickPos - 20) / 60);
-                        if (pieceIndex >= 0 && pieceIndex < availablePieces.Count)
+                        // Die verfügbaren Teile werden in Reihen gezeichnet (7 Spalten pro Reihe)
+                        int colsPerRow = 7; // entspricht der Zeichnungslogik (OFFSET_X=20, Schritt=60, wrap bei >400)
+                        int col = (int)((click.XClickPos - 20) / 60);
+                        int row = (int)((click.YClickPos - 250) / 80);
+
+                        if (col >= 0 && row >= 0)
                         {
-                            _selectedPiece = availablePieces[pieceIndex];
-                            
-                            // Speichere Auswahl in Rules für Painter
-                            var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_IQPuzzleRules;
-                            if (rules != null)
+                            int pieceIndex = row * colsPerRow + col;
+                            if (pieceIndex >= 0 && pieceIndex < availablePieces.Count)
                             {
-                                rules.SelectedPieceForPainting = _selectedPiece;
+                                _selectedPiece = availablePieces[pieceIndex];
+
+                                // Speichere Auswahl in Rules für Painter
+                                if (rules != null)
+                                {
+                                    rules.SelectedPieceForPainting = _selectedPiece;
+                                }
+
+                                return null; // Nur Auswahl, kein Zug
                             }
-                            
-                            return null; // Nur Auswahl, kein Zug
                         }
                     }
-                    // Klick auf Spielfeld: Teil sofort platzieren
-                    else if (_selectedPiece != null)
+                    // Klick auf Spielfeld
+                    else
                     {
                         int x = (int)((click.XClickPos - 20) / 40);
                         int y = (int)((click.YClickPos - 20) / 40);
 
                         if (field.IsValidPosition(x, y))
                         {
-                            // Prüfe ob Platzierung gültig ist
-                            var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_IQPuzzleRules;
-                            if (rules != null && rules.CanPlacePiece(_selectedPiece, x, y))
+                            // Wenn bereits ein Teil ausgewählt ist, versuche zu platzieren
+                            if (_selectedPiece != null)
                             {
-                                var move = new A3_LEA_IQPuzzleMove(_selectedPiece, x, y, _playerNumber);
-                                
-                                // Reset nach Platzierung
-                                _selectedPiece = null;
-                                rules.SelectedPieceForPainting = null;
-                                
-                                return move;
+                                if (rules != null && rules.CanPlacePiece(_selectedPiece, x, y))
+                                {
+                                    var move = new A3_LEA_IQPuzzleMove(_selectedPiece, x, y, _playerNumber);
+
+                                    // Reset nach Platzierung
+                                    _selectedPiece = null;
+                                    if (rules != null) rules.SelectedPieceForPainting = null;
+
+                                    return move;
+                                }
+                            }
+                            else
+                            {
+                                // Wenn kein Teil ausgewählt ist und auf ein bereits gesetztes Teil geklickt wurde,
+                                // dann dieses Teil aufnehmen (entfernen) und zur erneuten Platzierung auswählen.
+                                int pieceId = field[x, y];
+                                if (pieceId > 0 && rules != null)
+                                {
+                                    var piece = rules.PlacedPieces.FirstOrDefault(p => p.Id == pieceId);
+                                    if (piece != null)
+                                    {
+                                        // Entferne das Stück vom Feld und markiere es als ausgewählt
+                                        rules.RemovePiece(piece);
+                                        _selectedPiece = piece;
+                                        rules.SelectedPieceForPainting = _selectedPiece;
+                                    }
+                                }
                             }
                         }
                     }
@@ -971,8 +998,7 @@ namespace OOPGames
                     if (_selectedPiece != null)
                     {
                         _selectedPiece = _selectedPiece.Flip();
-                        
-                        var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_IQPuzzleRules;
+
                         if (rules != null)
                         {
                             rules.SelectedPieceForPainting = _selectedPiece;
