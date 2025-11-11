@@ -36,13 +36,74 @@ namespace OOPGames
         public MainWindow()
         {
             //REGISTER YOUR CLASSES HERE
+            //Register A5 Classes first
+            A5_Gomeringer register = new A5_Gomeringer();
+            register.Register();
+
+            //Register Snake Game
+            A5_Main.Register(OOPGamesManager.Singleton);
+
             //Painters
             OOPGamesManager.Singleton.RegisterPainter(new X_TicTacToePaint());
+            //OOPGamesManager.Singleton.RegisterPainter(new B5_TicTacToePaint());
+            //OOPGamesManager.Singleton.RegisterPainter(new B5_TicTacToeAnimatedPaint());
+
             //Rules
             OOPGamesManager.Singleton.RegisterRules(new X_TicTacToeRules());
+            //OOPGamesManager.Singleton.RegisterRules(new B5_TicTacToeRules());
+            
             //Players
             OOPGamesManager.Singleton.RegisterPlayer(new X_TicTacToeHumanPlayer());
             OOPGamesManager.Singleton.RegisterPlayer(new X_TicTacToeComputerPlayer());
+            //OOPGamesManager.Singleton.RegisterPlayer(new B5_TicTacToeHumanPlayer());
+            //OOPGamesManager.Singleton.RegisterPlayer(new B5_TicTacToeComputerPlayer());
+            //OOPGamesManager.Singleton.RegisterPlayer(new B5_TicTacToeSmartComputerPlayer());
+
+            //A4 Painters
+            OOPGamesManager.Singleton.RegisterPainter(new A4_TicTacToePaint());
+            OOPGamesManager.Singleton.RegisterRules(new A4_TicTacToeRules());
+            OOPGamesManager.Singleton.RegisterPlayer(new A4_TicTacToeHumanPlayer());
+            // Register A4 computer players so they appear in the Player dropdowns
+            OOPGamesManager.Singleton.RegisterPlayer(new A4_ComputerNormal());
+            OOPGamesManager.Singleton.RegisterPlayer(new A4_ComputerUnbeatable());
+
+            //A2 Painters
+            OOPGamesManager.Singleton.RegisterPainter(new A2_Painter());
+            OOPGamesManager.Singleton.RegisterRules(new A2_Rules());
+            //OOPGamesManager.Singleton.RegisterPlayer(new A2_HumanPlayer());  // Commented out as class is not implemented yet
+              
+
+            //A3_LEA TicTacToe
+            OOPGamesManager.Singleton.RegisterPainter(new A3_LEA_TicTacToePaint());
+            OOPGamesManager.Singleton.RegisterRules(new A3_LEA_TicTacToeRules());
+            OOPGamesManager.Singleton.RegisterPlayer(new A3_LEA_TicTacToeHumanPlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new A3_LEA_TicTacToeComputerPlayer());
+
+            //A3_LEA IQ Puzzle
+            OOPGamesManager.Singleton.RegisterPainter(new A3_LEA_IQPuzzlePaint());
+            OOPGamesManager.Singleton.RegisterRules(new A3_LEA_IQPuzzleRules());
+            OOPGamesManager.Singleton.RegisterPlayer(new A3_LEA_IQPuzzleHumanPlayer());
+
+            // B3 Mika Röder TicTacToe
+            OOPGamesManager.Singleton.RegisterPainter(new B3_Mika_Roeder_Paint());
+            OOPGamesManager.Singleton.RegisterRules(new B3_Mika_Roeder_Rules());
+            OOPGamesManager.Singleton.RegisterPlayer(new B3_Mika_Roeder_HumanPlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new B3_Mika_Roeder_ComputerPlayer());
+
+            //B4 TicTacToe (Justus_Lorenz)
+            OOPGamesManager.Singleton.RegisterPainter(new B4_TicTacToePaint());
+            OOPGamesManager.Singleton.RegisterRules(new B4_TicTacToeRules());
+            OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeHumanPlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeComputerPlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeHardComputer());
+            OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeMediumComputer());
+
+            // B2 group (Moritz & Tobias)
+            OOPGamesManager.Singleton.RegisterPainter(new B2_TicTacToePainter());
+            OOPGamesManager.Singleton.RegisterRules(new B2_TicTacToeRules());
+            OOPGamesManager.Singleton.RegisterPlayer(new B2_HumanTicTacToePlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new B2_ComputerTicTacToePlayer());
+
 
             InitializeComponent();
             PaintList.ItemsSource = OOPGamesManager.Singleton.Painters;
@@ -50,12 +111,13 @@ namespace OOPGames
             Player2List.ItemsSource = OOPGamesManager.Singleton.Players;
             RulesList.ItemsSource = OOPGamesManager.Singleton.Rules;
 
+            
             _PaintTimer = new System.Windows.Threading.DispatcherTimer();
             _PaintTimer.Interval = new TimeSpan(0, 0, 0, 0, 40);
-            _PaintTimer.Tick += _PaintTimer_Tick;
+            _PaintTimer.Tick += _PaintTimer_Tick; 
             _PaintTimer.Start();
         }
-
+        /// Halllo
         private void _PaintTimer_Tick(object sender, EventArgs e)
         {
             if (_CurrentPainter != null &&
@@ -113,6 +175,7 @@ namespace OOPGames
                 Status.Text = "Game startet!";
                 Status.Text = "Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
                 _CurrentRules.ClearField();
+                PaintCanvas.Focus();
                 _CurrentPainter.PaintGameField(PaintCanvas, _CurrentRules.CurrentField);
                 DoComputerMoves();
             }
@@ -124,6 +187,7 @@ namespace OOPGames
             if (winner > 0)
             {
                 Status.Text = "Player " + winner + " Won!";
+                ScheduleRestartIfNeeded();
             }
             else
             {
@@ -144,7 +208,16 @@ namespace OOPGames
                     if (winner > 0)
                     {
                         Status.Text = "Player " + winner + " Won!";
+                        ScheduleRestartIfNeeded();
                     }
+                }
+
+                // If the board is full and there's no winner, it's a draw — schedule restart as well
+                //A4 Restart Logic
+                if (!_CurrentRules.MovesPossible && winner <= 0)
+                {
+                    Status.Text = "Draw!";
+                    ScheduleRestartIfNeeded();
                 }
             }
         }
@@ -161,8 +234,20 @@ namespace OOPGames
                 if (_CurrentRules.MovesPossible &&
                     _CurrentPlayer is IHumanGamePlayer)
                 {
-                    IPlayMove pm = ((IHumanGamePlayer)_CurrentPlayer).GetMove(new ClickSelection((int)e.GetPosition(PaintCanvas).X, 
-                        (int)e.GetPosition(PaintCanvas).Y, (int)e.ChangedButton), _CurrentRules.CurrentField);
+                    // Create an A4-specific click selection (with canvas size) only for A4 group players.
+                    IClickSelection sel;
+                    var px = (int)e.GetPosition(PaintCanvas).X;
+                    var py = (int)e.GetPosition(PaintCanvas).Y;
+                    var btn = (int)e.ChangedButton;
+                    // Always include canvas dimensions in the click selection so
+                    // human players can map clicks to cells consistently.
+                    sel = new A4_ClickSelection(px, py, btn, (int)PaintCanvas.ActualWidth, (int)PaintCanvas.ActualHeight);
+
+                    IPlayMove pm = null;
+
+                    // Let the player's GetMove method handle the click mapping
+                    pm = ((IHumanGamePlayer)_CurrentPlayer).GetMove(sel, _CurrentRules.CurrentField);
+                    
                     if (pm != null)
                     {
                         _CurrentRules.DoMove(pm);
@@ -172,6 +257,12 @@ namespace OOPGames
                     }
 
                     DoComputerMoves();
+                    // If the human move caused a win, schedule restart von Gruppe A4 :)
+                    winner = _CurrentRules.CheckIfPLayerWon();
+                    if (winner > 0)
+                    {
+                        ScheduleRestartIfNeeded();
+                    }
                 }
             }
         }
@@ -203,9 +294,60 @@ namespace OOPGames
                         _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
                         Status.Text = "Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
                     }
-
+                    //Restart Logic for Gruppe A4 :)
                     DoComputerMoves();
+                    winner = _CurrentRules.CheckIfPLayerWon();
+                    if (winner > 0)
+                    {
+                        ScheduleRestartIfNeeded();
+                    }
                 }
+            }
+        }
+
+        // Schedule a restart after 3 seconds if the AutoRestart checkbox is checked
+        private void ScheduleRestartIfNeeded()
+        {
+            try
+            {
+                if (AutoRestartCheck != null && AutoRestartCheck.IsChecked == true)
+                {
+                    var timer = new System.Windows.Threading.DispatcherTimer();
+                    timer.Interval = TimeSpan.FromSeconds(3);
+                    timer.Tick += (s, e) =>
+                    {
+                        timer.Stop();
+                        RestartGame();
+                    };
+                    timer.Start();
+                }
+            }
+            catch
+            {
+                // ignore scheduling errors
+            }
+        }
+
+        // Restarts the current game: clears the rules field, repaints and resets the status and current player
+        private void RestartGame()
+        {
+            if (_CurrentRules == null || _CurrentPainter == null) return;
+
+            _CurrentRules.ClearField();
+            // repaint
+            _CurrentPainter.PaintGameField(PaintCanvas, _CurrentRules.CurrentField);
+
+            // Reset current player to player1 if available
+            if (_CurrentPlayer1 != null)
+            {
+                _CurrentPlayer = _CurrentPlayer1;
+                Status.Text = "Game restarted! Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
+                // If the first player is a computer, let it make its move(s)
+                DoComputerMoves();
+            }
+            else
+            {
+                Status.Text = "Game restarted!";
             }
         }
     }
