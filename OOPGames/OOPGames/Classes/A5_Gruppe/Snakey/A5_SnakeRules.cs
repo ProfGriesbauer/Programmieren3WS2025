@@ -63,7 +63,8 @@ namespace OOPGames
 
         public void TickGameCall()
         {
-            _field.MoveSnake(); // Bewege die Schlange bei jedem Tick
+            // Bewegung erfolgt durch den Timer in A5_SnakeField
+            // Nicht hier, sonst bewegt sich die Schlange bei jedem Frame!
         }
     }
 
