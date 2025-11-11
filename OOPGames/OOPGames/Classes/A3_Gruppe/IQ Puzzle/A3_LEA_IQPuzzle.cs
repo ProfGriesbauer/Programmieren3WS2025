@@ -89,100 +89,106 @@ namespace OOPGames
         {
             var pieces = new List<IA3_LEA_IQPuzzlePiece>();
 
-            // Piece 1: L-Shape (4 cells)
-            pieces.Add(new A3_LEA_IQPuzzlePiece(1, "L-Shape", Colors.Red, new int[,]
-            {
-                { 1, 0 },
-                { 1, 0 },
-                { 1, 1 }
-            }));
-
-            // Piece 2: T-Shape (4 cells)
-            pieces.Add(new A3_LEA_IQPuzzlePiece(2, "T-Shape", Colors.Orange, new int[,]
+            // Teil 1: Lila - X X X
+            //              X
+            pieces.Add(new A3_LEA_IQPuzzlePiece(1, "Lila", Color.FromRgb(148, 0, 211), new int[,]
             {
                 { 1, 1, 1 },
-                { 0, 1, 0 }
+                { 1, 0, 0 }
             }));
 
-            // Piece 3: Z-Shape (4 cells)
-            pieces.Add(new A3_LEA_IQPuzzlePiece(3, "Z-Shape", Colors.Yellow, new int[,]
+            // Teil 2: Hellgrün - X X X X
+            pieces.Add(new A3_LEA_IQPuzzlePiece(2, "Hellgrün", Color.FromRgb(144, 238, 144), new int[,]
             {
+                { 1, 1, 1, 1 }
+            }));
+
+            // Teil 3: Hautfarben - X X X
+            //                      X X
+            pieces.Add(new A3_LEA_IQPuzzlePiece(3, "Hautfarben", Color.FromRgb(255, 218, 185), new int[,]
+            {
+                { 1, 1, 1 },
+                { 1, 1, 0 }
+            }));
+
+            // Teil 4: Rot - X X
+            //               X
+            //               X X
+            pieces.Add(new A3_LEA_IQPuzzlePiece(4, "Rot", Color.FromRgb(220, 20, 60), new int[,]
+            {
+                { 1, 1 },
+                { 1, 0 },
+                { 1, 1 }
+            }));
+
+            // Teil 5: Weiß - X
+            //                X X
+            //                  X X
+            pieces.Add(new A3_LEA_IQPuzzlePiece(5, "Weiß", Color.FromRgb(240, 240, 240), new int[,]
+            {
+                { 1, 0, 0 },
                 { 1, 1, 0 },
                 { 0, 1, 1 }
             }));
 
-            // Piece 4: Square (4 cells)
-            pieces.Add(new A3_LEA_IQPuzzlePiece(4, "Square", Colors.Green, new int[,]
-            {
-                { 1, 1 },
-                { 1, 1 }
-            }));
-
-            // Piece 5: Long L (5 cells)
-            pieces.Add(new A3_LEA_IQPuzzlePiece(5, "Long-L", Colors.Cyan, new int[,]
-            {
-                { 1, 0 },
-                { 1, 0 },
-                { 1, 0 },
-                { 1, 1 }
-            }));
-
-            // Piece 6: W-Shape (5 cells)
-            pieces.Add(new A3_LEA_IQPuzzlePiece(6, "W-Shape", Colors.Blue, new int[,]
-            {
-                { 1, 0, 0 },
-                { 1, 1, 0 },
-                { 0, 1, 1 }
-            }));
-
-            // Piece 7: P-Shape (5 cells)
-            pieces.Add(new A3_LEA_IQPuzzlePiece(7, "P-Shape", Colors.Purple, new int[,]
-            {
-                { 1, 1 },
-                { 1, 1 },
-                { 1, 0 }
-            }));
-
-            // Piece 8: Y-Shape (5 cells)
-            pieces.Add(new A3_LEA_IQPuzzlePiece(8, "Y-Shape", Colors.Magenta, new int[,]
-            {
-                { 0, 1 },
-                { 1, 1 },
-                { 0, 1 },
-                { 0, 1 }
-            }));
-
-            // Piece 9: U-Shape (5 cells)
-            pieces.Add(new A3_LEA_IQPuzzlePiece(9, "U-Shape", Colors.Pink, new int[,]
-            {
-                { 1, 0, 1 },
-                { 1, 1, 1 }
-            }));
-
-            // Piece 10: I-Shape (5 cells)
-            pieces.Add(new A3_LEA_IQPuzzlePiece(10, "I-Shape", Colors.Brown, new int[,]
-            {
-                { 1 },
-                { 1 },
-                { 1 },
-                { 1 },
-                { 1 }
-            }));
-
-            // Piece 11: V-Shape (5 cells)
-            pieces.Add(new A3_LEA_IQPuzzlePiece(11, "V-Shape", Colors.LightBlue, new int[,]
-            {
-                { 1, 0, 0 },
-                { 1, 0, 0 },
-                { 1, 1, 1 }
-            }));
-
-            // Piece 12: Plus-Shape (5 cells)
-            pieces.Add(new A3_LEA_IQPuzzlePiece(12, "Plus", Colors.LightGreen, new int[,]
+            // Teil 6: Orange -   X
+            //                  X X X
+            //                    X
+            pieces.Add(new A3_LEA_IQPuzzlePiece(6, "Orange", Color.FromRgb(255, 140, 0), new int[,]
             {
                 { 0, 1, 0 },
                 { 1, 1, 1 },
                 { 0, 1, 0 }
+            }));
+
+            // Teil 7: Dunkelblau - X X X
+            //                          X X
+            pieces.Add(new A3_LEA_IQPuzzlePiece(7, "Dunkelblau", Color.FromRgb(0, 0, 139), new int[,]
+            {
+                { 1, 1, 1, 0 },
+                { 0, 0, 1, 1 }
+            }));
+
+            // Teil 8: Hellblau - X X X X
+            //                      X
+            pieces.Add(new A3_LEA_IQPuzzlePiece(8, "Hellblau", Color.FromRgb(135, 206, 250), new int[,]
+            {
+                { 1, 1, 1, 1 },
+                { 0, 1, 0, 0 }
+            }));
+
+            // Teil 9: Dunkelgrün - X X
+            //                      X
+            pieces.Add(new A3_LEA_IQPuzzlePiece(9, "Dunkelgrün", Color.FromRgb(0, 100, 0), new int[,]
+            {
+                { 1, 1 },
+                { 1, 0 }
+            }));
+
+            // Teil 10: Grau - X X X X
+            //                 X
+            pieces.Add(new A3_LEA_IQPuzzlePiece(10, "Grau", Color.FromRgb(169, 169, 169), new int[,]
+            {
+                { 1, 1, 1, 1 },
+                { 1, 0, 0, 0 }
+            }));
+
+            // Teil 11: Gelb - X X X
+            //                 X
+            //                 X
+            pieces.Add(new A3_LEA_IQPuzzlePiece(11, "Gelb", Color.FromRgb(255, 215, 0), new int[,]
+            {
+                { 1, 1, 1 },
+                { 1, 0, 0 },
+                { 1, 0, 0 }
+            }));
+
+            // Teil 12: Pink - X X
+            //                 X X
+            pieces.Add(new A3_LEA_IQPuzzlePiece(12, "Pink", Color.FromRgb(255, 192, 203), new int[,]
+            {
+                { 1, 1 },
+                { 1, 1 }
             }));
 
             return pieces;
@@ -876,12 +882,39 @@ namespace OOPGames
             var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_IQPuzzleRules;
             if (rules != null)
             {
-                // Berechne Gitterkoordinaten (wenn ein Teil ausgewählt ist, zeige dort Vorschau)
+                // Berechne Gitterkoordinaten
                 int gridX = (int)((mousePos.X - 20) / 40);
                 int gridY = (int)((mousePos.Y - 20) / 40);
                 
                 rules.MouseX = gridX;
                 rules.MouseY = gridY;
+            }
+
+            // Mausrad-Rotation (ScrollWheelDelta)
+            if (e is System.Windows.Input.MouseWheelEventArgs)
+            {
+                var wheelEvent = e as System.Windows.Input.MouseWheelEventArgs;
+                if (wheelEvent != null && _selectedPiece != null)
+                {
+                    if (wheelEvent.Delta > 0)
+                    {
+                        // Mausrad nach oben = Drehen
+                        _selectedPiece = _selectedPiece.Rotate();
+                        if (rules != null)
+                        {
+                            rules.SelectedPieceForPainting = _selectedPiece;
+                        }
+                    }
+                    else if (wheelEvent.Delta < 0)
+                    {
+                        // Mausrad nach unten = Rückwärts drehen (3x vorwärts)
+                        _selectedPiece = _selectedPiece.Rotate().Rotate().Rotate();
+                        if (rules != null)
+                        {
+                            rules.SelectedPieceForPainting = _selectedPiece;
+                        }
+                    }
+                }
             }
         }
 
@@ -893,68 +926,88 @@ namespace OOPGames
             if (selection is IClickSelection)
             {
                 var click = (IClickSelection)selection;
-                
+                var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_IQPuzzleRules;
+
                 // Linksklick
                 if (click.ChangedButton == 0) // Left button
                 {
                     // Prüfe ob in Piece-Auswahl geklickt wurde (unten)
                     if (click.YClickPos > 250)
                     {
-                        int pieceIndex = (int)((click.XClickPos - 20) / 60);
-                        if (pieceIndex >= 0 && pieceIndex < availablePieces.Count)
+                        // Die verfügbaren Teile werden in Reihen gezeichnet (7 Spalten pro Reihe)
+                        int colsPerRow = 7; // entspricht der Zeichnungslogik (OFFSET_X=20, Schritt=60, wrap bei >400)
+                        int col = (int)((click.XClickPos - 20) / 60);
+                        int row = (int)((click.YClickPos - 250) / 80);
+
+                        if (col >= 0 && row >= 0)
                         {
-                            _selectedPiece = availablePieces[pieceIndex];
-                            
-                            // Speichere Auswahl in Rules für Painter
-                            var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_IQPuzzleRules;
-                            if (rules != null)
+                            int pieceIndex = row * colsPerRow + col;
+                            if (pieceIndex >= 0 && pieceIndex < availablePieces.Count)
                             {
-                                rules.SelectedPieceForPainting = _selectedPiece;
+                                _selectedPiece = availablePieces[pieceIndex];
+
+                                // Speichere Auswahl in Rules für Painter
+                                if (rules != null)
+                                {
+                                    rules.SelectedPieceForPainting = _selectedPiece;
+                                }
+
+                                return null; // Nur Auswahl, kein Zug
                             }
-                            
-                            return null; // Nur Auswahl, kein Zug
                         }
                     }
-                    // Klick auf Spielfeld: Teil sofort platzieren
-                    else if (_selectedPiece != null)
+                    // Klick auf Spielfeld
+                    else
                     {
                         int x = (int)((click.XClickPos - 20) / 40);
                         int y = (int)((click.YClickPos - 20) / 40);
 
                         if (field.IsValidPosition(x, y))
                         {
-                            // Prüfe ob Platzierung gültig ist
-                            var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_IQPuzzleRules;
-                            if (rules != null && rules.CanPlacePiece(_selectedPiece, x, y))
+                            // Wenn bereits ein Teil ausgewählt ist, versuche zu platzieren
+                            if (_selectedPiece != null)
                             {
-                                var move = new A3_LEA_IQPuzzleMove(_selectedPiece, x, y, _playerNumber);
-                                
-                                // Reset nach Platzierung
-                                _selectedPiece = null;
-                                rules.SelectedPieceForPainting = null;
-                                
-                                return move;
+                                if (rules != null && rules.CanPlacePiece(_selectedPiece, x, y))
+                                {
+                                    var move = new A3_LEA_IQPuzzleMove(_selectedPiece, x, y, _playerNumber);
+
+                                    // Reset nach Platzierung
+                                    _selectedPiece = null;
+                                    if (rules != null) rules.SelectedPieceForPainting = null;
+
+                                    return move;
+                                }
+                            }
+                            else
+                            {
+                                // Wenn kein Teil ausgewählt ist und auf ein bereits gesetztes Teil geklickt wurde,
+                                // dann dieses Teil aufnehmen (entfernen) und zur erneuten Platzierung auswählen.
+                                int pieceId = field[x, y];
+                                if (pieceId > 0 && rules != null)
+                                {
+                                    var piece = rules.PlacedPieces.FirstOrDefault(p => p.Id == pieceId);
+                                    if (piece != null)
+                                    {
+                                        // Entferne das Stück vom Feld und markiere es als ausgewählt
+                                        rules.RemovePiece(piece);
+                                        _selectedPiece = piece;
+                                        rules.SelectedPieceForPainting = _selectedPiece;
+                                    }
+                                }
                             }
                         }
                     }
                 }
-                // Rechtsklick: Stück entfernen
+                // Rechtsklick: Flip selected piece
                 else if (click.ChangedButton == 1) // Right button
                 {
-                    int x = (int)((click.XClickPos - 20) / 40);
-                    int y = (int)((click.YClickPos - 20) / 40);
-
-                    if (field.IsValidPosition(x, y))
+                    if (_selectedPiece != null)
                     {
-                        int pieceId = field[x, y];
-                        if (pieceId > 0)
+                        _selectedPiece = _selectedPiece.Flip();
+
+                        if (rules != null)
                         {
-                            var allPieces = A3_LEA_IQPuzzlePieceFactory.CreateAllPieces();
-                            var piece = allPieces.FirstOrDefault(p => p.Id == pieceId);
-                            if (piece != null)
-                            {
-                                return new A3_LEA_IQPuzzleMove(piece, x, y, _playerNumber, true);
-                            }
+                            rules.SelectedPieceForPainting = _selectedPiece;
                         }
                     }
                 }

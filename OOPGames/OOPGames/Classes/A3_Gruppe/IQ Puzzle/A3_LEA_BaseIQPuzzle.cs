@@ -8,6 +8,32 @@ using System.Windows.Controls;
 namespace OOPGames
 {
     /**************************************************************************
+     * CLICK SELECTION FOR IQ PUZZLE
+     **************************************************************************/
+
+    /// <summary>
+    /// Click selection implementation for IQ Puzzle
+    /// </summary>
+    public class A3_LEA_ClickSelection : IClickSelection
+    {
+        private int _clickX;
+        private int _clickY;
+        private int _changedButton;
+
+        public A3_LEA_ClickSelection(int clickX, int clickY, int changedButton)
+        {
+            _clickX = clickX;
+            _clickY = clickY;
+            _changedButton = changedButton;
+        }
+
+        public int XClickPos => _clickX;
+        public int YClickPos => _clickY;
+        public int ChangedButton => _changedButton;
+        public MoveType MoveType => MoveType.click;
+    }
+
+    /**************************************************************************
      * BASE CLASSES FÜR IQ PUZZLER PRO
      **************************************************************************/
 
