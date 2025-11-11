@@ -3,6 +3,7 @@ using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using System.Reflection;
@@ -55,12 +56,23 @@ namespace OOPGames
     }
 
     // Painter for the TicTacToe field
-    public class A2_Painter : IPaintGame
+    public class A2_Painter : IPaintGame2
     {
         public string Name => "A2_TicTacToe_Painter";
 
-        // This method is used by the project's painting system (even if not declared on IPaintGame)
+        // This method is called when a move is made manually
         public void PaintGameField(Canvas canvas, IGameField currentField)
+        {
+            DoPaint(canvas, currentField);
+        }
+
+        // This method is called every 40ms by the timer
+        public void TickPaintGameField(Canvas canvas, IGameField currentField)
+        {
+            DoPaint(canvas, currentField);
+        }
+
+        private void DoPaint(Canvas canvas, IGameField currentField)
         {
             if (canvas == null) return;
 
@@ -297,74 +309,96 @@ namespace OOPGames
         }
 
         // IMoveSelection can be implemented differently in the project.
-        // We try to obtain a Point via known method GetPosition() or via X/Y properties using reflection.
+        // We support both IClickSelection (mouse clicks) and IKeySelection (keyboard input)
         public IPlayMove GetMove(IMoveSelection selection, IGameField field)
         {
             if (!(field is A2_TicTacToeField gameField)) return null;
             if (selection == null) return null;
 
-            Point? pos = null;
-            var selObj = selection;
-            var selType = selObj.GetType();
-
-            // Try method GetPosition()
-            var mi = selType.GetMethod("GetPosition", BindingFlags.Instance | BindingFlags.Public);
-            if (mi != null)
+            // Handle keyboard input (IKeySelection)
+            if (selection is IKeySelection keySelection)
             {
-                var ret = mi.Invoke(selObj, null);
-                if (ret is Point p) pos = p;
+                // Map numeric keys (1-9 on numpad or regular 1-9) to board positions
+                // 1=top-left, 2=top-center, 3=top-right
+                // 4=mid-left, 5=mid-center, 6=mid-right
+                // 7=bottom-left, 8=bottom-center, 9=bottom-right
+                return GetMoveFromKey(keySelection.Key, gameField);
+            }
+
+            // Handle mouse click input (IClickSelection)
+            if (selection is IClickSelection)
+            {
+                return GetMoveFromClick((IClickSelection)selection, gameField);
+            }
+
+            return null;
+        }
+
+        private IPlayMove GetMoveFromKey(Key key, A2_TicTacToeField gameField)
+        {
+            int? position = key switch
+            {
+                Key.NumPad1 or Key.D1 => 0,
+                Key.NumPad2 or Key.D2 => 1,
+                Key.NumPad3 or Key.D3 => 2,
+                Key.NumPad4 or Key.D4 => 3,
+                Key.NumPad5 or Key.D5 => 4,
+                Key.NumPad6 or Key.D6 => 5,
+                Key.NumPad7 or Key.D7 => 6,
+                Key.NumPad8 or Key.D8 => 7,
+                Key.NumPad9 or Key.D9 => 8,
+                _ => null
+            };
+
+            if (position.HasValue)
+            {
+                int pos = position.Value;
+                int row = pos / 3;
+                int col = pos % 3;
+                
+                if (gameField.Cells[row, col] == A2_CellState.Empty)
+                {
+                    System.Diagnostics.Debug.WriteLine($"A2 Key Move: key={key}, pos={pos}, row={row}, col={col}");
+                    return new A2_TicTacToeMove(PlayerNumber, row, col);
+                }
                 else
                 {
-                    var t = ret?.GetType();
-                    if (t != null && t.IsGenericType && t.GetGenericTypeDefinition() == typeof(Nullable<>))
-                    {
-                        var hasValueProp = t.GetProperty("HasValue");
-                        var valueProp = t.GetProperty("Value");
-                        if (hasValueProp != null && valueProp != null && (bool)hasValueProp.GetValue(ret))
-                        {
-                            pos = (Point)valueProp.GetValue(ret);
-                        }
-                    }
+                    System.Diagnostics.Debug.WriteLine($"A2 Key: Cell not empty at ({row},{col})");
                 }
             }
-
-            // Fallback: try properties X and Y (accept ints etc.)
-            if (!pos.HasValue)
+            else
             {
-                var px = selType.GetProperty("X", BindingFlags.Instance | BindingFlags.Public);
-                var py = selType.GetProperty("Y", BindingFlags.Instance | BindingFlags.Public);
-                if (px != null && py != null)
-                {
-                    var xv = px.GetValue(selObj);
-                    var yv = py.GetValue(selObj);
-                    if (TryGetDouble(xv, out double xd) && TryGetDouble(yv, out double yd))
-                    {
-                        pos = new Point(xd, yd);
-                    }
-                }
+                System.Diagnostics.Debug.WriteLine($"A2 Key: Not a valid number key: {key}");
             }
 
-            if (!pos.HasValue) return null;
+            return null;
+        }
+
+        private IPlayMove GetMoveFromClick(IClickSelection clickSel, A2_TicTacToeField gameField)
+        {
+            Point pos = new Point(clickSel.XClickPos, clickSel.YClickPos);
 
             // Determine canvas size if available (try properties CanvasWidth/CanvasHeight via reflection)
             double width = 300, height = 300;
+            var selType = clickSel.GetType();
             var pw = selType.GetProperty("CanvasWidth", BindingFlags.Instance | BindingFlags.Public);
             var ph = selType.GetProperty("CanvasHeight", BindingFlags.Instance | BindingFlags.Public);
             if (pw != null && ph != null)
             {
-                var wv = pw.GetValue(selObj);
-                var hv = ph.GetValue(selObj);
+                var wv = pw.GetValue(clickSel);
+                var hv = ph.GetValue(clickSel);
                 if (TryGetDouble(wv, out double wd)) width = wd;
                 if (TryGetDouble(hv, out double hd)) height = hd;
             }
-
+            
+            // Calculate board layout the same way as the painter
             double size = Math.Min(width, height);
             double cellSize = size / 3.0;
             double offsetX = (width - size) / 2.0;
             double offsetY = (height - size) / 2.0;
 
-            int row = (int)Math.Floor((pos.Value.Y - offsetY) / cellSize);
-            int col = (int)Math.Floor((pos.Value.X - offsetX) / cellSize);
+            int row = (int)Math.Floor((pos.Y - offsetY) / cellSize);
+            int col = (int)Math.Floor((pos.X - offsetX) / cellSize);
 
             if (row >= 0 && row < 3 && col >= 0 && col < 3)
             {
@@ -378,4 +412,3 @@ namespace OOPGames
         }
     }
 }
-// ...existing code...
