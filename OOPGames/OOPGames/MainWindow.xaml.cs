@@ -99,7 +99,19 @@ namespace OOPGames
                 {
                     ((IGameRules2)_CurrentRules).TickGameCall();
                 }
-            }
+
+                //Call MouseMoved event for HumanGamePlayers with mouse support
+                if (_CurrentPlayer is IHumanGamePlayerWithMouse humanPlayerWithMouse)
+                {
+                    //  get the current mouse event args on PaintCanvas
+                    var mousePos = Mouse.GetPosition(PaintCanvas);
+                    MouseEventArgs mouseEventArgs = new MouseEventArgs(Mouse.PrimaryDevice, 0)
+                    {
+                        RoutedEvent = Mouse.MouseMoveEvent,
+                        Source = this
+                    };
+                    humanPlayerWithMouse.OnMouseMoved(mouseEventArgs);
+                }
         }
 
         private void StartGame_Click(object sender, RoutedEventArgs e)
