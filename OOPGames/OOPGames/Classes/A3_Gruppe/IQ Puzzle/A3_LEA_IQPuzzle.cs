@@ -876,12 +876,39 @@ namespace OOPGames
             var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_IQPuzzleRules;
             if (rules != null)
             {
-                // Berechne Gitterkoordinaten (wenn ein Teil ausgewählt ist, zeige dort Vorschau)
+                // Berechne Gitterkoordinaten
                 int gridX = (int)((mousePos.X - 20) / 40);
                 int gridY = (int)((mousePos.Y - 20) / 40);
                 
                 rules.MouseX = gridX;
                 rules.MouseY = gridY;
+            }
+
+            // Mausrad-Rotation (ScrollWheelDelta)
+            if (e is System.Windows.Input.MouseWheelEventArgs)
+            {
+                var wheelEvent = e as System.Windows.Input.MouseWheelEventArgs;
+                if (wheelEvent != null && _selectedPiece != null)
+                {
+                    if (wheelEvent.Delta > 0)
+                    {
+                        // Mausrad nach oben = Drehen
+                        _selectedPiece = _selectedPiece.Rotate();
+                        if (rules != null)
+                        {
+                            rules.SelectedPieceForPainting = _selectedPiece;
+                        }
+                    }
+                    else if (wheelEvent.Delta < 0)
+                    {
+                        // Mausrad nach unten = Rückwärts drehen (3x vorwärts)
+                        _selectedPiece = _selectedPiece.Rotate().Rotate().Rotate();
+                        if (rules != null)
+                        {
+                            rules.SelectedPieceForPainting = _selectedPiece;
+                        }
+                    }
+                }
             }
         }
 
@@ -938,23 +965,17 @@ namespace OOPGames
                         }
                     }
                 }
-                // Rechtsklick: Stück entfernen
+                // Rechtsklick: Flip selected piece
                 else if (click.ChangedButton == 1) // Right button
                 {
-                    int x = (int)((click.XClickPos - 20) / 40);
-                    int y = (int)((click.YClickPos - 20) / 40);
-
-                    if (field.IsValidPosition(x, y))
+                    if (_selectedPiece != null)
                     {
-                        int pieceId = field[x, y];
-                        if (pieceId > 0)
+                        _selectedPiece = _selectedPiece.Flip();
+                        
+                        var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_IQPuzzleRules;
+                        if (rules != null)
                         {
-                            var allPieces = A3_LEA_IQPuzzlePieceFactory.CreateAllPieces();
-                            var piece = allPieces.FirstOrDefault(p => p.Id == pieceId);
-                            if (piece != null)
-                            {
-                                return new A3_LEA_IQPuzzleMove(piece, x, y, _playerNumber, true);
-                            }
+                            rules.SelectedPieceForPainting = _selectedPiece;
                         }
                     }
                 }
