@@ -13,7 +13,7 @@ namespace OOPGames
 
         // Segment spacing in pixels equals image size
         private const double SEGMENT_GAP = SNAKE_SIZE;
-        private const double SPEED = 10.0; // Pixels per tick for smooth movement
+        private const double SPEED = 8; // Pixels per tick for smooth movement
         private const int TIMER_INTERVAL_MS = 16; // ~60 FPS
 
         // Game state
@@ -23,10 +23,13 @@ namespace OOPGames
         public int CountdownSeconds { get; private set; }
         public bool IsCountingDown { get; private set; }
 
+        // Pending direction change for grid-aligned movement
+        private PixelPosition _pendingDirection;
+        private PixelPosition _targetPosition; // Target position where direction change should happen
+
         private readonly DispatcherTimer _gameTimer;
         private readonly DispatcherTimer _countdownTimer;
         private readonly Random _random;
-        private int _initialTailLength = 3;
 
         // Head position history for continuous segment spacing
         private readonly List<PixelPosition> _history = new List<PixelPosition>();
@@ -65,26 +68,21 @@ namespace OOPGames
         {
             Snake.Clear();
             _history.Clear();
-            double startX = FIELD_WIDTH / 2.0;
-            double startY = FIELD_HEIGHT / 2.0;
+            
+            // Start in the center of the middle grid cell
+            // Field is 480x480 with 32x32 cells = 15x15 grid
+            // Center should be at (240-16, 240-16) = (224, 224)
+            double startX = FIELD_WIDTH / 2.0 - 16; // 224
+            double startY = FIELD_HEIGHT / 2.0 - 16; // 224
 
-            // Head at start position
+            // Head at start position - only head, no tail initially
             Snake.Add(new PixelPosition(startX, startY));
             Direction = new PixelPosition(1, 0);
+            _pendingDirection = null;
+            _targetPosition = null;
 
-            // Seed history with points behind head along -X axis
-            // This ensures initial tail segments appear correctly spaced
-            int neededHistory = (_initialTailLength - 1) * StepGap + StepGap * 2;
-            for (int i = 0; i <= neededHistory; i++)
-            {
-                _history.Add(new PixelPosition(startX - (i * SPEED), startY));
-            }
-
-            // Create additional segments positioned from history
-            for (int i = 1; i < _initialTailLength; i++)
-            {
-                Snake.Add(new PixelPosition(startX - (i * SEGMENT_GAP), startY));
-            }
+            // Minimal history - just the starting position
+            _history.Add(new PixelPosition(startX, startY));
         }
 
         private void SpawnFood()
@@ -99,6 +97,36 @@ namespace OOPGames
             if (Snake.Count == 0) return;
 
             var head = Snake[0];
+            
+            // Check if we have reached the target position for direction change
+            if (_targetPosition != null && _pendingDirection != null)
+            {
+                // Check if we have reached or passed the target position
+                bool reachedTarget = false;
+                
+                if (Direction.X > 0) // Moving right
+                    reachedTarget = head.X >= _targetPosition.X;
+                else if (Direction.X < 0) // Moving left
+                    reachedTarget = head.X <= _targetPosition.X;
+                else if (Direction.Y > 0) // Moving down
+                    reachedTarget = head.Y >= _targetPosition.Y;
+                else if (Direction.Y < 0) // Moving up
+                    reachedTarget = head.Y <= _targetPosition.Y;
+                
+                if (reachedTarget)
+                {
+                    // Move to exact target position and change direction
+                    Snake[0].X = _targetPosition.X;
+                    Snake[0].Y = _targetPosition.Y;
+                    Direction = _pendingDirection;
+                    _pendingDirection = null;
+                    _targetPosition = null;
+                    
+                    // Update history with the target position
+                    _history.Add(new PixelPosition(Snake[0].X, Snake[0].Y));
+                }
+            }
+            
             var newHead = new PixelPosition(
                 head.X + (Direction.X * SPEED),
                 head.Y + (Direction.Y * SPEED)
@@ -173,8 +201,56 @@ namespace OOPGames
             var newDirection = new PixelPosition(dx, dy);
             if (!newDirection.IsOpposite(Direction))
             {
-                Direction = newDirection;
+                var head = Snake[0];
+                
+                // Calculate which grid cell the head is currently in
+                int gridX = (int)(head.X / SNAKE_SIZE);
+                int gridY = (int)(head.Y / SNAKE_SIZE);
+                
+                // Calculate center of current grid cell (corrected by -16 pixels)
+                double centerX = gridX * SNAKE_SIZE + SNAKE_SIZE / 2.0 - 16;
+                double centerY = gridY * SNAKE_SIZE + SNAKE_SIZE / 2.0 - 16;
+                
+                // Calculate 3/4 threshold point (24 pixels from start of cell, corrected by -16)
+                double threeQuarterX = gridX * SNAKE_SIZE + (SNAKE_SIZE * 3.0 / 4.0) - 16;
+                double threeQuarterY = gridY * SNAKE_SIZE + (SNAKE_SIZE * 3.0 / 4.0) - 16;
+                
+                // Determine target position based on current position relative to 3/4 point
+                PixelPosition targetPos;
+                
+                // Check if we're before or after the 3/4 point in the direction of movement
+                bool beforeThreeQuarterX = (Direction.X > 0 && head.X < threeQuarterX) || (Direction.X < 0 && head.X > threeQuarterX);
+                bool beforeThreeQuarterY = (Direction.Y > 0 && head.Y < threeQuarterY) || (Direction.Y < 0 && head.Y > threeQuarterY);
+                bool atThreeQuarterX = Direction.X == 0 || Math.Abs(head.X - threeQuarterX) < 1;
+                bool atThreeQuarterY = Direction.Y == 0 || Math.Abs(head.Y - threeQuarterY) < 1;
+                
+                if ((beforeThreeQuarterX || atThreeQuarterX) && (beforeThreeQuarterY || atThreeQuarterY))
+                {
+                    // Haven't reached 3/4 point yet, target is center of current cell
+                    targetPos = new PixelPosition(centerX, centerY);
+                }
+                else
+                {
+                    // Past 3/4 point, target is center of next cell in current direction
+                    double nextCenterX = (gridX + Direction.X) * SNAKE_SIZE + SNAKE_SIZE / 2.0 - 16;
+                    double nextCenterY = (gridY + Direction.Y) * SNAKE_SIZE + SNAKE_SIZE / 2.0 - 16;
+                    targetPos = new PixelPosition(nextCenterX, nextCenterY);
+                }
+                
+                _pendingDirection = newDirection;
+                _targetPosition = targetPos;
             }
+        }
+
+        private bool IsAtGridPosition(PixelPosition position)
+        {
+            // Check if position is aligned to grid (multiple of SNAKE_SIZE)
+            const double tolerance = 0.1; // Small tolerance for floating point precision
+            double gridX = position.X / SNAKE_SIZE;
+            double gridY = position.Y / SNAKE_SIZE;
+            
+            return Math.Abs(gridX - Math.Round(gridX)) < tolerance &&
+                   Math.Abs(gridY - Math.Round(gridY)) < tolerance;
         }
 
         private bool IsOutOfBounds(PixelPosition position)
