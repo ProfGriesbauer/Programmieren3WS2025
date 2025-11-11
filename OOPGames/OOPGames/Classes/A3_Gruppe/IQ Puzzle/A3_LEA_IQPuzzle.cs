@@ -329,7 +329,8 @@ namespace OOPGames
             _piecePlacements = new Dictionary<int, (int x, int y)>();
             _currentDifficulty = 1;
             SelectedPieceForPainting = null;
-            LoadChallenge(1);
+            // Kein automatisches Laden eines Levels beim Start
+            // LoadChallenge(1);
         }
 
         public override IA3_LEA_IQPuzzleField IQPuzzleField => _field;
@@ -502,13 +503,54 @@ namespace OOPGames
             ClearField();
             _currentDifficulty = Math.Min(Math.Max(challengeNumber / 24 + 1, 1), 5);
 
-            // Einfache Challenge: Platziere ein paar Stücke vor
-            // (In einer echten Implementierung würden hier 120 vordefinierte Challenges sein)
-            if (challengeNumber == 1)
+            // Lade Level aus der Level-Datei
+            var level = A3_LEA_IQPuzzleLevels.GetLevel(challengeNumber);
+            if (level != null && level.GridLayout != null)
             {
-                // Starter Challenge: Nur wenige Stücke übrig
-                PlacePiece(_allPieces[0], 0, 0);  // L-Shape
-                PlacePiece(_allPieces[3], 3, 0);  // Square
+                // Lade das vordefinierte Level-Layout
+                LoadLevelFromGrid(level.GridLayout);
+            }
+            // Kein Fallback - Grid bleibt leer wenn kein Level definiert ist
+        }
+
+        /// <summary>
+        /// Lädt ein Level aus einem Grid-Layout
+        /// </summary>
+        private void LoadLevelFromGrid(int[,] gridLayout)
+        {
+            // Grid ist [11, 5] = [width, height]
+            for (int x = 0; x < 11; x++)
+            {
+                for (int y = 0; y < 5; y++)
+                {
+                    int pieceId = gridLayout[x, y];
+                    if (pieceId > 0)
+                    {
+                        _field[x, y] = pieceId;
+                    }
+                }
+            }
+
+            // Ermittle welche Teile bereits platziert wurden
+            var placedPieceIds = new HashSet<int>();
+            for (int x = 0; x < 11; x++)
+            {
+                for (int y = 0; y < 5; y++)
+                {
+                    int pieceId = gridLayout[x, y];
+                    if (pieceId > 0 && !placedPieceIds.Contains(pieceId))
+                    {
+                        placedPieceIds.Add(pieceId);
+                        
+                        // Finde das entsprechende Piece-Objekt
+                        var piece = _allPieces.FirstOrDefault(p => p.Id == pieceId);
+                        if (piece != null && !_placedPieces.Contains(piece))
+                        {
+                            _placedPieces.Add(piece);
+                            _piecePlacements[piece.Id] = (x, y);
+                        }
+                    }
+                }
             }
         }
 
@@ -598,6 +640,9 @@ namespace OOPGames
         {
             canvas.Children.Clear();
             canvas.Background = new SolidColorBrush(Color.FromRgb(240, 240, 240));
+
+            // Zeichne Level-Buttons ZUERST (vor allem anderen, damit sie klickbar sind)
+            DrawLevelButtons(canvas);
 
             // Zeichne Spielfeld-Gitter
             DrawGrid(canvas, field);
@@ -837,6 +882,53 @@ namespace OOPGames
             canvas.Children.Add(text);
         }
 
+        private void DrawLevelButtons(Canvas canvas)
+        {
+            // Easy Button als Rechteck (wie die Bausteine) - dadurch ist er anklickbar
+            double buttonX = 500;
+            double buttonY = 30;
+            double buttonWidth = 100;
+            double buttonHeight = 40;
+            
+            // Button-Hintergrund
+            var buttonRect = new Rectangle
+            {
+                Width = buttonWidth,
+                Height = buttonHeight,
+                Fill = new SolidColorBrush(Color.FromRgb(100, 200, 100)),
+                Stroke = Brushes.DarkGreen,
+                StrokeThickness = 2,
+                RadiusX = 5,
+                RadiusY = 5
+            };
+            Canvas.SetLeft(buttonRect, buttonX);
+            Canvas.SetTop(buttonRect, buttonY);
+            canvas.Children.Add(buttonRect);
+            
+            // Button-Text
+            var buttonText = new TextBlock
+            {
+                Text = "Easy",
+                FontSize = 18,
+                FontWeight = FontWeights.Bold,
+                Foreground = Brushes.White
+            };
+            Canvas.SetLeft(buttonText, buttonX + 25);
+            Canvas.SetTop(buttonText, buttonY + 8);
+            canvas.Children.Add(buttonText);
+            
+            // Hinweis-Text darunter
+            var hintText = new TextBlock
+            {
+                Text = "Click to load Level 1",
+                FontSize = 9,
+                Foreground = Brushes.Gray
+            };
+            Canvas.SetLeft(hintText, buttonX);
+            Canvas.SetTop(hintText, buttonY + buttonHeight + 5);
+            canvas.Children.Add(hintText);
+        }
+
         private Color GetColorForPieceId(int pieceId)
         {
             var allPieces = A3_LEA_IQPuzzlePieceFactory.CreateAllPieces();
@@ -926,6 +1018,24 @@ namespace OOPGames
             if (selection is IClickSelection)
             {
                 var click = (IClickSelection)selection;
+                
+                // Prüfe ob auf den "Easy" Button geklickt wurde (X: 500-600, Y: 30-70)
+                if (click.ChangedButton == 0 && // Linksklick
+                    click.XClickPos >= 500 && click.XClickPos <= 600 &&
+                    click.YClickPos >= 30 && click.YClickPos <= 70)
+                {
+                    // Lade Level 1
+                    var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_IQPuzzleRules;
+                    if (rules != null)
+                    {
+                        rules.LoadChallenge(1);
+                        
+                        // Zurücksetzen der Auswahl
+                        _selectedPiece = null;
+                        rules.SelectedPieceForPainting = null;
+                    }
+                    return null; // Kein Move, nur Button-Klick
+                }
                 
                 // Linksklick
                 if (click.ChangedButton == 0) // Left button
