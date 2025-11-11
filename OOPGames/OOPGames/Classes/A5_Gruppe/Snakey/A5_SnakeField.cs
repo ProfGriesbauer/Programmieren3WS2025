@@ -1,32 +1,24 @@
 using System;
 using System.Collections.Generic;
+using System.Windows.Threading;
 
 namespace OOPGames
 {
     public class A5_SnakeField : IGameField
     {
-        // Spielfeld in Pixeln
-        public const int FIELD_WIDTH = 600;   // Pixel
-        public const int FIELD_HEIGHT = 600;  // Pixel
-        public const int SNAKE_SIZE = 40;     // Größe eines Schlangensegments in Pixeln (doppelt so groß)
+        // Konstanten für Spielfeld-Konfiguration
+        public const int FIELD_WIDTH = 600;
+        public const int FIELD_HEIGHT = 600;
+        public const int SNAKE_SIZE = 40;
         
+        private const double SPEED = 10.0;
+        private const int TIMER_INTERVAL_MS = 16; // ~60 FPS
+
+        // Spielzustand
         public List<PixelPosition> Snake { get; private set; }
-        public PixelPosition Direction { get; set; }
-        private System.Windows.Threading.DispatcherTimer gameTimer;
-        private bool isGameRunning = false;
-        private const double SPEED = 10.0; // Pixel pro Frame (5x schneller)
-
-        public class PixelPosition
-        {
-            public double X { get; set; }
-            public double Y { get; set; }
-
-            public PixelPosition(double x, double y)
-            {
-                X = x;
-                Y = y;
-            }
-        }
+        public PixelPosition Direction { get; private set; }
+        
+        private readonly DispatcherTimer _gameTimer;
 
         public bool CanBePaintedBy(IPaintGame painter)
         {
@@ -38,25 +30,19 @@ namespace OOPGames
             Snake = new List<PixelPosition>();
             InitializeSnake();
             
-            // Timer für flüssige Bewegung - läuft schneller für pixel-basierte Updates
-            gameTimer = new System.Windows.Threading.DispatcherTimer();
-            gameTimer.Tick += GameTimer_Tick;
-            gameTimer.Interval = TimeSpan.FromMilliseconds(16); // ca. 60 FPS
-            gameTimer.Start();
-            isGameRunning = true;
+            _gameTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromMilliseconds(TIMER_INTERVAL_MS)
+            };
+            _gameTimer.Tick += OnTimerTick;
+            _gameTimer.Start();
         }
 
         private void InitializeSnake()
         {
-            // Start in der Mitte des Spielfelds
-            double startX = FIELD_WIDTH / 2.0;
-            double startY = FIELD_HEIGHT / 2.0;
-            
-            Snake = new List<PixelPosition>();
-            // Starte nur mit dem Kopf
-            Snake.Add(new PixelPosition(startX, startY));
-            
-            Direction = new PixelPosition(1, 0); // Start nach rechts
+            Snake.Clear();
+            Snake.Add(new PixelPosition(FIELD_WIDTH / 2.0, FIELD_HEIGHT / 2.0));
+            Direction = new PixelPosition(1, 0);
         }
 
         public void MoveSnake()
@@ -64,56 +50,44 @@ namespace OOPGames
             if (Snake.Count == 0) return;
             
             var head = Snake[0];
-            
-            // Berechne neue Kopfposition mit kleinen Pixel-Schritten
             var newHead = new PixelPosition(
-                x: head.X + (Direction.X * SPEED),
-                y: head.Y + (Direction.Y * SPEED)
+                head.X + (Direction.X * SPEED),
+                head.Y + (Direction.Y * SPEED)
             );
             
-            // Überprüfe Kollision mit Wänden
-            if (newHead.X < 0 || newHead.X >= FIELD_WIDTH || 
-                newHead.Y < 0 || newHead.Y >= FIELD_HEIGHT)
+            if (IsOutOfBounds(newHead))
             {
-                // Game Over - für jetzt einfach zurücksetzen
                 InitializeSnake();
                 return;
             }
 
-            // Füge neuen Kopf hinzu
             Snake.Insert(0, newHead);
-            
-            // Entferne das letzte Segment (Snake behält konstante Länge)
             Snake.RemoveAt(Snake.Count - 1);
         }
 
         public void ChangeDirection(double dx, double dy)
         {
-            // Verhindere 180-Grad-Drehungen (keine Umkehr erlaubt)
-            if (!IsOppositeDirection(dx, dy))
+            var newDirection = new PixelPosition(dx, dy);
+            if (!newDirection.IsOpposite(Direction))
             {
-                Direction = new PixelPosition(dx, dy);
+                Direction = newDirection;
             }
         }
 
-        private bool IsOppositeDirection(double dx, double dy)
+        private bool IsOutOfBounds(PixelPosition position)
         {
-            // Prüfe, ob die neue Richtung genau entgegengesetzt zur aktuellen ist
-            return (dx != 0 && dx == -Direction.X) || (dy != 0 && dy == -Direction.Y);
+            return position.X < 0 || position.X >= FIELD_WIDTH ||
+                   position.Y < 0 || position.Y >= FIELD_HEIGHT;
         }
 
-        private void GameTimer_Tick(object sender, EventArgs e)
+        private void OnTimerTick(object sender, EventArgs e)
         {
-            if (isGameRunning)
-            {
-                MoveSnake();
-            }
+            MoveSnake();
         }
 
-        // Legacy-Methode für Kompatibilität mit IGameField - nicht mehr verwendet
         public int GetPosition(int x, int y)
         {
-            return 0;
+            return 0; // Legacy-Methode für IGameField-Kompatibilität
         }
     }
 }

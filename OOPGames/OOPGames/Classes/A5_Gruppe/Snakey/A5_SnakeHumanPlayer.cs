@@ -1,15 +1,11 @@
-using System;
 using System.Windows.Input;
 
 namespace OOPGames
 {
     public class A5_SnakeHumanPlayer : IHumanGamePlayer
     {
-        private int _playerNumber = 1;
-
         public string Name => "A5 Player Snake";
-
-        public int PlayerNumber => _playerNumber;
+        public int PlayerNumber { get; private set; } = 1;
 
         public bool CanBeRuledBy(IGameRules rules)
         {
@@ -18,40 +14,32 @@ namespace OOPGames
 
         public IGamePlayer Clone()
         {
-            A5_SnakeHumanPlayer clone = new A5_SnakeHumanPlayer();
-            clone.SetPlayerNumber(_playerNumber);
-            return clone;
+            return new A5_SnakeHumanPlayer { PlayerNumber = this.PlayerNumber };
         }
 
         public void SetPlayerNumber(int playerNumber)
         {
-            _playerNumber = playerNumber;
+            PlayerNumber = playerNumber;
         }
 
         public IPlayMove GetMove(IMoveSelection selection, IGameField field)
         {
-            if (selection is IKeySelection keySelection)
+            if (!(selection is IKeySelection keySelection)) return null;
+
+            string direction = keySelection.Key switch
             {
-                A5_SnakeMove move = new A5_SnakeMove { PlayerNumber = PlayerNumber };
-                
-                switch (keySelection.Key)
-                {
-                    case Key.W:
-                        move.Direction = "W";
-                        return move;
-                    case Key.S:
-                        move.Direction = "S";
-                        return move;
-                    case Key.A:
-                        move.Direction = "A";
-                        return move;
-                    case Key.D:
-                        move.Direction = "D";
-                        return move;
-                }
-            }
-            
-            return null;
+                Key.W => "W",
+                Key.S => "S",
+                Key.A => "A",
+                Key.D => "D",
+                _ => null
+            };
+
+            return direction != null ? new A5_SnakeMove 
+            { 
+                Direction = direction, 
+                PlayerNumber = PlayerNumber 
+            } : null;
         }
     }
 }

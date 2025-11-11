@@ -1,70 +1,51 @@
 using System;
-using System.Collections.Generic;
 
 namespace OOPGames
 {
     public class A5_SnakeRules : IGameRules2
     {
         public string Name => "A5 Rules Snake";
-        private A5_SnakeField _field;
+        public IGameField CurrentField => _field;
+        public bool MovesPossible => true;
+
+        private readonly A5_SnakeField _field;
 
         public A5_SnakeRules()
         {
             _field = new A5_SnakeField();
         }
 
-        public IGameField CurrentField => _field;
-
-        public bool MovesPossible => true; // Immer möglich zu bewegen
-
         public void DoMove(IPlayMove move)
         {
-            if (move is A5_SnakeMove snakeMove)
+            if (!(move is A5_SnakeMove snakeMove)) return;
+
+            switch (snakeMove.Direction)
             {
-                try
-                {
-                    switch (snakeMove.Direction)
-                    {
-                        case "W":
-                            _field.ChangeDirection(0, -1);  // Nach oben
-                            break;
-                        case "S":
-                            _field.ChangeDirection(0, 1);   // Nach unten
-                            break;
-                        case "A":
-                            _field.ChangeDirection(-1, 0);  // Nach links
-                            break;
-                        case "D":
-                            _field.ChangeDirection(1, 0);   // Nach rechts
-                            break;
-                    }
-                }
-                catch (Exception)
-                {
-                    // Fehlerbehandlung für ungültige Bewegungen
-                }
+                case "W": _field.ChangeDirection(0, -1); break;
+                case "S": _field.ChangeDirection(0, 1); break;
+                case "A": _field.ChangeDirection(-1, 0); break;
+                case "D": _field.ChangeDirection(1, 0); break;
             }
         }
 
         public void ClearField()
         {
-            _field = new A5_SnakeField();
+            // Wird durch StartedGameCall aufgerufen - hier nicht nötig
         }
 
         public int CheckIfPLayerWon()
         {
-            return -1; // Noch keine Gewinnbedingung implementiert
+            return -1; // Snake hat kein klassisches Gewinn-Szenario
         }
 
         public void StartedGameCall()
         {
-            ClearField();
+            // Spiel wird automatisch durch A5_SnakeField verwaltet
         }
 
         public void TickGameCall()
         {
-            // Bewegung erfolgt durch den Timer in A5_SnakeField
-            // Nicht hier, sonst bewegt sich die Schlange bei jedem Frame!
+            // Bewegung erfolgt durch Timer in A5_SnakeField
         }
     }
 

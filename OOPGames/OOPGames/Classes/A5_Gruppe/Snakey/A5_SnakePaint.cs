@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
@@ -10,113 +11,128 @@ namespace OOPGames
     {
         public string Name => "A5 Paint Snake";
 
-        // Bild-Texturen für Spielfeld
         private static ImageBrush _grassBrush;
         private static ImageBrush _snakeBrush;
         private static bool _imagesLoaded = false;
+
+        private const string GRASS_IMAGE = "grass.png";
+        private const string SNAKE_IMAGE = "snake.png";
 
         private void LoadImages()
         {
             if (_imagesLoaded) return;
             _imagesLoaded = true;
 
+            string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            string assetsPath = System.IO.Path.Combine(baseDir, "Assets", "Snake");
+
+            _grassBrush = LoadImageBrush(System.IO.Path.Combine(assetsPath, GRASS_IMAGE));
+            _snakeBrush = LoadImageBrush(System.IO.Path.Combine(assetsPath, SNAKE_IMAGE));
+        }
+
+        private static ImageBrush LoadImageBrush(string imagePath)
+        {
+            if (!File.Exists(imagePath)) return null;
+
             try
             {
-                string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                string grassPath = System.IO.Path.Combine(baseDir, "Assets", "Snake", "grass.png");
-                string snakePath = System.IO.Path.Combine(baseDir, "Assets", "Snake", "snake.png");
+                var bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.UriSource = new Uri(imagePath, UriKind.Absolute);
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.CreateOptions = BitmapCreateOptions.PreservePixelFormat | 
+                                      BitmapCreateOptions.IgnoreColorProfile;
+                bitmap.EndInit();
+                bitmap.Freeze();
 
-                if (System.IO.File.Exists(grassPath))
-                {
-                    var bmp = new BitmapImage();
-                    bmp.BeginInit();
-                    bmp.UriSource = new Uri(grassPath, UriKind.Absolute);
-                    bmp.CacheOption = BitmapCacheOption.OnLoad;
-                    bmp.CreateOptions = BitmapCreateOptions.PreservePixelFormat | BitmapCreateOptions.IgnoreColorProfile;
-                    bmp.EndInit();
-                    bmp.Freeze();
-                    _grassBrush = new ImageBrush(bmp)
-                    {
-                        Stretch = Stretch.Fill
-                    };
-                }
-
-                if (System.IO.File.Exists(snakePath))
-                {
-                    var bmp = new BitmapImage();
-                    bmp.BeginInit();
-                    bmp.UriSource = new Uri(snakePath, UriKind.Absolute);
-                    bmp.CacheOption = BitmapCacheOption.OnLoad;
-                    bmp.CreateOptions = BitmapCreateOptions.PreservePixelFormat | BitmapCreateOptions.IgnoreColorProfile;
-                    bmp.EndInit();
-                    bmp.Freeze();
-                    _snakeBrush = new ImageBrush(bmp)
-                    {
-                        Stretch = Stretch.Fill
-                    };
-                }
+                return new ImageBrush(bitmap) { Stretch = Stretch.Fill };
             }
             catch
             {
-                // Ignoriere Ladefehler
+                return null;
             }
         }
 
         public void PaintGameField(Canvas canvas, IGameField currentField)
         {
-            if (currentField is A5_SnakeField field)
+            if (!(currentField is A5_SnakeField field)) return;
+
+            canvas.Children.Clear();
+            canvas.Background = Brushes.Black;
+            LoadImages();
+
+            var scale = CalculateScale(canvas);
+            var offset = CalculateOffset(canvas, scale);
+
+            DrawGrassBackground(canvas, scale, offset);
+            DrawSnake(canvas, field, scale, offset);
+        }
+
+        private double CalculateScale(Canvas canvas)
+        {
+            double scaleX = canvas.ActualWidth / A5_SnakeField.FIELD_WIDTH;
+            double scaleY = canvas.ActualHeight / A5_SnakeField.FIELD_HEIGHT;
+            return Math.Min(scaleX, scaleY);
+        }
+
+        private (double X, double Y) CalculateOffset(Canvas canvas, double scale)
+        {
+            double scaledWidth = A5_SnakeField.FIELD_WIDTH * scale;
+            double scaledHeight = A5_SnakeField.FIELD_HEIGHT * scale;
+            return ((canvas.ActualWidth - scaledWidth) / 2, (canvas.ActualHeight - scaledHeight) / 2);
+        }
+
+        private void DrawGrassBackground(Canvas canvas, double scale, (double X, double Y) offset)
+        {
+            int tilesX = (int)Math.Ceiling(A5_SnakeField.FIELD_WIDTH / (double)A5_SnakeField.SNAKE_SIZE);
+            int tilesY = (int)Math.Ceiling(A5_SnakeField.FIELD_HEIGHT / (double)A5_SnakeField.SNAKE_SIZE);
+
+            for (int x = 0; x < tilesX; x++)
             {
-                canvas.Children.Clear();
-                canvas.Background = Brushes.Black;
-
-                LoadImages();
-
-                // Spielfeld in Canvas-Größe skalieren
-                double scaleX = canvas.ActualWidth / A5_SnakeField.FIELD_WIDTH;
-                double scaleY = canvas.ActualHeight / A5_SnakeField.FIELD_HEIGHT;
-                double scale = Math.Min(scaleX, scaleY);
-
-                double scaledWidth = A5_SnakeField.FIELD_WIDTH * scale;
-                double scaledHeight = A5_SnakeField.FIELD_HEIGHT * scale;
-                double offsetX = (canvas.ActualWidth - scaledWidth) / 2;
-                double offsetY = (canvas.ActualHeight - scaledHeight) / 2;
-
-                // Zeichne Hintergrund mit Gras-Tiles
-                int tilesX = (int)Math.Ceiling(A5_SnakeField.FIELD_WIDTH / (double)A5_SnakeField.SNAKE_SIZE);
-                int tilesY = (int)Math.Ceiling(A5_SnakeField.FIELD_HEIGHT / (double)A5_SnakeField.SNAKE_SIZE);
-
-                for (int x = 0; x < tilesX; x++)
+                for (int y = 0; y < tilesY; y++)
                 {
-                    for (int y = 0; y < tilesY; y++)
-                    {
-                        Rectangle grassRect = new Rectangle
-                        {
-                            Width = A5_SnakeField.SNAKE_SIZE * scale,
-                            Height = A5_SnakeField.SNAKE_SIZE * scale,
-                            Fill = _grassBrush != null ? (Brush)_grassBrush : Brushes.LightGreen
-                        };
-                        Canvas.SetLeft(grassRect, offsetX + (x * A5_SnakeField.SNAKE_SIZE * scale));
-                        Canvas.SetTop(grassRect, offsetY + (y * A5_SnakeField.SNAKE_SIZE * scale));
-                        canvas.Children.Add(grassRect);
-                    }
-                }
-
-                // Zeichne Schlangensegmente an ihren exakten Pixel-Positionen
-                for (int i = 0; i < field.Snake.Count; i++)
-                {
-                    var segment = field.Snake[i];
-                    Rectangle snakeRect = new Rectangle
-                    {
-                        Width = A5_SnakeField.SNAKE_SIZE * scale,
-                        Height = A5_SnakeField.SNAKE_SIZE * scale,
-                        // Nur der Kopf (Index 0) bekommt das Bild, der Rest eine Farbe
-                        Fill = (i == 0 && _snakeBrush != null) ? (Brush)_snakeBrush : Brushes.DarkGreen
-                    };
-                    Canvas.SetLeft(snakeRect, offsetX + (segment.X * scale));
-                    Canvas.SetTop(snakeRect, offsetY + (segment.Y * scale));
-                    canvas.Children.Add(snakeRect);
+                    var grassTile = CreateRectangle(
+                        A5_SnakeField.SNAKE_SIZE * scale,
+                        A5_SnakeField.SNAKE_SIZE * scale,
+                        _grassBrush != null ? (Brush)_grassBrush : Brushes.LightGreen,
+                        offset.X + (x * A5_SnakeField.SNAKE_SIZE * scale),
+                        offset.Y + (y * A5_SnakeField.SNAKE_SIZE * scale)
+                    );
+                    canvas.Children.Add(grassTile);
                 }
             }
+        }
+
+        private void DrawSnake(Canvas canvas, A5_SnakeField field, double scale, (double X, double Y) offset)
+        {
+            for (int i = 0; i < field.Snake.Count; i++)
+            {
+                var segment = field.Snake[i];
+                bool isHead = i == 0;
+                Brush fill = (isHead && _snakeBrush != null) ? _snakeBrush : Brushes.DarkGreen;
+
+                var snakeSegment = CreateRectangle(
+                    A5_SnakeField.SNAKE_SIZE * scale,
+                    A5_SnakeField.SNAKE_SIZE * scale,
+                    fill,
+                    offset.X + (segment.X * scale),
+                    offset.Y + (segment.Y * scale)
+                );
+                canvas.Children.Add(snakeSegment);
+            }
+        }
+
+        private Rectangle CreateRectangle(double width, double height, Brush fill, double left, double top)
+        {
+            var rect = new Rectangle
+            {
+                Width = width,
+                Height = height,
+                Fill = fill
+            };
+            Canvas.SetLeft(rect, left);
+            Canvas.SetTop(rect, top);
+            return rect;
         }
 
         public void TickPaintGameField(Canvas canvas, IGameField currentField)
