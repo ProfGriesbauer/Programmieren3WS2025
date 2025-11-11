@@ -28,24 +28,13 @@ namespace OOPGames
             }
         }
 
-        public void ClearField()
-        {
-            // Wird durch StartedGameCall aufgerufen - hier nicht nötig
-        }
+        public void ClearField() { }
+        public void StartedGameCall() { }
+        public void TickGameCall() { }
 
         public int CheckIfPLayerWon()
         {
-            return -1; // Snake hat kein klassisches Gewinn-Szenario
-        }
-
-        public void StartedGameCall()
-        {
-            // Spiel wird automatisch durch A5_SnakeField verwaltet
-        }
-
-        public void TickGameCall()
-        {
-            // Bewegung erfolgt durch Timer in A5_SnakeField
+            return -1; // Snake has no classic win condition
         }
     }
 

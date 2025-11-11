@@ -6,29 +6,33 @@ namespace OOPGames
 {
     public class A5_SnakeField : IGameField
     {
-        // Konstanten für Spielfeld-Konfiguration
-        public const int FIELD_WIDTH = 600;
-        public const int FIELD_HEIGHT = 600;
-    public const int SNAKE_SIZE = 40;
-    // Abstand zwischen Kopf- und Schwanzsegmenten in Pixeln = Bildgröße
-    private const double SEGMENT_GAP = SNAKE_SIZE;
-        
-    private const double SPEED = 10.0; // Pixel pro Tick (flüssige Bewegung)
+        // Game field configuration constants
+        public const int FIELD_WIDTH = 480;
+        public const int FIELD_HEIGHT = 480;
+        public const int SNAKE_SIZE = 32;
+
+        // Segment spacing in pixels equals image size
+        private const double SEGMENT_GAP = SNAKE_SIZE;
+        private const double SPEED = 10.0; // Pixels per tick for smooth movement
         private const int TIMER_INTERVAL_MS = 16; // ~60 FPS
 
-        // Spielzustand
+        // Game state
         public List<PixelPosition> Snake { get; private set; }
         public PixelPosition Direction { get; private set; }
         public PixelPosition Food { get; private set; }
-        
-    private readonly DispatcherTimer _gameTimer;
-        private readonly Random _random;
-        private int _initialTailLength = 3; // Startlänge des Schwanzes
-    // Verlauf der Kopfpositionen (für kontinuierlichen Abstand der Segmente)
-    private readonly List<PixelPosition> _history = new List<PixelPosition>();
+        public int CountdownSeconds { get; private set; }
+        public bool IsCountingDown { get; private set; }
 
-    // Anzahl History-Schritte, die einem Segmentabstand entsprechen
-    private int StepGap => Math.Max(1, (int)Math.Round(SEGMENT_GAP / SPEED));
+        private readonly DispatcherTimer _gameTimer;
+        private readonly DispatcherTimer _countdownTimer;
+        private readonly Random _random;
+        private int _initialTailLength = 3;
+
+        // Head position history for continuous segment spacing
+        private readonly List<PixelPosition> _history = new List<PixelPosition>();
+
+        // Number of history steps equal to one segment gap
+        private int StepGap => Math.Max(1, (int)Math.Round(SEGMENT_GAP / SPEED));
 
         public bool CanBePaintedBy(IPaintGame painter)
         {
@@ -39,15 +43,22 @@ namespace OOPGames
         {
             _random = new Random();
             Snake = new List<PixelPosition>();
-            InitializeSnake();
-            SpawnFood();
             
             _gameTimer = new DispatcherTimer
             {
                 Interval = TimeSpan.FromMilliseconds(TIMER_INTERVAL_MS)
             };
             _gameTimer.Tick += OnTimerTick;
-            _gameTimer.Start();
+
+            _countdownTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(1)
+            };
+            _countdownTimer.Tick += OnCountdownTick;
+
+            InitializeSnake();
+            SpawnFood();
+            StartCountdown();
         }
 
         private void InitializeSnake()
@@ -57,20 +68,19 @@ namespace OOPGames
             double startX = FIELD_WIDTH / 2.0;
             double startY = FIELD_HEIGHT / 2.0;
 
-            // Kopf an Startposition
+            // Head at start position
             Snake.Add(new PixelPosition(startX, startY));
             Direction = new PixelPosition(1, 0);
 
-            // Seed der History: Punkte hinter dem Kopf entlang -X, so dass
-            // die ersten Schwanzsegmente sofort korrekt mit Abstand erscheinen
-            int neededHistory = (_initialTailLength - 1) * StepGap + StepGap * 2; // etwas Puffer
+            // Seed history with points behind head along -X axis
+            // This ensures initial tail segments appear correctly spaced
+            int neededHistory = (_initialTailLength - 1) * StepGap + StepGap * 2;
             for (int i = 0; i <= neededHistory; i++)
             {
-                // Lege Punkte in 1-Schritt-Abständen von SPEED entlang der negativen X-Achse an
                 _history.Add(new PixelPosition(startX - (i * SPEED), startY));
             }
 
-            // Erzeuge weitere Segmente; sie werden später aus der History positioniert
+            // Create additional segments positioned from history
             for (int i = 1; i < _initialTailLength; i++)
             {
                 Snake.Add(new PixelPosition(startX - (i * SEGMENT_GAP), startY));
@@ -79,7 +89,6 @@ namespace OOPGames
 
         private void SpawnFood()
         {
-            // Spawn food at random grid-aligned position
             int gridX = _random.Next(0, FIELD_WIDTH / SNAKE_SIZE);
             int gridY = _random.Next(0, FIELD_HEIGHT / SNAKE_SIZE);
             Food = new PixelPosition(gridX * SNAKE_SIZE, gridY * SNAKE_SIZE);
@@ -88,26 +97,27 @@ namespace OOPGames
         public void MoveSnake()
         {
             if (Snake.Count == 0) return;
-            
+
             var head = Snake[0];
             var newHead = new PixelPosition(
                 head.X + (Direction.X * SPEED),
                 head.Y + (Direction.Y * SPEED)
             );
-            
+
             if (IsOutOfBounds(newHead) || CheckSelfCollision(newHead))
             {
+                _gameTimer.Stop();
                 InitializeSnake();
                 SpawnFood();
+                StartCountdown();
                 return;
             }
 
-            // Kopf aktualisieren und History erweitern
+            // Update head and extend history
             Snake[0] = newHead;
             _history.Add(new PixelPosition(newHead.X, newHead.Y));
 
-            // Positioniere die Schwanzsegmente anhand des Verlaufs so, dass
-            // jedes Segment in SEGMENT_GAP-Abstand dem Kopf folgt
+            // Position tail segments from history with SEGMENT_GAP spacing
             for (int i = 1; i < Snake.Count; i++)
             {
                 int idx = _history.Count - 1 - (i * StepGap);
@@ -119,7 +129,7 @@ namespace OOPGames
                 }
             }
 
-            // History begrenzen: ausreichend für aktuelle Segmentanzahl + Puffer
+            // Trim history to keep only necessary data
             int maxHistory = (Snake.Count + 5) * StepGap;
             int toTrim = _history.Count - maxHistory;
             if (toTrim > 0)
@@ -130,18 +140,14 @@ namespace OOPGames
             // Check if food is eaten
             if (IsFoodEaten(newHead))
             {
-                // Schlange wächst: füge ein neues Segment am Ende hinzu
                 var last = Snake[Snake.Count - 1];
                 Snake.Add(new PixelPosition(last.X, last.Y));
                 SpawnFood();
             }
-            // Kein automatisches Entfernen des letzten Segments nötig, da
-            // die Positionen über den Verlauf gesteuert werden
         }
 
         private bool IsFoodEaten(PixelPosition head)
         {
-            // Check if head is close enough to food (within SNAKE_SIZE distance)
             double dx = Math.Abs(head.X - Food.X);
             double dy = Math.Abs(head.Y - Food.Y);
             return dx < SNAKE_SIZE && dy < SNAKE_SIZE;
@@ -149,7 +155,7 @@ namespace OOPGames
 
         private bool CheckSelfCollision(PixelPosition head)
         {
-            // Check collision with own body (skip first few segments)
+            // Skip first few segments to avoid false collision
             for (int i = 3; i < Snake.Count; i++)
             {
                 double dx = Math.Abs(head.X - Snake[i].X);
@@ -179,12 +185,33 @@ namespace OOPGames
 
         private void OnTimerTick(object sender, EventArgs e)
         {
-            MoveSnake();
+            if (!IsCountingDown)
+            {
+                MoveSnake();
+            }
+        }
+
+        private void OnCountdownTick(object sender, EventArgs e)
+        {
+            CountdownSeconds--;
+            if (CountdownSeconds <= 0)
+            {
+                _countdownTimer.Stop();
+                IsCountingDown = false;
+                _gameTimer.Start();
+            }
+        }
+
+        private void StartCountdown()
+        {
+            CountdownSeconds = 3;
+            IsCountingDown = true;
+            _countdownTimer.Start();
         }
 
         public int GetPosition(int x, int y)
         {
-            return 0; // Legacy-Methode für IGameField-Kompatibilität
+            return 0; // IGameField interface compatibility
         }
     }
 }
