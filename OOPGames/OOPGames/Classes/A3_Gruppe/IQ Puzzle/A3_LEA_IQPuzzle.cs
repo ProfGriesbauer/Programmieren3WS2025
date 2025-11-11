@@ -311,6 +311,10 @@ namespace OOPGames
         public int PreviewX { get; set; } = -1;
         public int PreviewY { get; set; } = -1;
 
+        // Live Mausposition (wird bei OnMouseMoved() aktualisiert)
+        public int MouseX { get; set; } = -1;
+        public int MouseY { get; set; } = -1;
+
         public A3_LEA_IQPuzzleRules()
         {
             _field = new A3_LEA_IQPuzzleField();
@@ -595,9 +599,21 @@ namespace OOPGames
             // Zeichne platzierte Stücke
             DrawPlacedPieces(canvas, field);
 
-            // Zeichne verfügbare Stücke unten (mit aktuellem Rotations-Status!)
+            // Debug: Zeichne roten Punkt an aktueller Mausposition
             var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_IQPuzzleRules;
+            if (rules != null && rules.MouseX >= 0 && rules.MouseY >= 0)
+            {
+                DrawMousePositionIndicator(canvas, rules.MouseX, rules.MouseY);
+            }
+
+            // Zeichne Live-Vorschau an Mausposition (wenn Teil ausgewählt ist)
             var effectiveSelectedPiece = selectedPiece ?? rules?.SelectedPieceForPainting;
+            if (rules != null && effectiveSelectedPiece != null && rules.MouseX >= 0 && rules.MouseY >= 0)
+            {
+                DrawPlacementPreview(canvas, field, effectiveSelectedPiece, rules.MouseX, rules.MouseY);
+            }
+
+            // Zeichne verfügbare Stücke unten (mit aktuellem Rotations-Status!)
             DrawAvailablePieces(canvas, availablePieces, effectiveSelectedPiece);
 
             // Zeichne Anleitung
@@ -665,6 +681,25 @@ namespace OOPGames
                     canvas.Children.Add(rect);
                 }
             }
+        }
+
+        private void DrawMousePositionIndicator(Canvas canvas, int gridX, int gridY)
+        {
+            // Zeichne einen roten Punkt in der Mitte der Zelle
+            double pixelX = OFFSET_X + gridX * CELL_SIZE + CELL_SIZE / 2;
+            double pixelY = OFFSET_Y + gridY * CELL_SIZE + CELL_SIZE / 2;
+
+            var dot = new Ellipse
+            {
+                Width = 8,
+                Height = 8,
+                Fill = Brushes.Red,
+                Stroke = Brushes.DarkRed,
+                StrokeThickness = 1
+            };
+            Canvas.SetLeft(dot, pixelX - 4);
+            Canvas.SetTop(dot, pixelY - 4);
+            canvas.Children.Add(dot);
         }
 
         private void DrawAvailablePieces(Canvas canvas, List<IA3_LEA_IQPuzzlePiece> availablePieces, IA3_LEA_IQPuzzlePiece selectedPiece)
@@ -832,6 +867,22 @@ namespace OOPGames
         public override IGamePlayer Clone()
         {
             return new A3_LEA_IQPuzzleHumanPlayer();
+        }
+
+        public override void OnMouseMoved(System.Windows.Input.MouseEventArgs e)
+        {
+            // Berechne die Gitterposition unter der Maus (20 Pixel Offset, 40 Pixel Zellengröße)
+            var mousePos = e.GetPosition(null); // Mausposition relativ zum Fenster
+            var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_IQPuzzleRules;
+            if (rules != null)
+            {
+                // Berechne Gitterkoordinaten (wenn ein Teil ausgewählt ist, zeige dort Vorschau)
+                int gridX = (int)((mousePos.X - 20) / 40);
+                int gridY = (int)((mousePos.Y - 20) / 40);
+                
+                rules.MouseX = gridX;
+                rules.MouseY = gridY;
+            }
         }
 
         public override IA3_LEA_IQPuzzleMove GetMove(IMoveSelection selection, IA3_LEA_IQPuzzleField field,
