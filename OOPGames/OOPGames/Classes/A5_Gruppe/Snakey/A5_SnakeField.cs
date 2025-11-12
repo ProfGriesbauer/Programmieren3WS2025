@@ -13,8 +13,8 @@ namespace OOPGames
 
         // Segment spacing in pixels equals image size
         private const double SEGMENT_GAP = SNAKE_SIZE;
-        private const double SPEED = 8; // Pixels per tick for smooth movement
-        private const int TIMER_INTERVAL_MS = 16; // ~60 FPS
+        private const double SPEED = 4; // Pixels per tick - halved for 120 FPS (same overall speed)
+        private const int TIMER_INTERVAL_MS = 8; // ~120 FPS
 
         // Game state
         public List<PixelPosition> Snake { get; private set; }
@@ -255,8 +255,14 @@ namespace OOPGames
 
         private bool IsOutOfBounds(PixelPosition position)
         {
-            return position.X < 0 || position.X >= FIELD_WIDTH ||
-                   position.Y < 0 || position.Y >= FIELD_HEIGHT;
+            const int DEATH_MARGIN = 8; // 8 pixel tolerance - matches 3/4 logic overflow
+            
+            // For left/top: position is top-left corner, so allow -DEATH_MARGIN
+            // For right/bottom: position + SNAKE_SIZE is bottom-right corner, so check that + DEATH_MARGIN
+            return position.X < -DEATH_MARGIN || 
+                   position.Y < -DEATH_MARGIN ||
+                   position.X + SNAKE_SIZE > FIELD_WIDTH + DEATH_MARGIN ||
+                   position.Y + SNAKE_SIZE > FIELD_HEIGHT + DEATH_MARGIN;
         }
 
         private void OnTimerTick(object sender, EventArgs e)
