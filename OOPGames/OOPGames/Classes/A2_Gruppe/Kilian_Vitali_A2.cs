@@ -57,122 +57,135 @@ namespace OOPGames
 
     // Painter for the TicTacToe field
     public class A2_Painter : IPaintGame2
+{
+    public string Name => "A2_TicTacToe_Painter";
+
+    // Merkt sich die letzte Canvas-Größe (für Mausklick-Berechnung)
+    public static double LastCanvasWidth { get; private set; } = 300;
+    public static double LastCanvasHeight { get; private set; } = 300;
+
+    // Wird aufgerufen, wenn ein Zug gemacht wurde
+    public void PaintGameField(Canvas canvas, IGameField currentField)
     {
-        public string Name => "A2_TicTacToe_Painter";
+        DoPaint(canvas, currentField);
+    }
 
-        // This method is called when a move is made manually
-        public void PaintGameField(Canvas canvas, IGameField currentField)
+    // Wird alle 40ms vom Timer aufgerufen
+    public void TickPaintGameField(Canvas canvas, IGameField currentField)
+    {
+        DoPaint(canvas, currentField);
+    }
+
+    private void DoPaint(Canvas canvas, IGameField currentField)
+    {
+        if (canvas == null) return;
+
+        canvas.Children.Clear();
+
+        var field = currentField as A2_TicTacToeField;
+
+        double width = Math.Max(1.0, canvas.ActualWidth);
+        double height = Math.Max(1.0, canvas.ActualHeight);
+
+        // Canvas-Größe merken, damit der HumanPlayer sie für Mausklicks nutzen kann
+        LastCanvasWidth = width;
+        LastCanvasHeight = height;
+
+        double size = Math.Min(width, height);
+        double cell = size / 3.0;
+        double offsetX = (width - size) / 2.0;
+        double offsetY = (height - size) / 2.0;
+
+        // Gitter zeichnen
+        var lineBrush = Brushes.Black;
+        double thickness = 2.0;
+        for (int i = 1; i <= 2; i++)
         {
-            DoPaint(canvas, currentField);
+            // vertikale Linien
+            var v = new Line()
+            {
+                X1 = offsetX + i * cell,
+                Y1 = offsetY,
+                X2 = offsetX + i * cell,
+                Y2 = offsetY + 3 * cell,
+                Stroke = lineBrush,
+                StrokeThickness = thickness
+            };
+            canvas.Children.Add(v);
+
+            // horizontale Linien
+            var h = new Line()
+            {
+                X1 = offsetX,
+                Y1 = offsetY + i * cell,
+                X2 = offsetX + 3 * cell,
+                Y2 = offsetY + i * cell,
+                Stroke = lineBrush,
+                StrokeThickness = thickness
+            };
+            canvas.Children.Add(h);
         }
 
-        // This method is called every 40ms by the timer
-        public void TickPaintGameField(Canvas canvas, IGameField currentField)
+        if (field == null) return;
+
+        // X / O zeichnen
+        double padding = cell * 0.15;
+        double inner = cell - 2 * padding;
+
+        for (int r = 0; r < 3; r++)
         {
-            DoPaint(canvas, currentField);
-        }
-
-        private void DoPaint(Canvas canvas, IGameField currentField)
-        {
-            if (canvas == null) return;
-
-            canvas.Children.Clear();
-
-            var field = currentField as A2_TicTacToeField;
-            double width = Math.Max(1.0, canvas.ActualWidth);
-            double height = Math.Max(1.0, canvas.ActualHeight);
-            double size = Math.Min(width, height);
-            double cell = size / 3.0;
-            double offsetX = (width - size) / 2.0;
-            double offsetY = (height - size) / 2.0;
-
-            // draw grid
-            var lineBrush = Brushes.Black;
-            double thickness = 2.0;
-            for (int i = 1; i <= 2; i++)
+            for (int c = 0; c < 3; c++)
             {
-                // vertical
-                var v = new Line()
+                var state = field.Cells[r, c];
+                double x = offsetX + c * cell + padding;
+                double y = offsetY + r * cell + padding;
+
+                if (state == A2_CellState.O)
                 {
-                    X1 = offsetX + i * cell,
-                    Y1 = offsetY,
-                    X2 = offsetX + i * cell,
-                    Y2 = offsetY + 3 * cell,
-                    Stroke = lineBrush,
-                    StrokeThickness = thickness
-                };
-                canvas.Children.Add(v);
-
-                // horizontal
-                var h = new Line()
-                {
-                    X1 = offsetX,
-                    Y1 = offsetY + i * cell,
-                    X2 = offsetX + 3 * cell,
-                    Y2 = offsetY + i * cell,
-                    Stroke = lineBrush,
-                    StrokeThickness = thickness
-                };
-                canvas.Children.Add(h);
-            }
-
-            if (field == null) return;
-
-            double padding = cell * 0.15;
-            double inner = cell - 2 * padding;
-
-            for (int r = 0; r < 3; r++)
-            {
-                for (int c = 0; c < 3; c++)
-                {
-                    var state = field.Cells[r, c];
-                    double x = offsetX + c * cell + padding;
-                    double y = offsetY + r * cell + padding;
-
-                    if (state == A2_CellState.O)
+                    var ellipse = new Ellipse()
                     {
-                        var ellipse = new Ellipse()
-                        {
-                            Width = inner,
-                            Height = inner,
-                            Stroke = Brushes.DarkBlue,
-                            StrokeThickness = 4,
-                        };
-                        Canvas.SetLeft(ellipse, x);
-                        Canvas.SetTop(ellipse, y);
-                        canvas.Children.Add(ellipse);
-                    }
-                    else if (state == A2_CellState.X)
+                        Width = inner,
+                        Height = inner,
+                        Stroke = Brushes.DarkBlue,
+                        StrokeThickness = 4
+                    };
+                    Canvas.SetLeft(ellipse, x);
+                    Canvas.SetTop(ellipse, y);
+                    canvas.Children.Add(ellipse);
+                }
+                else if (state == A2_CellState.X)
+                {
+                    var l1 = new Line()
                     {
-                        var l1 = new Line()
-                        {
-                            X1 = x,
-                            Y1 = y,
-                            X2 = x + inner,
-                            Y2 = y + inner,
-                            Stroke = Brushes.DarkRed,
-                            StrokeThickness = 4,
-                            StrokeStartLineCap = PenLineCap.Round,
-                            StrokeEndLineCap = PenLineCap.Round
-                        };
-                        var l2 = new Line()
-                        {
-                            X1 = x + inner,
-                            Y1 = y,
-                            X2 = x,
-                            Y2 = y + inner,
-                            Stroke = Brushes.DarkRed,
-                            StrokeThickness = 4,
-                            StrokeStartLineCap = PenLineCap.Round,
-                            StrokeEndLineCap = PenLineCap.Round
-                        };
-                        canvas.Children.Add(l1);
-                        canvas.Children.Add(l2);
-                    }
+                        X1 = x,
+                        Y1 = y,
+                        X2 = x + inner,
+                        Y2 = y + inner,
+                        Stroke = Brushes.DarkRed,
+                        StrokeThickness = 4,
+                        StrokeStartLineCap = PenLineCap.Round,
+                        StrokeEndLineCap = PenLineCap.Round
+                    };
+                    var l2 = new Line()
+                    {
+                        X1 = x + inner,
+                        Y1 = y,
+                        X2 = x,
+                        Y2 = y + inner,
+                        Stroke = Brushes.DarkRed,
+                        StrokeThickness = 4,
+                        StrokeStartLineCap = PenLineCap.Round,
+                        StrokeEndLineCap = PenLineCap.Round
+                    };
+                    canvas.Children.Add(l1);
+                    canvas.Children.Add(l2);
                 }
             }
         }
     }
+}
+
+
 
     public class A2_Rules : IGameRules
     {
@@ -273,142 +286,161 @@ namespace OOPGames
 
     // Human player implementation compatible with project move-selection types.
     public class A2_HumanPlayer : IHumanGamePlayer
+{
+    public string Name => "A2_Human_Player";
+    public int PlayerNumber { get; private set; }
+
+    public A2_HumanPlayer(int playerNumber = 1)
     {
-        public string Name => "A2_Human_Player";
-        public int PlayerNumber { get; private set; }
+        PlayerNumber = playerNumber;
+    }
 
-        public A2_HumanPlayer(int playerNumber = 1)
+    public void SetPlayerNumber(int number) => PlayerNumber = number;
+
+    public bool CanBeRuledBy(IGameRules rules) => rules is A2_Rules;
+
+    public IGamePlayer Clone() => new A2_HumanPlayer(PlayerNumber);
+
+    // Hilfsfunktion, falls wir irgendwann doch wieder Reflection-Werte casten wollen
+    private bool TryGetDouble(object o, out double d)
+    {
+        if (o == null)
         {
-            PlayerNumber = playerNumber;
+            d = 0;
+            return false;
         }
 
-        public void SetPlayerNumber(int number) => PlayerNumber = number;
-
-        public bool CanBeRuledBy(IGameRules rules) => rules is A2_Rules;
-
-        public IGamePlayer Clone() => new A2_HumanPlayer(PlayerNumber);
-
-        bool TryGetDouble(object o, out double d)
+        switch (o)
         {
-            if (o == null) { d = 0; return false; }
-            switch (o)
-            {
-                case double x: d = x; return true;
-                case float x: d = x; return true;
-                case int x: d = x; return true;
-                case long x: d = x; return true;
-                case short x: d = x; return true;
-                case decimal x: d = (double)x; return true;
-                case uint x: d = x; return true;
-                case ulong x: d = x; return true;
-                case byte x: d = x; return true;
-                case sbyte x: d = x; return true;
-                case string s when double.TryParse(s, out var v): d = v; return true;
-                default: d = 0; return false;
-            }
-        }
-
-        // IMoveSelection can be implemented differently in the project.
-        // We support both IClickSelection (mouse clicks) and IKeySelection (keyboard input)
-        public IPlayMove GetMove(IMoveSelection selection, IGameField field)
-        {
-            if (!(field is A2_TicTacToeField gameField)) return null;
-            if (selection == null) return null;
-
-            // Handle keyboard input (IKeySelection)
-            if (selection is IKeySelection keySelection)
-            {
-                // Map numeric keys (1-9 on numpad or regular 1-9) to board positions
-                // 1=top-left, 2=top-center, 3=top-right
-                // 4=mid-left, 5=mid-center, 6=mid-right
-                // 7=bottom-left, 8=bottom-center, 9=bottom-right
-                return GetMoveFromKey(keySelection.Key, gameField);
-            }
-
-            // Handle mouse click input (IClickSelection)
-            if (selection is IClickSelection)
-            {
-                return GetMoveFromClick((IClickSelection)selection, gameField);
-            }
-
-            return null;
-        }
-
-        private IPlayMove GetMoveFromKey(Key key, A2_TicTacToeField gameField)
-        {
-            int? position = key switch
-            {
-                Key.NumPad1 or Key.D1 => 0,
-                Key.NumPad2 or Key.D2 => 1,
-                Key.NumPad3 or Key.D3 => 2,
-                Key.NumPad4 or Key.D4 => 3,
-                Key.NumPad5 or Key.D5 => 4,
-                Key.NumPad6 or Key.D6 => 5,
-                Key.NumPad7 or Key.D7 => 6,
-                Key.NumPad8 or Key.D8 => 7,
-                Key.NumPad9 or Key.D9 => 8,
-                _ => null
-            };
-
-            if (position.HasValue)
-            {
-                int pos = position.Value;
-                int row = pos / 3;
-                int col = pos % 3;
-                
-                if (gameField.Cells[row, col] == A2_CellState.Empty)
-                {
-                    System.Diagnostics.Debug.WriteLine($"A2 Key Move: key={key}, pos={pos}, row={row}, col={col}");
-                    return new A2_TicTacToeMove(PlayerNumber, row, col);
-                }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine($"A2 Key: Cell not empty at ({row},{col})");
-                }
-            }
-            else
-            {
-                System.Diagnostics.Debug.WriteLine($"A2 Key: Not a valid number key: {key}");
-            }
-
-            return null;
-        }
-
-        private IPlayMove GetMoveFromClick(IClickSelection clickSel, A2_TicTacToeField gameField)
-        {
-            Point pos = new Point(clickSel.XClickPos, clickSel.YClickPos);
-
-            // Determine canvas size if available (try properties CanvasWidth/CanvasHeight via reflection)
-            double width = 300, height = 300;
-            var selType = clickSel.GetType();
-            var pw = selType.GetProperty("CanvasWidth", BindingFlags.Instance | BindingFlags.Public);
-            var ph = selType.GetProperty("CanvasHeight", BindingFlags.Instance | BindingFlags.Public);
-            if (pw != null && ph != null)
-            {
-                var wv = pw.GetValue(clickSel);
-                var hv = ph.GetValue(clickSel);
-                if (TryGetDouble(wv, out double wd)) width = wd;
-                if (TryGetDouble(hv, out double hd)) height = hd;
-            }
-            
-            // Calculate board layout the same way as the painter
-            double size = Math.Min(width, height);
-            double cellSize = size / 3.0;
-            double offsetX = (width - size) / 2.0;
-            double offsetY = (height - size) / 2.0;
-
-            int row = (int)Math.Floor((pos.Y - offsetY) / cellSize);
-            int col = (int)Math.Floor((pos.X - offsetX) / cellSize);
-
-            if (row >= 0 && row < 3 && col >= 0 && col < 3)
-            {
-                if (gameField.Cells[row, col] == A2_CellState.Empty)
-                {
-                    return new A2_TicTacToeMove(PlayerNumber, row, col);
-                }
-            }
-
-            return null;
+            case double x: d = x; return true;
+            case float x: d = x; return true;
+            case int x: d = x; return true;
+            case long x: d = x; return true;
+            case short x: d = x; return true;
+            case decimal x: d = (double)x; return true;
+            case uint x: d = x; return true;
+            case ulong x: d = x; return true;
+            case byte x: d = x; return true;
+            case sbyte x: d = x; return true;
+            case string s when double.TryParse(s, out var v): d = v; return true;
+            default:
+                d = 0;
+                return false;
         }
     }
+
+    public IPlayMove GetMove(IMoveSelection selection, IGameField field)
+    {
+        if (!(field is A2_TicTacToeField gameField) || selection == null)
+            return null;
+
+        // Tastatur (Numpad / Zahlenreihe)
+        if (selection is IKeySelection keySelection)
+        {
+            return GetMoveFromKey(keySelection.Key, gameField);
+        }
+
+        // Maus
+        if (selection is IClickSelection clickSelection)
+        {
+            return GetMoveFromClick(clickSelection, gameField);
+        }
+
+        return null;
+    }
+
+    // Numpad-Layout:
+    // 7 8 9
+    // 4 5 6
+    // 1 2 3
+    private IPlayMove GetMoveFromKey(Key key, A2_TicTacToeField gameField)
+    {
+        int? position = key switch
+        {
+            Key.NumPad7 or Key.D7 => 0, // oben links
+            Key.NumPad8 or Key.D8 => 1, // oben Mitte
+            Key.NumPad9 or Key.D9 => 2, // oben rechts
+
+            Key.NumPad4 or Key.D4 => 3, // Mitte links
+            Key.NumPad5 or Key.D5 => 4, // Mitte
+            Key.NumPad6 or Key.D6 => 5, // Mitte rechts
+
+            Key.NumPad1 or Key.D1 => 6, // unten links
+            Key.NumPad2 or Key.D2 => 7, // unten Mitte
+            Key.NumPad3 or Key.D3 => 8, // unten rechts
+
+            _ => (int?)null
+        };
+
+        if (!position.HasValue)
+        {
+            return null;
+        }
+
+        int pos = position.Value;
+        int row = pos / 3;
+        int col = pos % 3;
+
+        if (gameField.Cells[row, col] != A2_CellState.Empty)
+        {
+            return null;
+        }
+
+        return new A2_TicTacToeMove(PlayerNumber, row, col);
+    }
+
+    private IPlayMove GetMoveFromClick(IClickSelection clickSel, A2_TicTacToeField gameField)
+    {
+        // Klickposition auf der Canvas
+        Point pos = new Point(clickSel.XClickPos, clickSel.YClickPos);
+
+        // Basis: letzte Canvas-Größe aus dem Painter
+        double width = A2_Painter.LastCanvasWidth;
+        double height = A2_Painter.LastCanvasHeight;
+
+        // Fallback, falls noch nichts gemalt wurde
+        if (width <= 0 || height <= 0)
+        {
+            width = 300;
+            height = 300;
+        }
+
+        // OPTIONAL: falls der Selection-Typ CanvasWidth/CanvasHeight Properties hat, diese nutzen
+        var selType = clickSel.GetType();
+        var pw = selType.GetProperty("CanvasWidth", BindingFlags.Instance | BindingFlags.Public);
+        var ph = selType.GetProperty("CanvasHeight", BindingFlags.Instance | BindingFlags.Public);
+        if (pw != null && ph != null)
+        {
+            var wv = pw.GetValue(clickSel);
+            var hv = ph.GetValue(clickSel);
+            if (TryGetDouble(wv, out double wd)) width = wd;
+            if (TryGetDouble(hv, out double hd)) height = hd;
+        }
+
+        // Geometrie exakt wie im Painter
+        double size = Math.Min(width, height);
+        double cellSize = size / 3.0;
+        double offsetX = (width - size) / 2.0;
+        double offsetY = (height - size) / 2.0;
+
+        int col = (int)Math.Floor((pos.X - offsetX) / cellSize);
+        int row = (int)Math.Floor((pos.Y - offsetY) / cellSize);
+
+        // Außerhalb des Spielfelds?
+        if (row < 0 || row >= 3 || col < 0 || col >= 3)
+        {
+            return null;
+        }
+
+        // Feld belegt?
+        if (gameField.Cells[row, col] != A2_CellState.Empty)
+        {
+            return null;
+        }
+
+        return new A2_TicTacToeMove(PlayerNumber, row, col);
+    }
+}
+
+
 }
