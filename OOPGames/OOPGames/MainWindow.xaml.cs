@@ -108,7 +108,7 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeMediumComputer());
             FlappyBird flappy = new FlappyBird();
             flappy.Register();
-            CrossyRoads crossy = new CrossyRoads();
+            CrossyGamePlugin crossy = new CrossyGamePlugin();
             crossy.Register();
             
 
