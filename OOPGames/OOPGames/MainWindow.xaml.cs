@@ -26,12 +26,15 @@ namespace OOPGames
         IGameRules _CurrentRules = null;
         IGamePlayer _CurrentPlayer1 = null;
         IGamePlayer _CurrentPlayer2 = null;
+        B3_Jarde_Roeder b3Fishing;
+
 
         System.Windows.Threading.DispatcherTimer _PaintTimer = null;
 
         public MainWindow()
         {
             //REGISTER YOUR CLASSES HERE
+            
             //Register A5 Classes first
             A5_Gomeringer register = new A5_Gomeringer();
             register.Register();
@@ -87,7 +90,10 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterPlayer(new A3_LEA_HumanSchiffePlayer());
             
             
-            // B3 Mika Röder TicTacToe
+            // B3 Jarde_Roeder
+            b3Fishing = new B3_Jarde_Roeder();
+            OOPGamesManager.Singleton.RegisterPainter(b3Fishing);
+            OOPGamesManager.Singleton.RegisterRules(b3Fishing);
             OOPGamesManager.Singleton.RegisterPainter(new B3_Mika_Roeder_Paint());
             OOPGamesManager.Singleton.RegisterRules(new B3_Mika_Roeder_Rules());
             OOPGamesManager.Singleton.RegisterPlayer(new B3_Mika_Roeder_HumanPlayer());

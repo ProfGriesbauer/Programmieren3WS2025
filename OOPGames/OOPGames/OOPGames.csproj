@@ -8,6 +8,12 @@
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="Assets\**\*.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+</ItemGroup>
   
   <ItemGroup>
     <Content Include="Assets\Snake\grass_new.png">
@@ -27,3 +33,6 @@
     </Content>
   </ItemGroup>
 </Project>
+
+
+
