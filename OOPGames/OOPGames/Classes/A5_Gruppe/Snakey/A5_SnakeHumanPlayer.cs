@@ -32,6 +32,7 @@ namespace OOPGames
                 Key.S => "S",
                 Key.A => "A",
                 Key.D => "D",
+                Key.Space => "SPACE",
                 _ => null
             };
 

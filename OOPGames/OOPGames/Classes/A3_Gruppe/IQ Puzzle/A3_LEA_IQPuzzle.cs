@@ -553,70 +553,6 @@ namespace OOPGames
                 }
             }
         }
-
-        public override bool SolvePuzzle()
-        {
-            return SolveRecursive();
-        }
-
-        private bool SolveRecursive()
-        {
-            if (_field.IsFull())
-                return true;
-
-            var available = AvailablePieces;
-            if (available.Count == 0)
-                return false;
-
-            foreach (var piece in available)
-            {
-                // Probiere alle Rotationen
-                var currentPiece = piece;
-                for (int rotation = 0; rotation < 4; rotation++)
-                {
-                    for (int y = 0; y < _field.Height; y++)
-                    {
-                        for (int x = 0; x < _field.Width; x++)
-                        {
-                            if (CanPlacePiece(currentPiece, x, y))
-                            {
-                                PlacePiece(currentPiece, x, y);
-
-                                if (SolveRecursive())
-                                    return true;
-
-                                RemovePiece(currentPiece);
-                            }
-                        }
-                    }
-                    currentPiece = currentPiece.Rotate();
-                }
-
-                // Probiere gespiegelt
-                currentPiece = piece.Flip();
-                for (int rotation = 0; rotation < 4; rotation++)
-                {
-                    for (int y = 0; y < _field.Height; y++)
-                    {
-                        for (int x = 0; x < _field.Width; x++)
-                        {
-                            if (CanPlacePiece(currentPiece, x, y))
-                            {
-                                PlacePiece(currentPiece, x, y);
-
-                                if (SolveRecursive())
-                                    return true;
-
-                                RemovePiece(currentPiece);
-                            }
-                        }
-                    }
-                    currentPiece = currentPiece.Rotate();
-                }
-            }
-
-            return false;
-        }
     }
 
     #endregion
@@ -862,7 +798,7 @@ namespace OOPGames
 
             var label = new TextBlock
             {
-                Text = "Available Pieces (Click to select, R to rotate, F to flip):",
+                Text = "Ziel: Platziere alle Teile im Spielfeld ohne Überlappung!",
                 FontSize = 12,
                 FontWeight = FontWeights.Bold
             };
@@ -975,7 +911,7 @@ namespace OOPGames
         {
             var text = new TextBlock
             {
-                Text = "LEFT CLICK: Select piece | LEFT CLICK on grid: Place piece | RIGHT CLICK: Remove | R: Rotate | F: Flip",
+                Text = "LINKSKLICK: Teil wählen/platzieren | R/MAUSRAD: Drehen | F/RECHTSKLICK: Spiegeln | ESC: Ablegen",
                 FontSize = 10,
                 Foreground = Brushes.DarkGray
             };
@@ -986,7 +922,7 @@ namespace OOPGames
 
         private void DrawLevelButtons(Canvas canvas)
         {
-            // Easy Button (Level 1)
+            // Level 1 Button
             double buttonX1 = 500;
             double buttonY = 30;
             double buttonWidth = 100;
@@ -1007,19 +943,21 @@ namespace OOPGames
             Canvas.SetTop(buttonRect1, buttonY);
             canvas.Children.Add(buttonRect1);
             
-            // Button 1 - Text
+            // Button 1 - Text (mittig zentriert)
             var buttonText1 = new TextBlock
             {
-                Text = "Easy",
+                Text = "Level 1",
                 FontSize = 18,
                 FontWeight = FontWeights.Bold,
-                Foreground = Brushes.White
+                Foreground = Brushes.White,
+                TextAlignment = TextAlignment.Center
             };
-            Canvas.SetLeft(buttonText1, buttonX1 + 25);
-            Canvas.SetTop(buttonText1, buttonY + 8);
+            buttonText1.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            Canvas.SetLeft(buttonText1, buttonX1 + (buttonWidth - buttonText1.DesiredSize.Width) / 2);
+            Canvas.SetTop(buttonText1, buttonY + (buttonHeight - buttonText1.DesiredSize.Height) / 2);
             canvas.Children.Add(buttonText1);
 
-            // Challenge Button (Level 51)
+            // Challenge Button (Level 2)
             double buttonY2 = 100;
         
             
@@ -1038,16 +976,18 @@ namespace OOPGames
             Canvas.SetTop(buttonRect2, buttonY2);
             canvas.Children.Add(buttonRect2);
             
-            // Button 2 - Text
+            // Button 2 - Text (mittig zentriert)
             var buttonText2 = new TextBlock
             {
-                Text = "Challenge",
-                FontSize = 14,
+                Text = "Level 2",
+                FontSize = 18,
                 FontWeight = FontWeights.Bold,
-                Foreground = Brushes.White
+                Foreground = Brushes.White,
+                TextAlignment = TextAlignment.Center
             };
-            Canvas.SetLeft(buttonText2, buttonX1 + 5);
-            Canvas.SetTop(buttonText2, buttonY2 + 10);
+            buttonText2.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            Canvas.SetLeft(buttonText2, buttonX1 + (buttonWidth - buttonText2.DesiredSize.Width) / 2);
+            Canvas.SetTop(buttonText2, buttonY2 + (buttonHeight - buttonText2.DesiredSize.Height) / 2);
             canvas.Children.Add(buttonText2);
         }
 
@@ -1189,19 +1129,27 @@ namespace OOPGames
                 if (click.ChangedButton == 0) // Left button
                 {
                     // Prüfe ob in Piece-Auswahl geklickt wurde (unten)
-                    if (click.YClickPos > 250)
+                    if (click.YClickPos >= 250)
                     {
-                        // Die verfügbaren Teile werden in Reihen gezeichnet (7 Spalten pro Reihe)
-                        int colsPerRow = 7; // entspricht der Zeichnungslogik (OFFSET_X=20, Schritt=60, wrap bei >400)
-                        int col = (int)((click.XClickPos - 20) / 60);
-                        int row = (int)((click.YClickPos - 250) / 80);
-
-                        if (col >= 0 && row >= 0)
+                        // Simuliere die Zeichenlogik für präzise Erkennung
+                        const double PIECE_OFFSET_X = 20;
+                        const double PIECE_START_Y = 250;
+                        const double PIECE_SPACING_X = 60;
+                        const double PIECE_SPACING_Y = 80;
+                        const double PIECE_CLICK_RADIUS = 30; // Klickbereich um jedes Piece
+                        
+                        double currentX = PIECE_OFFSET_X;
+                        double currentY = PIECE_START_Y;
+                        
+                        for (int i = 0; i < availablePieces.Count; i++)
                         {
-                            int pieceIndex = row * colsPerRow + col;
-                            if (pieceIndex >= 0 && pieceIndex < availablePieces.Count)
+                            // Prüfe ob Klick in der Nähe dieses Pieces ist
+                            double distanceX = Math.Abs(click.XClickPos - (currentX + 15)); // +15 für Mitte des Pieces
+                            double distanceY = Math.Abs(click.YClickPos - (currentY + 15));
+                            
+                            if (distanceX < PIECE_CLICK_RADIUS && distanceY < PIECE_CLICK_RADIUS)
                             {
-                                _selectedPiece = availablePieces[pieceIndex];
+                                _selectedPiece = availablePieces[i];
 
                                 // Speichere Auswahl in Rules für Painter
                                 if (rules != null)
@@ -1211,10 +1159,18 @@ namespace OOPGames
 
                                 return null; // Nur Auswahl, kein Zug
                             }
+                            
+                            // Nächste Position berechnen (genau wie in DrawAvailablePieces)
+                            currentX += PIECE_SPACING_X;
+                            if (currentX > 400)
+                            {
+                                currentX = PIECE_OFFSET_X;
+                                currentY += PIECE_SPACING_Y;
+                            }
                         }
                     }
                     // Klick auf Spielfeld
-                    else
+                    else if (click.YClickPos >= 20 && click.YClickPos < 220 && click.XClickPos >= 20)
                     {
                         int x = (int)((click.XClickPos - 20) / 40);
                         int y = (int)((click.YClickPos - 20) / 40);
@@ -1308,11 +1264,6 @@ namespace OOPGames
                     {
                         return hint;
                     }
-                }
-                // S: Solve
-                else if (key.Key == System.Windows.Input.Key.S && rules != null)
-                {
-                    rules.SolvePuzzle();
                 }
             }
 

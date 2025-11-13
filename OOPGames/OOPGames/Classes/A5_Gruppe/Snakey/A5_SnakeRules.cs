@@ -25,6 +25,7 @@ namespace OOPGames
                 case "S": _field.ChangeDirection(0, 1); break;
                 case "A": _field.ChangeDirection(-1, 0); break;
                 case "D": _field.ChangeDirection(1, 0); break;
+                case "SPACE": _field.StartGame(); break;
             }
         }
 

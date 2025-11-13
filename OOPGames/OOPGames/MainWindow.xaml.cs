@@ -66,7 +66,8 @@ namespace OOPGames
             //A2 Painters
             OOPGamesManager.Singleton.RegisterPainter(new A2_Painter());
             OOPGamesManager.Singleton.RegisterRules(new A2_Rules());
-            OOPGamesManager.Singleton.RegisterPlayer(new A2_HumanPlayer());  
+            OOPGamesManager.Singleton.RegisterPlayer(new A2_HumanPlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new A2_ComputerPlayer());  
               
 
             //A3_LEA TicTacToe
