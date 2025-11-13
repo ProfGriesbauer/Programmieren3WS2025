@@ -367,4 +367,186 @@ namespace OOPGames
             return new A2_TicTacToeMove(PlayerNumber, row, col);
         }
     }
+        // Unbesiegbarer Computer-Spieler für A2-TicTacToe
+    public class A2_ComputerPlayer : IComputerGamePlayer
+    {
+        public string Name => "A2_Computer_Player";
+
+        public int PlayerNumber { get; private set; }
+
+        public A2_ComputerPlayer(int playerNumber = 2)
+        {
+            PlayerNumber = playerNumber;
+        }
+
+        public void SetPlayerNumber(int playerNumber)
+        {
+            PlayerNumber = playerNumber;
+        }
+
+        public bool CanBeRuledBy(IGameRules rules)
+        {
+            return rules is A2_Rules;
+        }
+
+        public IGamePlayer Clone()
+        {
+            return new A2_ComputerPlayer(PlayerNumber);
+        }
+
+        // Wird vom Framework aufgerufen, wenn der Computer am Zug ist
+        public IPlayMove GetMove(IGameField field)
+        {
+            if (field is not A2_TicTacToeField tttField)
+                return null;
+
+            // Unbesiegbare Strategie mit Minimax
+            int bestRow = -1;
+            int bestCol = -1;
+            int bestScore = int.MinValue;
+
+            A2_CellState ai = PlayerNumber == 1 ? A2_CellState.X : A2_CellState.O;
+            A2_CellState opp = PlayerNumber == 1 ? A2_CellState.O : A2_CellState.X;
+
+            // Über alle möglichen Züge iterieren
+            for (int r = 0; r < 3; r++)
+            {
+                for (int c = 0; c < 3; c++)
+                {
+                    if (tttField.Cells[r, c] == A2_CellState.Empty)
+                    {
+                        // Zug simulieren
+                        tttField.Cells[r, c] = ai;
+                        int score = Minimax(tttField, false, ai, opp);
+                        // Rückgängig machen
+                        tttField.Cells[r, c] = A2_CellState.Empty;
+
+                        if (score > bestScore)
+                        {
+                            bestScore = score;
+                            bestRow = r;
+                            bestCol = c;
+                        }
+                    }
+                }
+            }
+
+            if (bestRow == -1 || bestCol == -1)
+            {
+                // Kein gültiger Zug (z.B. Board voll)
+                return null;
+            }
+
+            return new A2_TicTacToeMove(PlayerNumber, bestRow, bestCol);
+        }
+
+        // Minimax-Algorithmus: Computer maximiert, Gegner minimiert
+        private int Minimax(A2_TicTacToeField field, bool isMaximizing,
+                            A2_CellState ai, A2_CellState opp)
+        {
+            int eval = Evaluate(field, ai, opp);
+            if (eval != 0)
+            {
+                return eval; // Sieg oder Niederlage
+            }
+
+            if (!HasEmptyCell(field))
+            {
+                return 0;    // Unentschieden
+            }
+
+            if (isMaximizing)
+            {
+                int best = int.MinValue;
+                for (int r = 0; r < 3; r++)
+                {
+                    for (int c = 0; c < 3; c++)
+                    {
+                        if (field.Cells[r, c] == A2_CellState.Empty)
+                        {
+                            field.Cells[r, c] = ai;
+                            int val = Minimax(field, false, ai, opp);
+                            field.Cells[r, c] = A2_CellState.Empty;
+                            if (val > best) best = val;
+                        }
+                    }
+                }
+                return best;
+            }
+            else
+            {
+                int best = int.MaxValue;
+                for (int r = 0; r < 3; r++)
+                {
+                    for (int c = 0; c < 3; c++)
+                    {
+                        if (field.Cells[r, c] == A2_CellState.Empty)
+                        {
+                            field.Cells[r, c] = opp;
+                            int val = Minimax(field, true, ai, opp);
+                            field.Cells[r, c] = A2_CellState.Empty;
+                            if (val < best) best = val;
+                        }
+                    }
+                }
+                return best;
+            }
+        }
+
+        // Bewertet das Board aus Sicht des Computers:
+        // +10 = Computer gewinnt, -10 = Gegner gewinnt, 0 = noch keiner
+        private int Evaluate(A2_TicTacToeField field, A2_CellState ai, A2_CellState opp)
+        {
+            // Reihen & Spalten
+            for (int i = 0; i < 3; i++)
+            {
+                // Zeile
+                if (field.Cells[i, 0] != A2_CellState.Empty &&
+                    field.Cells[i, 0] == field.Cells[i, 1] &&
+                    field.Cells[i, 1] == field.Cells[i, 2])
+                {
+                    return field.Cells[i, 0] == ai ? 10 : -10;
+                }
+
+                // Spalte
+                if (field.Cells[0, i] != A2_CellState.Empty &&
+                    field.Cells[0, i] == field.Cells[1, i] &&
+                    field.Cells[1, i] == field.Cells[2, i])
+                {
+                    return field.Cells[0, i] == ai ? 10 : -10;
+                }
+            }
+
+            // Diagonalen
+            if (field.Cells[0, 0] != A2_CellState.Empty &&
+                field.Cells[0, 0] == field.Cells[1, 1] &&
+                field.Cells[1, 1] == field.Cells[2, 2])
+            {
+                return field.Cells[0, 0] == ai ? 10 : -10;
+            }
+
+            if (field.Cells[0, 2] != A2_CellState.Empty &&
+                field.Cells[0, 2] == field.Cells[1, 1] &&
+                field.Cells[1, 1] == field.Cells[2, 0])
+            {
+                return field.Cells[0, 2] == ai ? 10 : -10;
+            }
+
+            return 0;
+        }
+
+        private bool HasEmptyCell(A2_TicTacToeField field)
+        {
+            for (int r = 0; r < 3; r++)
+            {
+                for (int c = 0; c < 3; c++)
+                {
+                    if (field.Cells[r, c] == A2_CellState.Empty)
+                        return true;
+                }
+            }
+            return false;
+        }
+    }
+
 }
