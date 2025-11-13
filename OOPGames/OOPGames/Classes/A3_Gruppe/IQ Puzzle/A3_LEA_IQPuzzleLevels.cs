@@ -102,7 +102,7 @@ namespace OOPGames
                 { 2, 8, 8, 10, 10 },       // Column 3
                 { 2, 8, 1, 1, 10 },        // Column 4
                 { 2, 0, 0, 1, 10 },        // Column 5
-                { 2, 0, 0, 1, 10 },        // Column 6
+                { 0, 0, 0, 1, 10 },        // Column 6
                 { 0, 0, 0, 0, 0 },         // Column 7
                 { 0, 0, 0, 0, 0 },         // Column 8
                 { 0, 0, 0, 0, 0 },         // Column 9
