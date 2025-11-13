@@ -16,12 +16,14 @@ namespace OOPGames
         private static ImageBrush _grassBrush;
         private static ImageBrush _snakeBrush;
         private static ImageBrush _tailBrush;
+        private static ImageBrush _rattleBrush;
         private static ImageBrush _foodBrush;
         private static bool _imagesLoaded = false;
 
         private const string GRASS_IMAGE = "grass_new.png";
         private const string SNAKE_IMAGE = "snake.png";
         private const string TAIL_IMAGE = "tail.png";
+        private const string RATTLE_IMAGE = "rattletail.png";
         private const string FOOD_IMAGE = "strawberry.png";
 
         private void LoadImages()
@@ -35,6 +37,7 @@ namespace OOPGames
             _grassBrush = LoadImageBrush(IOPath.Combine(assetsPath, GRASS_IMAGE));
             _snakeBrush = LoadImageBrush(IOPath.Combine(assetsPath, SNAKE_IMAGE));
             _tailBrush = LoadImageBrush(IOPath.Combine(assetsPath, TAIL_IMAGE));
+            _rattleBrush = LoadImageBrush(IOPath.Combine(assetsPath, RATTLE_IMAGE));
             _foodBrush = LoadImageBrush(IOPath.Combine(assetsPath, FOOD_IMAGE));
         }
 
@@ -47,9 +50,7 @@ namespace OOPGames
                 var bitmap = new BitmapImage();
                 bitmap.BeginInit();
                 bitmap.UriSource = new Uri(imagePath, UriKind.Absolute);
-                bitmap.CacheOption = BitmapCacheOption.None; // Disable caching to force reload
-                bitmap.CreateOptions = BitmapCreateOptions.PreservePixelFormat | 
-                                      BitmapCreateOptions.IgnoreColorProfile;
+                bitmap.CacheOption = BitmapCacheOption.OnLoad;
                 bitmap.EndInit();
                 bitmap.Freeze();
 
@@ -114,9 +115,23 @@ namespace OOPGames
             for (int i = 0; i < field.Snake.Count; i++)
             {
                 var segment = field.Snake[i];
-                Brush fill = i == 0
-                    ? (_snakeBrush != null ? (Brush)_snakeBrush : Brushes.Red)
-                    : (_tailBrush != null ? (Brush)_tailBrush : Brushes.DarkRed);
+                Brush fill;
+                
+                if (i == 0)
+                {
+                    // Kopf
+                    fill = _snakeBrush != null ? (Brush)_snakeBrush : Brushes.Red;
+                }
+                else if (i == field.Snake.Count - 1)
+                {
+                    // Rassel (letztes Segment)
+                    fill = _rattleBrush != null ? (Brush)_rattleBrush : Brushes.Orange;
+                }
+                else
+                {
+                    // Körper
+                    fill = _tailBrush != null ? (Brush)_tailBrush : Brushes.DarkRed;
+                }
 
                 var snakeSegment = CreateRectangle(
                     A5_SnakeField.SNAKE_SIZE * scale,
@@ -125,6 +140,15 @@ namespace OOPGames
                     offset.X + (segment.X * scale),
                     offset.Y + (segment.Y * scale)
                 );
+                
+                // Rotiere Segment basierend auf Bewegungsrichtung
+                double angle = segment.GetRotationAngle();
+                if (angle != 0)
+                {
+                    snakeSegment.RenderTransformOrigin = new Point(0.5, 0.5);
+                    snakeSegment.RenderTransform = new RotateTransform(angle);
+                }
+                
                 canvas.Children.Add(snakeSegment);
             }
         }

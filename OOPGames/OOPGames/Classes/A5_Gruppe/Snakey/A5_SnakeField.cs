@@ -76,13 +76,19 @@ namespace OOPGames
             double startY = FIELD_HEIGHT / 2.0 - 16; // 224
 
             // Head at start position - only head, no tail initially
-            Snake.Add(new PixelPosition(startX, startY));
+            var startPos = new PixelPosition(startX, startY);
+            startPos.DirX = 1;
+            startPos.DirY = 0;
+            Snake.Add(startPos);
             Direction = new PixelPosition(1, 0);
             _pendingDirection = null;
             _targetPosition = null;
 
-            // Minimal history - just the starting position
-            _history.Add(new PixelPosition(startX, startY));
+            // Minimal history - just the starting position with direction
+            var histStart = new PixelPosition(startX, startY);
+            histStart.DirX = 1;
+            histStart.DirY = 0;
+            _history.Add(histStart);
         }
 
         private void SpawnFood()
@@ -122,8 +128,11 @@ namespace OOPGames
                     _pendingDirection = null;
                     _targetPosition = null;
                     
-                    // Update history with the target position
-                    _history.Add(new PixelPosition(Snake[0].X, Snake[0].Y));
+                    // Update history with the target position and new direction
+                    var histPos = new PixelPosition(Snake[0].X, Snake[0].Y);
+                    histPos.DirX = Direction.X;
+                    histPos.DirY = Direction.Y;
+                    _history.Add(histPos);
                 }
             }
             
@@ -131,6 +140,8 @@ namespace OOPGames
                 head.X + (Direction.X * SPEED),
                 head.Y + (Direction.Y * SPEED)
             );
+            newHead.DirX = Direction.X;
+            newHead.DirY = Direction.Y;
 
             if (IsOutOfBounds(newHead) || CheckSelfCollision(newHead))
             {
@@ -143,7 +154,10 @@ namespace OOPGames
 
             // Update head and extend history
             Snake[0] = newHead;
-            _history.Add(new PixelPosition(newHead.X, newHead.Y));
+            var historyPos = new PixelPosition(newHead.X, newHead.Y);
+            historyPos.DirX = Direction.X;
+            historyPos.DirY = Direction.Y;
+            _history.Add(historyPos);
 
             // Position tail segments from history with SEGMENT_GAP spacing
             for (int i = 1; i < Snake.Count; i++)
@@ -154,6 +168,8 @@ namespace OOPGames
                     var p = _history[idx];
                     Snake[i].X = p.X;
                     Snake[i].Y = p.Y;
+                    Snake[i].DirX = p.DirX;
+                    Snake[i].DirY = p.DirY;
                 }
             }
 
