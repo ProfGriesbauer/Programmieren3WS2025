@@ -28,7 +28,7 @@
             </Grid.RowDefinitions>
             <Canvas x:Name="PaintCanvas" Grid.Row="0" 
                     HorizontalAlignment="Stretch" VerticalAlignment="Stretch" 
-                    Margin="5,5,5,5" MouseDown="PaintCanvas_MouseDown"
+                    Margin="5,5,5,5" MouseDown="PaintCanvas_MouseDown" MouseWheel="PaintCanvas_MouseWheel" PreviewMouseRightButtonDown="PaintCanvas_PreviewMouseRightButtonDown"
                     Focusable="True"
                     KeyboardNavigation.TabNavigation="None"/>
             <Grid Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
