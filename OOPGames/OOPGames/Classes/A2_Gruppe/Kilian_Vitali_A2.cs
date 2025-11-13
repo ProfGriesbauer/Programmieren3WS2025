@@ -1,21 +1,21 @@
-﻿// ...existing code...
-using System;
-using System.Linq;
+﻿using System;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using System.Reflection;
+using System.Windows.Input;
 
 namespace OOPGames
 {
-    // Simple TicTacToe implementation bundled into A2 files.
-    // All helper classes are kept in this file as requested.
+    // Zustände eines Feldes
+    public enum A2_CellState
+    {
+        Empty = 0,
+        X = 1,
+        O = 2
+    }
 
-    public enum A2_CellState { Empty = 0, X = 1, O = 2 }
-
-    // Minimal game field implementing the IGameField marker interface
+    // Spielfeld 3x3
     public class A2_TicTacToeField : IGameField
     {
         public A2_CellState[,] Cells { get; } = new A2_CellState[3, 3];
@@ -28,19 +28,21 @@ namespace OOPGames
         public void Clear()
         {
             for (int r = 0; r < 3; r++)
+            {
                 for (int c = 0; c < 3; c++)
+                {
                     Cells[r, c] = A2_CellState.Empty;
+                }
+            }
         }
 
-        // Implement required interface member
         public bool CanBePaintedBy(IPaintGame painter)
         {
-            // Accept our painter or any painter that identifies as A2
-            return painter is A2_Painter || (painter?.Name?.Contains("A2") ?? false);
+            return painter is A2_Painter;
         }
     }
 
-    // Concrete move with row & column
+    // Spielzug
     public class A2_TicTacToeMove : IRowMove, IColumnMove
     {
         public int PlayerNumber { get; }
@@ -55,226 +57,214 @@ namespace OOPGames
         }
     }
 
-    // Painter for the TicTacToe field
+    // Statischer Painter (fixe Feldgröße wie im Beispiel)
     public class A2_Painter : IPaintGame2
     {
         public string Name => "A2_TicTacToe_Painter";
 
-        // This method is called when a move is made manually
+        // Feste Geometrie des Spielfelds
+        private const int BoardLeft = 20;
+        private const int BoardTop = 20;
+        private const int CellSize = 100;          // 3 * 100 = 300 => Boardgröße 300x300
+        private const int BoardSize = CellSize * 3;
+
         public void PaintGameField(Canvas canvas, IGameField currentField)
         {
-            DoPaint(canvas, currentField);
+            Draw(canvas, currentField as A2_TicTacToeField);
         }
 
-        // This method is called every 40ms by the timer
         public void TickPaintGameField(Canvas canvas, IGameField currentField)
         {
-            DoPaint(canvas, currentField);
+            Draw(canvas, currentField as A2_TicTacToeField);
         }
 
-        private void DoPaint(Canvas canvas, IGameField currentField)
+        private void Draw(Canvas canvas, A2_TicTacToeField field)
         {
             if (canvas == null) return;
 
             canvas.Children.Clear();
+            canvas.Background = new SolidColorBrush(Color.FromRgb(255, 255, 255));
 
-            var field = currentField as A2_TicTacToeField;
-            double width = Math.Max(1.0, canvas.ActualWidth);
-            double height = Math.Max(1.0, canvas.ActualHeight);
-            double size = Math.Min(width, height);
-            double cell = size / 3.0;
-            double offsetX = (width - size) / 2.0;
-            double offsetY = (height - size) / 2.0;
+            // Gitterlinien (identisch zur Click-Geometrie)
+            var lineStroke = new SolidColorBrush(Color.FromRgb(0, 0, 0));
 
-            // draw grid
-            var lineBrush = Brushes.Black;
-            double thickness = 2.0;
-            for (int i = 1; i <= 2; i++)
-            {
-                // vertical
-                var v = new Line()
-                {
-                    X1 = offsetX + i * cell,
-                    Y1 = offsetY,
-                    X2 = offsetX + i * cell,
-                    Y2 = offsetY + 3 * cell,
-                    Stroke = lineBrush,
-                    StrokeThickness = thickness
-                };
-                canvas.Children.Add(v);
+            // Vertikale Linien bei x = 120 und 220
+            Line l1 = new Line() { X1 = BoardLeft + CellSize, Y1 = BoardTop, X2 = BoardLeft + CellSize, Y2 = BoardTop + BoardSize, Stroke = lineStroke, StrokeThickness = 2.0 };
+            canvas.Children.Add(l1);
+            Line l2 = new Line() { X1 = BoardLeft + 2 * CellSize, Y1 = BoardTop, X2 = BoardLeft + 2 * CellSize, Y2 = BoardTop + BoardSize, Stroke = lineStroke, StrokeThickness = 2.0 };
+            canvas.Children.Add(l2);
 
-                // horizontal
-                var h = new Line()
-                {
-                    X1 = offsetX,
-                    Y1 = offsetY + i * cell,
-                    X2 = offsetX + 3 * cell,
-                    Y2 = offsetY + i * cell,
-                    Stroke = lineBrush,
-                    StrokeThickness = thickness
-                };
-                canvas.Children.Add(h);
-            }
+            // Horizontale Linien bei y = 120 und 220
+            Line l3 = new Line() { X1 = BoardLeft, Y1 = BoardTop + CellSize, X2 = BoardLeft + BoardSize, Y2 = BoardTop + CellSize, Stroke = lineStroke, StrokeThickness = 2.0 };
+            canvas.Children.Add(l3);
+            Line l4 = new Line() { X1 = BoardLeft, Y1 = BoardTop + 2 * CellSize, X2 = BoardLeft + BoardSize, Y2 = BoardTop + 2 * CellSize, Stroke = lineStroke, StrokeThickness = 2.0 };
+            canvas.Children.Add(l4);
 
             if (field == null) return;
 
-            double padding = cell * 0.15;
-            double inner = cell - 2 * padding;
+            // X / O zeichnen
+            double padding = CellSize * 0.15;
+            double inner = CellSize - 2 * padding;
+
+            Brush xStroke = new SolidColorBrush(Color.FromRgb(200, 0, 0));
+            Brush oStroke = new SolidColorBrush(Color.FromRgb(0, 0, 200));
 
             for (int r = 0; r < 3; r++)
             {
                 for (int c = 0; c < 3; c++)
                 {
-                    var state = field.Cells[r, c];
-                    double x = offsetX + c * cell + padding;
-                    double y = offsetY + r * cell + padding;
+                    A2_CellState state = field.Cells[r, c];
+                    double cellLeft = BoardLeft + c * CellSize;
+                    double cellTop = BoardTop + r * CellSize;
 
-                    if (state == A2_CellState.O)
+                    double x = cellLeft + padding;
+                    double y = cellTop + padding;
+
+                    if (state == A2_CellState.X)
                     {
-                        var ellipse = new Ellipse()
-                        {
-                            Width = inner,
-                            Height = inner,
-                            Stroke = Brushes.DarkBlue,
-                            StrokeThickness = 4,
-                        };
-                        Canvas.SetLeft(ellipse, x);
-                        Canvas.SetTop(ellipse, y);
-                        canvas.Children.Add(ellipse);
-                    }
-                    else if (state == A2_CellState.X)
-                    {
-                        var l1 = new Line()
+                        Line x1 = new Line()
                         {
                             X1 = x,
                             Y1 = y,
                             X2 = x + inner,
                             Y2 = y + inner,
-                            Stroke = Brushes.DarkRed,
-                            StrokeThickness = 4,
-                            StrokeStartLineCap = PenLineCap.Round,
-                            StrokeEndLineCap = PenLineCap.Round
+                            Stroke = xStroke,
+                            StrokeThickness = 3.0
                         };
-                        var l2 = new Line()
+                        Line x2 = new Line()
                         {
                             X1 = x + inner,
                             Y1 = y,
                             X2 = x,
                             Y2 = y + inner,
-                            Stroke = Brushes.DarkRed,
-                            StrokeThickness = 4,
-                            StrokeStartLineCap = PenLineCap.Round,
-                            StrokeEndLineCap = PenLineCap.Round
+                            Stroke = xStroke,
+                            StrokeThickness = 3.0
                         };
-                        canvas.Children.Add(l1);
-                        canvas.Children.Add(l2);
+                        canvas.Children.Add(x1);
+                        canvas.Children.Add(x2);
+                    }
+                    else if (state == A2_CellState.O)
+                    {
+                        Ellipse e = new Ellipse()
+                        {
+                            Width = inner,
+                            Height = inner,
+                            Stroke = oStroke,
+                            StrokeThickness = 3.0
+                        };
+                        Canvas.SetLeft(e, x);
+                        Canvas.SetTop(e, y);
+                        canvas.Children.Add(e);
                     }
                 }
             }
         }
     }
 
+    // Regeln
     public class A2_Rules : IGameRules
     {
         private readonly A2_TicTacToeField _field = new A2_TicTacToeField();
-        private int _currentPlayer = 1; // players: 1 -> X, 2 -> O
+        private int _currentPlayer = 1; // 1 = X, 2 = O
 
-        public A2_Rules()
-        {
-            ClearField();
-        }
-
-        // IGameRules implementation
         public string Name => "A2_TicTacToe_Rules";
 
         public IGameField CurrentField => _field;
 
-        // true if at least one empty cell and nobody has already won
-        public bool MovesPossible => (_field.Cells.Cast<A2_CellState>().Any(s => s == A2_CellState.Empty)) && (CheckIfPlayerWon() == 0);
-
-        // Adds the move if valid. Expects IRowMove & IColumnMove
-        public void DoMove(IPlayMove move)
+        public bool MovesPossible
         {
-            if (move == null) return;
-
-            if (!(move is IRowMove rmove) || !(move is IColumnMove cmove)) return;
-
-            int r = rmove.Row;
-            int c = cmove.Column;
-
-            if (r < 0 || r > 2 || c < 0 || c > 2) return;
-
-            if (_field.Cells[r, c] != A2_CellState.Empty) return;
-
-            A2_CellState mark = (move.PlayerNumber == 1) ? A2_CellState.X : A2_CellState.O;
-            _field.Cells[r, c] = mark;
-
-            // switch to other player if moves remain
-            if (CheckIfPlayerWon() == 0)
+            get
             {
-                _currentPlayer = (_currentPlayer == 1) ? 2 : 1;
+                // Es gibt mindestens ein leeres Feld
+                for (int r = 0; r < 3; r++)
+                {
+                    for (int c = 0; c < 3; c++)
+                    {
+                        if (_field.Cells[r, c] == A2_CellState.Empty) return true;
+                    }
+                }
+                return false;
             }
         }
 
-        // convenience: reset board
+        public void DoMove(IPlayMove move)
+        {
+            if (move is not IRowMove rMove || move is not IColumnMove cMove)
+                return;
+
+            int row = rMove.Row;
+            int col = cMove.Column;
+
+            if (row < 0 || row > 2 || col < 0 || col > 2)
+                return;
+
+            if (_field.Cells[row, col] != A2_CellState.Empty)
+                return;
+
+            _field.Cells[row, col] = move.PlayerNumber == 1 ? A2_CellState.X : A2_CellState.O;
+
+            // Spielerwechsel nur, wenn noch niemand gewonnen hat
+            if (CheckIfPLayerWon() == -1)
+            {
+                _currentPlayer = _currentPlayer == 1 ? 2 : 1;
+            }
+        }
+
         public void ClearField()
         {
             _field.Clear();
             _currentPlayer = 1;
         }
 
-        // returns 0 = none, 1 = player 1 wins, 2 = player 2 wins, 3 = draw
-        public int CheckIfPlayerWon()
-        {
-            // rows & columns
-            for (int i = 0; i < 3; i++)
-            {
-                if (_field.Cells[i, 0] != A2_CellState.Empty &&
-                    _field.Cells[i, 0] == _field.Cells[i, 1] && _field.Cells[i, 1] == _field.Cells[i, 2])
-                {
-                    return (_field.Cells[i, 0] == A2_CellState.X) ? 1 : 2;
-                }
-
-                if (_field.Cells[0, i] != A2_CellState.Empty &&
-                    _field.Cells[0, i] == _field.Cells[1, i] && _field.Cells[1, i] == _field.Cells[2, i])
-                {
-                    return (_field.Cells[0, i] == A2_CellState.X) ? 1 : 2;
-                }
-            }
-
-            // diagonals
-            if (_field.Cells[0, 0] != A2_CellState.Empty &&
-                _field.Cells[0, 0] == _field.Cells[1, 1] && _field.Cells[1, 1] == _field.Cells[2, 2])
-            {
-                return (_field.Cells[0, 0] == A2_CellState.X) ? 1 : 2;
-            }
-            if (_field.Cells[0, 2] != A2_CellState.Empty &&
-                _field.Cells[0, 2] == _field.Cells[1, 1] && _field.Cells[1, 1] == _field.Cells[2, 0])
-            {
-                return (_field.Cells[0, 2] == A2_CellState.X) ? 1 : 2;
-            }
-
-            // draw?
-            bool anyEmpty = _field.Cells.Cast<A2_CellState>().Any(s => s == A2_CellState.Empty);
-            if (!anyEmpty) return 3;
-
-            return 0;
-        }
-
-        // Implemented to satisfy possible interface typo
         public int CheckIfPLayerWon()
         {
-            return CheckIfPlayerWon();
+            // Reihen und Spalten
+            for (int i = 0; i < 3; i++)
+            {
+                // Zeile i
+                if (_field.Cells[i, 0] != A2_CellState.Empty &&
+                    _field.Cells[i, 0] == _field.Cells[i, 1] &&
+                    _field.Cells[i, 1] == _field.Cells[i, 2])
+                {
+                    return _field.Cells[i, 0] == A2_CellState.X ? 1 : 2;
+                }
+
+                // Spalte i
+                if (_field.Cells[0, i] != A2_CellState.Empty &&
+                    _field.Cells[0, i] == _field.Cells[1, i] &&
+                    _field.Cells[1, i] == _field.Cells[2, i])
+                {
+                    return _field.Cells[0, i] == A2_CellState.X ? 1 : 2;
+                }
+            }
+
+            // Diagonalen
+            if (_field.Cells[0, 0] != A2_CellState.Empty &&
+                _field.Cells[0, 0] == _field.Cells[1, 1] &&
+                _field.Cells[1, 1] == _field.Cells[2, 2])
+            {
+                return _field.Cells[0, 0] == A2_CellState.X ? 1 : 2;
+            }
+
+            if (_field.Cells[0, 2] != A2_CellState.Empty &&
+                _field.Cells[0, 2] == _field.Cells[1, 1] &&
+                _field.Cells[1, 1] == _field.Cells[2, 0])
+            {
+                return _field.Cells[0, 2] == A2_CellState.X ? 1 : 2;
+            }
+
+            // Kein Gewinner
+            return -1;
         }
 
-        // Expose current player for external use (optional)
         public int CurrentPlayer => _currentPlayer;
     }
 
-    // Human player implementation compatible with project move-selection types.
+    // Human-Player mit Numpad und statischem Mausklick
     public class A2_HumanPlayer : IHumanGamePlayer
     {
         public string Name => "A2_Human_Player";
+
         public int PlayerNumber { get; private set; }
 
         public A2_HumanPlayer(int playerNumber = 1)
@@ -282,133 +272,281 @@ namespace OOPGames
             PlayerNumber = playerNumber;
         }
 
-        public void SetPlayerNumber(int number) => PlayerNumber = number;
-
-        public bool CanBeRuledBy(IGameRules rules) => rules is A2_Rules;
-
-        public IGamePlayer Clone() => new A2_HumanPlayer(PlayerNumber);
-
-        bool TryGetDouble(object o, out double d)
+        public void SetPlayerNumber(int playerNumber)
         {
-            if (o == null) { d = 0; return false; }
-            switch (o)
-            {
-                case double x: d = x; return true;
-                case float x: d = x; return true;
-                case int x: d = x; return true;
-                case long x: d = x; return true;
-                case short x: d = x; return true;
-                case decimal x: d = (double)x; return true;
-                case uint x: d = x; return true;
-                case ulong x: d = x; return true;
-                case byte x: d = x; return true;
-                case sbyte x: d = x; return true;
-                case string s when double.TryParse(s, out var v): d = v; return true;
-                default: d = 0; return false;
-            }
+            PlayerNumber = playerNumber;
         }
 
-        // IMoveSelection can be implemented differently in the project.
-        // We support both IClickSelection (mouse clicks) and IKeySelection (keyboard input)
+        public bool CanBeRuledBy(IGameRules rules)
+        {
+            return rules is A2_Rules;
+        }
+
+        public IGamePlayer Clone()
+        {
+            return new A2_HumanPlayer(PlayerNumber);
+        }
+
         public IPlayMove GetMove(IMoveSelection selection, IGameField field)
         {
-            if (!(field is A2_TicTacToeField gameField)) return null;
-            if (selection == null) return null;
+            if (selection == null || field is not A2_TicTacToeField tttField)
+                return null;
 
-            // Handle keyboard input (IKeySelection)
-            if (selection is IKeySelection keySelection)
+            if (selection is IKeySelection keySel)
             {
-                // Map numeric keys (1-9 on numpad or regular 1-9) to board positions
-                // 1=top-left, 2=top-center, 3=top-right
-                // 4=mid-left, 5=mid-center, 6=mid-right
-                // 7=bottom-left, 8=bottom-center, 9=bottom-right
-                return GetMoveFromKey(keySelection.Key, gameField);
+                return GetMoveFromKey(keySel.Key, tttField);
             }
 
-            // Handle mouse click input (IClickSelection)
-            if (selection is IClickSelection)
+            if (selection is IClickSelection clickSel)
             {
-                return GetMoveFromClick((IClickSelection)selection, gameField);
+                return GetMoveFromClick(clickSel, tttField);
             }
 
             return null;
         }
 
-        private IPlayMove GetMoveFromKey(Key key, A2_TicTacToeField gameField)
+        // Numpad-Layout:
+        // 7 8 9
+        // 4 5 6
+        // 1 2 3
+        private IPlayMove GetMoveFromKey(Key key, A2_TicTacToeField field)
         {
-            int? position = key switch
+            int? pos = key switch
             {
-                Key.NumPad1 or Key.D1 => 0,
-                Key.NumPad2 or Key.D2 => 1,
-                Key.NumPad3 or Key.D3 => 2,
+                Key.NumPad7 or Key.D7 => 0,
+                Key.NumPad8 or Key.D8 => 1,
+                Key.NumPad9 or Key.D9 => 2,
                 Key.NumPad4 or Key.D4 => 3,
                 Key.NumPad5 or Key.D5 => 4,
                 Key.NumPad6 or Key.D6 => 5,
-                Key.NumPad7 or Key.D7 => 6,
-                Key.NumPad8 or Key.D8 => 7,
-                Key.NumPad9 or Key.D9 => 8,
+                Key.NumPad1 or Key.D1 => 6,
+                Key.NumPad2 or Key.D2 => 7,
+                Key.NumPad3 or Key.D3 => 8,
                 _ => null
             };
 
-            if (position.HasValue)
+            if (!pos.HasValue)
+                return null;
+
+            int row = pos.Value / 3;
+            int col = pos.Value % 3;
+
+            if (field.Cells[row, col] != A2_CellState.Empty)
+                return null;
+
+            return new A2_TicTacToeMove(PlayerNumber, row, col);
+        }
+
+        // Maus-Click mit statischen Koordinaten wie im Painter
+        private IPlayMove GetMoveFromClick(IClickSelection sel, A2_TicTacToeField field)
+        {
+            const int BoardLeft = 20;
+            const int BoardTop = 20;
+            const int CellSize = 100;
+            const int BoardSize = CellSize * 3;
+
+            int x = sel.XClickPos;
+            int y = sel.YClickPos;
+
+            // Außerhalb des Boards?
+            if (x < BoardLeft || x > BoardLeft + BoardSize ||
+                y < BoardTop || y > BoardTop + BoardSize)
             {
-                int pos = position.Value;
-                int row = pos / 3;
-                int col = pos % 3;
-                
-                if (gameField.Cells[row, col] == A2_CellState.Empty)
+                return null;
+            }
+
+            int col = (x - BoardLeft) / CellSize;
+            int row = (y - BoardTop) / CellSize;
+
+            if (row < 0 || row > 2 || col < 0 || col > 2)
+                return null;
+
+            if (field.Cells[row, col] != A2_CellState.Empty)
+                return null;
+
+            return new A2_TicTacToeMove(PlayerNumber, row, col);
+        }
+    }
+        // Unbesiegbarer Computer-Spieler für A2-TicTacToe
+    public class A2_ComputerPlayer : IComputerGamePlayer
+    {
+        public string Name => "A2_Computer_Player";
+
+        public int PlayerNumber { get; private set; }
+
+        public A2_ComputerPlayer(int playerNumber = 2)
+        {
+            PlayerNumber = playerNumber;
+        }
+
+        public void SetPlayerNumber(int playerNumber)
+        {
+            PlayerNumber = playerNumber;
+        }
+
+        public bool CanBeRuledBy(IGameRules rules)
+        {
+            return rules is A2_Rules;
+        }
+
+        public IGamePlayer Clone()
+        {
+            return new A2_ComputerPlayer(PlayerNumber);
+        }
+
+        // Wird vom Framework aufgerufen, wenn der Computer am Zug ist
+        public IPlayMove GetMove(IGameField field)
+        {
+            if (field is not A2_TicTacToeField tttField)
+                return null;
+
+            // Unbesiegbare Strategie mit Minimax
+            int bestRow = -1;
+            int bestCol = -1;
+            int bestScore = int.MinValue;
+
+            A2_CellState ai = PlayerNumber == 1 ? A2_CellState.X : A2_CellState.O;
+            A2_CellState opp = PlayerNumber == 1 ? A2_CellState.O : A2_CellState.X;
+
+            // Über alle möglichen Züge iterieren
+            for (int r = 0; r < 3; r++)
+            {
+                for (int c = 0; c < 3; c++)
                 {
-                    System.Diagnostics.Debug.WriteLine($"A2 Key Move: key={key}, pos={pos}, row={row}, col={col}");
-                    return new A2_TicTacToeMove(PlayerNumber, row, col);
+                    if (tttField.Cells[r, c] == A2_CellState.Empty)
+                    {
+                        // Zug simulieren
+                        tttField.Cells[r, c] = ai;
+                        int score = Minimax(tttField, false, ai, opp);
+                        // Rückgängig machen
+                        tttField.Cells[r, c] = A2_CellState.Empty;
+
+                        if (score > bestScore)
+                        {
+                            bestScore = score;
+                            bestRow = r;
+                            bestCol = c;
+                        }
+                    }
                 }
-                else
+            }
+
+            if (bestRow == -1 || bestCol == -1)
+            {
+                // Kein gültiger Zug (z.B. Board voll)
+                return null;
+            }
+
+            return new A2_TicTacToeMove(PlayerNumber, bestRow, bestCol);
+        }
+
+        // Minimax-Algorithmus: Computer maximiert, Gegner minimiert
+        private int Minimax(A2_TicTacToeField field, bool isMaximizing,
+                            A2_CellState ai, A2_CellState opp)
+        {
+            int eval = Evaluate(field, ai, opp);
+            if (eval != 0)
+            {
+                return eval; // Sieg oder Niederlage
+            }
+
+            if (!HasEmptyCell(field))
+            {
+                return 0;    // Unentschieden
+            }
+
+            if (isMaximizing)
+            {
+                int best = int.MinValue;
+                for (int r = 0; r < 3; r++)
                 {
-                    System.Diagnostics.Debug.WriteLine($"A2 Key: Cell not empty at ({row},{col})");
+                    for (int c = 0; c < 3; c++)
+                    {
+                        if (field.Cells[r, c] == A2_CellState.Empty)
+                        {
+                            field.Cells[r, c] = ai;
+                            int val = Minimax(field, false, ai, opp);
+                            field.Cells[r, c] = A2_CellState.Empty;
+                            if (val > best) best = val;
+                        }
+                    }
                 }
+                return best;
             }
             else
             {
-                System.Diagnostics.Debug.WriteLine($"A2 Key: Not a valid number key: {key}");
+                int best = int.MaxValue;
+                for (int r = 0; r < 3; r++)
+                {
+                    for (int c = 0; c < 3; c++)
+                    {
+                        if (field.Cells[r, c] == A2_CellState.Empty)
+                        {
+                            field.Cells[r, c] = opp;
+                            int val = Minimax(field, true, ai, opp);
+                            field.Cells[r, c] = A2_CellState.Empty;
+                            if (val < best) best = val;
+                        }
+                    }
+                }
+                return best;
             }
-
-            return null;
         }
 
-        private IPlayMove GetMoveFromClick(IClickSelection clickSel, A2_TicTacToeField gameField)
+        // Bewertet das Board aus Sicht des Computers:
+        // +10 = Computer gewinnt, -10 = Gegner gewinnt, 0 = noch keiner
+        private int Evaluate(A2_TicTacToeField field, A2_CellState ai, A2_CellState opp)
         {
-            Point pos = new Point(clickSel.XClickPos, clickSel.YClickPos);
-
-            // Determine canvas size if available (try properties CanvasWidth/CanvasHeight via reflection)
-            double width = 300, height = 300;
-            var selType = clickSel.GetType();
-            var pw = selType.GetProperty("CanvasWidth", BindingFlags.Instance | BindingFlags.Public);
-            var ph = selType.GetProperty("CanvasHeight", BindingFlags.Instance | BindingFlags.Public);
-            if (pw != null && ph != null)
+            // Reihen & Spalten
+            for (int i = 0; i < 3; i++)
             {
-                var wv = pw.GetValue(clickSel);
-                var hv = ph.GetValue(clickSel);
-                if (TryGetDouble(wv, out double wd)) width = wd;
-                if (TryGetDouble(hv, out double hd)) height = hd;
-            }
-            
-            // Calculate board layout the same way as the painter
-            double size = Math.Min(width, height);
-            double cellSize = size / 3.0;
-            double offsetX = (width - size) / 2.0;
-            double offsetY = (height - size) / 2.0;
-
-            int row = (int)Math.Floor((pos.Y - offsetY) / cellSize);
-            int col = (int)Math.Floor((pos.X - offsetX) / cellSize);
-
-            if (row >= 0 && row < 3 && col >= 0 && col < 3)
-            {
-                if (gameField.Cells[row, col] == A2_CellState.Empty)
+                // Zeile
+                if (field.Cells[i, 0] != A2_CellState.Empty &&
+                    field.Cells[i, 0] == field.Cells[i, 1] &&
+                    field.Cells[i, 1] == field.Cells[i, 2])
                 {
-                    return new A2_TicTacToeMove(PlayerNumber, row, col);
+                    return field.Cells[i, 0] == ai ? 10 : -10;
+                }
+
+                // Spalte
+                if (field.Cells[0, i] != A2_CellState.Empty &&
+                    field.Cells[0, i] == field.Cells[1, i] &&
+                    field.Cells[1, i] == field.Cells[2, i])
+                {
+                    return field.Cells[0, i] == ai ? 10 : -10;
                 }
             }
 
-            return null;
+            // Diagonalen
+            if (field.Cells[0, 0] != A2_CellState.Empty &&
+                field.Cells[0, 0] == field.Cells[1, 1] &&
+                field.Cells[1, 1] == field.Cells[2, 2])
+            {
+                return field.Cells[0, 0] == ai ? 10 : -10;
+            }
+
+            if (field.Cells[0, 2] != A2_CellState.Empty &&
+                field.Cells[0, 2] == field.Cells[1, 1] &&
+                field.Cells[1, 1] == field.Cells[2, 0])
+            {
+                return field.Cells[0, 2] == ai ? 10 : -10;
+            }
+
+            return 0;
+        }
+
+        private bool HasEmptyCell(A2_TicTacToeField field)
+        {
+            for (int r = 0; r < 3; r++)
+            {
+                for (int c = 0; c < 3; c++)
+                {
+                    if (field.Cells[r, c] == A2_CellState.Empty)
+                        return true;
+                }
+            }
+            return false;
         }
     }
+
 }

@@ -553,70 +553,6 @@ namespace OOPGames
                 }
             }
         }
-
-        public override bool SolvePuzzle()
-        {
-            return SolveRecursive();
-        }
-
-        private bool SolveRecursive()
-        {
-            if (_field.IsFull())
-                return true;
-
-            var available = AvailablePieces;
-            if (available.Count == 0)
-                return false;
-
-            foreach (var piece in available)
-            {
-                // Probiere alle Rotationen
-                var currentPiece = piece;
-                for (int rotation = 0; rotation < 4; rotation++)
-                {
-                    for (int y = 0; y < _field.Height; y++)
-                    {
-                        for (int x = 0; x < _field.Width; x++)
-                        {
-                            if (CanPlacePiece(currentPiece, x, y))
-                            {
-                                PlacePiece(currentPiece, x, y);
-
-                                if (SolveRecursive())
-                                    return true;
-
-                                RemovePiece(currentPiece);
-                            }
-                        }
-                    }
-                    currentPiece = currentPiece.Rotate();
-                }
-
-                // Probiere gespiegelt
-                currentPiece = piece.Flip();
-                for (int rotation = 0; rotation < 4; rotation++)
-                {
-                    for (int y = 0; y < _field.Height; y++)
-                    {
-                        for (int x = 0; x < _field.Width; x++)
-                        {
-                            if (CanPlacePiece(currentPiece, x, y))
-                            {
-                                PlacePiece(currentPiece, x, y);
-
-                                if (SolveRecursive())
-                                    return true;
-
-                                RemovePiece(currentPiece);
-                            }
-                        }
-                    }
-                    currentPiece = currentPiece.Rotate();
-                }
-            }
-
-            return false;
-        }
     }
 
     #endregion
@@ -632,6 +568,10 @@ namespace OOPGames
         private const double OFFSET_X = 20;
         private const double OFFSET_Y = 20;
         private const double PIECE_PREVIEW_Y = 250;
+        
+        private double _winAnimationScale = 0;
+        private bool _isWinAnimationActive = false;
+        private bool _winAnimationComplete = false;
 
         public override string Name => "A3 LEA IQ Puzzler Pro Paint";
 
@@ -650,16 +590,18 @@ namespace OOPGames
             // Zeichne platzierte Stücke
             DrawPlacedPieces(canvas, field);
 
-            // Debug: Zeichne roten Punkt an aktueller Mausposition
+            // Debug: Zeichne roten Punkt an aktueller Mausposition (nur im Spielfeld!)
             var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_IQPuzzleRules;
-            if (rules != null && rules.MouseX >= 0 && rules.MouseY >= 0)
+            if (rules != null && rules.MouseX >= 0 && rules.MouseY >= 0 && 
+                rules.MouseX < field.Width && rules.MouseY < field.Height)
             {
                 DrawMousePositionIndicator(canvas, rules.MouseX, rules.MouseY);
             }
 
-            // Zeichne Live-Vorschau an Mausposition (wenn Teil ausgewählt ist)
+            // Zeichne Live-Vorschau an Mausposition (wenn Teil ausgewählt ist und im Spielfeld)
             var effectiveSelectedPiece = selectedPiece ?? rules?.SelectedPieceForPainting;
-            if (rules != null && effectiveSelectedPiece != null && rules.MouseX >= 0 && rules.MouseY >= 0)
+            if (rules != null && effectiveSelectedPiece != null && rules.MouseX >= 0 && rules.MouseY >= 0 &&
+                rules.MouseX < field.Width && rules.MouseY < field.Height)
             {
                 DrawPlacementPreview(canvas, field, effectiveSelectedPiece, rules.MouseX, rules.MouseY);
             }
@@ -669,6 +611,102 @@ namespace OOPGames
 
             // Zeichne Anleitung
             DrawInstructions(canvas);
+            
+            // Prüfe ob Puzzle gelöst ist und zeige Win-Animation
+            if (field.IsFull())
+            {
+                if (!_isWinAnimationActive)
+                {
+                    _isWinAnimationActive = true;
+                    _winAnimationScale = 0;
+                    _winAnimationComplete = false;
+                }
+                
+                // Animiere Scale nur einmal von 0 bis 1.0 (ohne Überschwingen)
+                if (!_winAnimationComplete)
+                {
+                    _winAnimationScale += 0.08;
+                    if (_winAnimationScale >= 1.0)
+                    {
+                        _winAnimationScale = 1.0;
+                        _winAnimationComplete = true;
+                    }
+                }
+                
+                DrawWinAnimation(canvas);
+            }
+            else
+            {
+                _isWinAnimationActive = false;
+                _winAnimationComplete = false;
+                _winAnimationScale = 0;
+            }
+        }
+        
+        private void DrawWinAnimation(Canvas canvas)
+        {
+            double canvasWidth = canvas.ActualWidth > 0 ? canvas.ActualWidth : 640;
+            double canvasHeight = canvas.ActualHeight > 0 ? canvas.ActualHeight : 480;
+            
+            double centerX = canvasWidth / 2;
+            double centerY = canvasHeight / 2;
+            
+            // Halbtransparenter Hintergrund
+            var overlay = new Rectangle
+            {
+                Width = canvasWidth,
+                Height = canvasHeight,
+                Fill = new SolidColorBrush(Color.FromArgb(150, 0, 0, 0))
+            };
+            canvas.Children.Add(overlay);
+            
+            // "WIN!" Text mit Animation - GRÖSSERE SCHRIFT
+            var winText = new TextBlock
+            {
+                Text = "WIN!",
+                FontSize = 150 * _winAnimationScale,  // Erhöht von 80 auf 150
+                FontWeight = FontWeights.Bold,
+                Foreground = new SolidColorBrush(Color.FromRgb(255, 215, 0)), // Gold
+                Effect = new System.Windows.Media.Effects.DropShadowEffect
+                {
+                    Color = Colors.Black,
+                    BlurRadius = 15,
+                    ShadowDepth = 8,
+                    Opacity = 0.9
+                }
+            };
+            
+            // Zentriere den Text
+            winText.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            double textWidth = winText.DesiredSize.Width;
+            double textHeight = winText.DesiredSize.Height;
+            
+            Canvas.SetLeft(winText, centerX - textWidth / 2);
+            Canvas.SetTop(winText, centerY - textHeight / 2 - 40);
+            canvas.Children.Add(winText);
+            
+            // "🎉 Puzzle Gelöst 🎉" Text darunter - auf Deutsch mit Party-Emojis
+            var subText = new TextBlock
+            {
+                Text = "🎉 Puzzle Gelöst 🎉",
+                FontSize = 32,  // Auch etwas größer gemacht
+                FontWeight = FontWeights.Normal,
+                Foreground = Brushes.White,
+                Effect = new System.Windows.Media.Effects.DropShadowEffect
+                {
+                    Color = Colors.Black,
+                    BlurRadius = 5,
+                    ShadowDepth = 2,
+                    Opacity = 0.8
+                }
+            };
+            
+            subText.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            double subTextWidth = subText.DesiredSize.Width;
+            
+            Canvas.SetLeft(subText, centerX - subTextWidth / 2);
+            Canvas.SetTop(subText, centerY + 50);
+            canvas.Children.Add(subText);
         }
 
         private void DrawGrid(Canvas canvas, IA3_LEA_IQPuzzleField field)
@@ -760,7 +798,7 @@ namespace OOPGames
 
             var label = new TextBlock
             {
-                Text = "Available Pieces (Click to select, R to rotate, F to flip):",
+                Text = "Ziel: Platziere alle Teile im Spielfeld ohne Überlappung!",
                 FontSize = 12,
                 FontWeight = FontWeights.Bold
             };
@@ -873,7 +911,7 @@ namespace OOPGames
         {
             var text = new TextBlock
             {
-                Text = "LEFT CLICK: Select piece | LEFT CLICK on grid: Place piece | RIGHT CLICK: Remove | R: Rotate | F: Flip",
+                Text = "LINKSKLICK: Teil wählen/platzieren | R/MAUSRAD: Drehen | F/RECHTSKLICK: Spiegeln | ESC: Ablegen",
                 FontSize = 10,
                 Foreground = Brushes.DarkGray
             };
@@ -884,14 +922,14 @@ namespace OOPGames
 
         private void DrawLevelButtons(Canvas canvas)
         {
-            // Easy Button als Rechteck (wie die Bausteine) - dadurch ist er anklickbar
-            double buttonX = 500;
+            // Level 1 Button
+            double buttonX1 = 500;
             double buttonY = 30;
             double buttonWidth = 100;
             double buttonHeight = 40;
             
-            // Button-Hintergrund
-            var buttonRect = new Rectangle
+            // Button 1 - Hintergrund
+            var buttonRect1 = new Rectangle
             {
                 Width = buttonWidth,
                 Height = buttonHeight,
@@ -901,32 +939,56 @@ namespace OOPGames
                 RadiusX = 5,
                 RadiusY = 5
             };
-            Canvas.SetLeft(buttonRect, buttonX);
-            Canvas.SetTop(buttonRect, buttonY);
-            canvas.Children.Add(buttonRect);
+            Canvas.SetLeft(buttonRect1, buttonX1);
+            Canvas.SetTop(buttonRect1, buttonY);
+            canvas.Children.Add(buttonRect1);
             
-            // Button-Text
-            var buttonText = new TextBlock
+            // Button 1 - Text (mittig zentriert)
+            var buttonText1 = new TextBlock
             {
-                Text = "Easy",
+                Text = "Level 1",
                 FontSize = 18,
                 FontWeight = FontWeights.Bold,
-                Foreground = Brushes.White
+                Foreground = Brushes.White,
+                TextAlignment = TextAlignment.Center
             };
-            Canvas.SetLeft(buttonText, buttonX + 25);
-            Canvas.SetTop(buttonText, buttonY + 8);
-            canvas.Children.Add(buttonText);
+            buttonText1.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            Canvas.SetLeft(buttonText1, buttonX1 + (buttonWidth - buttonText1.DesiredSize.Width) / 2);
+            Canvas.SetTop(buttonText1, buttonY + (buttonHeight - buttonText1.DesiredSize.Height) / 2);
+            canvas.Children.Add(buttonText1);
+
+            // Challenge Button (Level 2)
+            double buttonY2 = 100;
+        
             
-            // Hinweis-Text darunter
-            var hintText = new TextBlock
+            // Button 2 - Hintergrund
+            var buttonRect2 = new Rectangle
             {
-                Text = "Click to load Level 1",
-                FontSize = 9,
-                Foreground = Brushes.Gray
+                Width = buttonWidth,
+                Height = buttonHeight,
+                Fill = new SolidColorBrush(Color.FromRgb(255, 165, 0)),
+                Stroke = Brushes.DarkOrange,
+                StrokeThickness = 2,
+                RadiusX = 5,
+                RadiusY = 5
             };
-            Canvas.SetLeft(hintText, buttonX);
-            Canvas.SetTop(hintText, buttonY + buttonHeight + 5);
-            canvas.Children.Add(hintText);
+            Canvas.SetLeft(buttonRect2, buttonX1);
+            Canvas.SetTop(buttonRect2, buttonY2);
+            canvas.Children.Add(buttonRect2);
+            
+            // Button 2 - Text (mittig zentriert)
+            var buttonText2 = new TextBlock
+            {
+                Text = "Level 2",
+                FontSize = 18,
+                FontWeight = FontWeights.Bold,
+                Foreground = Brushes.White,
+                TextAlignment = TextAlignment.Center
+            };
+            buttonText2.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            Canvas.SetLeft(buttonText2, buttonX1 + (buttonWidth - buttonText2.DesiredSize.Width) / 2);
+            Canvas.SetTop(buttonText2, buttonY2 + (buttonHeight - buttonText2.DesiredSize.Height) / 2);
+            canvas.Children.Add(buttonText2);
         }
 
         private Color GetColorForPieceId(int pieceId)
@@ -969,43 +1031,49 @@ namespace OOPGames
 
         public override void OnMouseMoved(System.Windows.Input.MouseEventArgs e)
         {
-            // Berechne die Gitterposition unter der Maus (20 Pixel Offset, 40 Pixel Zellengröße)
-            var mousePos = e.GetPosition(null); // Mausposition relativ zum Fenster
             var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_IQPuzzleRules;
             if (rules != null)
             {
-                // Berechne Gitterkoordinaten
-                int gridX = (int)((mousePos.X - 20) / 40);
-                int gridY = (int)((mousePos.Y - 20) / 40);
-                
-                rules.MouseX = gridX;
-                rules.MouseY = gridY;
-            }
-
-            // Mausrad-Rotation (ScrollWheelDelta)
-            if (e is System.Windows.Input.MouseWheelEventArgs)
-            {
-                var wheelEvent = e as System.Windows.Input.MouseWheelEventArgs;
-                if (wheelEvent != null && _selectedPiece != null)
+                // Mausrad-Rotation ZUERST behandeln (vor Position-Update)
+                if (e is System.Windows.Input.MouseWheelEventArgs)
                 {
-                    if (wheelEvent.Delta > 0)
+                    var wheelEvent = e as System.Windows.Input.MouseWheelEventArgs;
+                    if (wheelEvent != null && _selectedPiece != null)
                     {
-                        // Mausrad nach oben = Drehen
-                        _selectedPiece = _selectedPiece.Rotate();
-                        if (rules != null)
+                        if (wheelEvent.Delta > 0)
                         {
+                            // Mausrad nach oben = Drehen
+                            _selectedPiece = _selectedPiece.Rotate();
+                            rules.SelectedPieceForPainting = _selectedPiece;
+                        }
+                        else if (wheelEvent.Delta < 0)
+                        {
+                            // Mausrad nach unten = Rückwärts drehen (3x vorwärts)
+                            _selectedPiece = _selectedPiece.Rotate().Rotate().Rotate();
                             rules.SelectedPieceForPainting = _selectedPiece;
                         }
                     }
-                    else if (wheelEvent.Delta < 0)
-                    {
-                        // Mausrad nach unten = Rückwärts drehen (3x vorwärts)
-                        _selectedPiece = _selectedPiece.Rotate().Rotate().Rotate();
-                        if (rules != null)
-                        {
-                            rules.SelectedPieceForPainting = _selectedPiece;
-                        }
-                    }
+                    // Bei Mausrad-Event: Position NICHT updaten, behalte aktuelle Position
+                    return;
+                }
+
+                // Position-Update nur bei normalen Mouse-Move Events
+                var mousePos = e.GetPosition(e.Source as System.Windows.IInputElement);
+                
+                // Berechne Gitterkoordinaten mit OFFSET_X=20, OFFSET_Y=20, CELL_SIZE=40
+                int gridX = (int)((mousePos.X - 30) / 40);
+                int gridY = (int)((mousePos.Y - 30) / 40);
+                
+                // Nur setzen, wenn innerhalb des Spielfelds (0-10 für X, 0-4 für Y)
+                if (gridX >= 0 && gridX < 11 && gridY >= 0 && gridY < 5)
+                {
+                    rules.MouseX = gridX;
+                    rules.MouseY = gridY;
+                }
+                else
+                {
+                    rules.MouseX = -1;
+                    rules.MouseY = -1;
                 }
             }
         }
@@ -1036,6 +1104,24 @@ namespace OOPGames
                     }
                     return null; // Kein Move, nur Button-Klick
                 }
+
+                // Prüfe ob auf den "Challenge" Button geklickt wurde (X: 500-600, Y: 100-140)
+                if (click.ChangedButton == 0 && // Linksklick
+                    click.XClickPos >= 500 && click.XClickPos <= 600 &&
+                    click.YClickPos >= 100 && click.YClickPos <= 140)
+                {
+                    // Lade Level 51
+                    var levelRules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_IQPuzzleRules;
+                    if (levelRules != null)
+                    {
+                        levelRules.LoadChallenge(51);
+
+                        // Zurücksetzen der Auswahl
+                        _selectedPiece = null;
+                        levelRules.SelectedPieceForPainting = null;
+                    }
+                    return null; // Kein Move, nur Button-Klick
+                }
                 
                 var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_IQPuzzleRules;
 
@@ -1043,19 +1129,27 @@ namespace OOPGames
                 if (click.ChangedButton == 0) // Left button
                 {
                     // Prüfe ob in Piece-Auswahl geklickt wurde (unten)
-                    if (click.YClickPos > 250)
+                    if (click.YClickPos >= 250)
                     {
-                        // Die verfügbaren Teile werden in Reihen gezeichnet (7 Spalten pro Reihe)
-                        int colsPerRow = 7; // entspricht der Zeichnungslogik (OFFSET_X=20, Schritt=60, wrap bei >400)
-                        int col = (int)((click.XClickPos - 20) / 60);
-                        int row = (int)((click.YClickPos - 250) / 80);
-
-                        if (col >= 0 && row >= 0)
+                        // Simuliere die Zeichenlogik für präzise Erkennung
+                        const double PIECE_OFFSET_X = 20;
+                        const double PIECE_START_Y = 250;
+                        const double PIECE_SPACING_X = 60;
+                        const double PIECE_SPACING_Y = 80;
+                        const double PIECE_CLICK_RADIUS = 30; // Klickbereich um jedes Piece
+                        
+                        double currentX = PIECE_OFFSET_X;
+                        double currentY = PIECE_START_Y;
+                        
+                        for (int i = 0; i < availablePieces.Count; i++)
                         {
-                            int pieceIndex = row * colsPerRow + col;
-                            if (pieceIndex >= 0 && pieceIndex < availablePieces.Count)
+                            // Prüfe ob Klick in der Nähe dieses Pieces ist
+                            double distanceX = Math.Abs(click.XClickPos - (currentX + 15)); // +15 für Mitte des Pieces
+                            double distanceY = Math.Abs(click.YClickPos - (currentY + 15));
+                            
+                            if (distanceX < PIECE_CLICK_RADIUS && distanceY < PIECE_CLICK_RADIUS)
                             {
-                                _selectedPiece = availablePieces[pieceIndex];
+                                _selectedPiece = availablePieces[i];
 
                                 // Speichere Auswahl in Rules für Painter
                                 if (rules != null)
@@ -1065,10 +1159,18 @@ namespace OOPGames
 
                                 return null; // Nur Auswahl, kein Zug
                             }
+                            
+                            // Nächste Position berechnen (genau wie in DrawAvailablePieces)
+                            currentX += PIECE_SPACING_X;
+                            if (currentX > 400)
+                            {
+                                currentX = PIECE_OFFSET_X;
+                                currentY += PIECE_SPACING_Y;
+                            }
                         }
                     }
                     // Klick auf Spielfeld
-                    else
+                    else if (click.YClickPos >= 20 && click.YClickPos < 220 && click.XClickPos >= 20)
                     {
                         int x = (int)((click.XClickPos - 20) / 40);
                         int y = (int)((click.YClickPos - 20) / 40);
@@ -1162,11 +1264,6 @@ namespace OOPGames
                     {
                         return hint;
                     }
-                }
-                // S: Solve
-                else if (key.Key == System.Windows.Input.Key.S && rules != null)
-                {
-                    rules.SolvePuzzle();
                 }
             }
 

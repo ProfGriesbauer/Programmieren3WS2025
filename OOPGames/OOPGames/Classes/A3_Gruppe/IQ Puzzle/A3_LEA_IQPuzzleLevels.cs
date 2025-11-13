@@ -102,7 +102,7 @@ namespace OOPGames
                 { 2, 8, 8, 10, 10 },       // Column 3
                 { 2, 8, 1, 1, 10 },        // Column 4
                 { 2, 0, 0, 1, 10 },        // Column 5
-                { 2, 0, 0, 1, 10 },        // Column 6
+                { 0, 0, 0, 1, 10 },        // Column 6
                 { 0, 0, 0, 0, 0 },         // Column 7
                 { 0, 0, 0, 0, 0 },         // Column 8
                 { 0, 0, 0, 0, 0 },         // Column 9
@@ -112,6 +112,24 @@ namespace OOPGames
 
             // Weitere Level können hier hinzugefügt werden
             // Level 2, 3, 4, etc.
+
+            // Level 51: Challenge (added similar to Level 1)
+            var level51 = new A3_LEA_IQPuzzleLevel(51, "Challenge");
+            level51.SetGridLayout(new int[,]
+            {
+                { 10, 10, 11, 12, 12 },   // Column 0
+                { 10, 2, 11, 12, 12 },  // Column 1
+                { 10, 2, 11, 11, 11 },    // Column 2
+                { 10, 2, 4, 4, 4 },    // Column 3
+                { 0, 2, 4, 0, 4 },     // Column 4
+                { 0, 0, 0, 0, 0 },     // Column 5
+                { 0, 0, 0, 0, 0 },     // Column 6
+                { 0, 0, 0, 0, 0 },     // Column 7
+                { 0, 0, 0, 0, 0 },     // Column 8
+                { 0, 0, 0, 0, 0 },     // Column 9
+                { 0, 0, 0, 0, 0 }      // Column 10
+            });
+            AllLevels.Add(level51);
         }
 
         /// <summary>
