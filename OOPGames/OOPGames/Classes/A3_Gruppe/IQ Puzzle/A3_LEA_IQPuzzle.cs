@@ -986,7 +986,7 @@ namespace OOPGames
 
         private void DrawLevelButtons(Canvas canvas)
         {
-            // Easy Button (Level 1)
+            // Level 1 Button
             double buttonX1 = 500;
             double buttonY = 30;
             double buttonWidth = 100;
@@ -1007,19 +1007,21 @@ namespace OOPGames
             Canvas.SetTop(buttonRect1, buttonY);
             canvas.Children.Add(buttonRect1);
             
-            // Button 1 - Text
+            // Button 1 - Text (mittig zentriert)
             var buttonText1 = new TextBlock
             {
-                Text = "Einfach",
+                Text = "Level 1",
                 FontSize = 18,
                 FontWeight = FontWeights.Bold,
-                Foreground = Brushes.White
+                Foreground = Brushes.White,
+                TextAlignment = TextAlignment.Center
             };
-            Canvas.SetLeft(buttonText1, buttonX1 + 25);
-            Canvas.SetTop(buttonText1, buttonY + 8);
+            buttonText1.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            Canvas.SetLeft(buttonText1, buttonX1 + (buttonWidth - buttonText1.DesiredSize.Width) / 2);
+            Canvas.SetTop(buttonText1, buttonY + (buttonHeight - buttonText1.DesiredSize.Height) / 2);
             canvas.Children.Add(buttonText1);
 
-            // Challenge Button (Level 51)
+            // Level 2 Button (Challenge)
             double buttonY2 = 100;
         
             
@@ -1038,16 +1040,18 @@ namespace OOPGames
             Canvas.SetTop(buttonRect2, buttonY2);
             canvas.Children.Add(buttonRect2);
             
-            // Button 2 - Text
+            // Button 2 - Text (mittig zentriert)
             var buttonText2 = new TextBlock
             {
-                Text = "Challenge",
-                FontSize = 14,
+                Text = "Level 2",
+                FontSize = 18,
                 FontWeight = FontWeights.Bold,
-                Foreground = Brushes.White
+                Foreground = Brushes.White,
+                TextAlignment = TextAlignment.Center
             };
-            Canvas.SetLeft(buttonText2, buttonX1 + 5);
-            Canvas.SetTop(buttonText2, buttonY2 + 10);
+            buttonText2.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            Canvas.SetLeft(buttonText2, buttonX1 + (buttonWidth - buttonText2.DesiredSize.Width) / 2);
+            Canvas.SetTop(buttonText2, buttonY2 + (buttonHeight - buttonText2.DesiredSize.Height) / 2);
             canvas.Children.Add(buttonText2);
         }
 
