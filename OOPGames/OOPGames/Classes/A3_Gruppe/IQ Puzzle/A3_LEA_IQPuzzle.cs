@@ -632,6 +632,10 @@ namespace OOPGames
         private const double OFFSET_X = 20;
         private const double OFFSET_Y = 20;
         private const double PIECE_PREVIEW_Y = 250;
+        
+        private double _winAnimationScale = 0;
+        private bool _isWinAnimationActive = false;
+        private bool _winAnimationComplete = false;
 
         public override string Name => "A3 LEA IQ Puzzler Pro Paint";
 
@@ -650,16 +654,18 @@ namespace OOPGames
             // Zeichne platzierte Stücke
             DrawPlacedPieces(canvas, field);
 
-            // Debug: Zeichne roten Punkt an aktueller Mausposition
+            // Debug: Zeichne roten Punkt an aktueller Mausposition (nur im Spielfeld!)
             var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_IQPuzzleRules;
-            if (rules != null && rules.MouseX >= 0 && rules.MouseY >= 0)
+            if (rules != null && rules.MouseX >= 0 && rules.MouseY >= 0 && 
+                rules.MouseX < field.Width && rules.MouseY < field.Height)
             {
                 DrawMousePositionIndicator(canvas, rules.MouseX, rules.MouseY);
             }
 
-            // Zeichne Live-Vorschau an Mausposition (wenn Teil ausgewählt ist)
+            // Zeichne Live-Vorschau an Mausposition (wenn Teil ausgewählt ist und im Spielfeld)
             var effectiveSelectedPiece = selectedPiece ?? rules?.SelectedPieceForPainting;
-            if (rules != null && effectiveSelectedPiece != null && rules.MouseX >= 0 && rules.MouseY >= 0)
+            if (rules != null && effectiveSelectedPiece != null && rules.MouseX >= 0 && rules.MouseY >= 0 &&
+                rules.MouseX < field.Width && rules.MouseY < field.Height)
             {
                 DrawPlacementPreview(canvas, field, effectiveSelectedPiece, rules.MouseX, rules.MouseY);
             }
@@ -669,6 +675,102 @@ namespace OOPGames
 
             // Zeichne Anleitung
             DrawInstructions(canvas);
+            
+            // Prüfe ob Puzzle gelöst ist und zeige Win-Animation
+            if (field.IsFull())
+            {
+                if (!_isWinAnimationActive)
+                {
+                    _isWinAnimationActive = true;
+                    _winAnimationScale = 0;
+                    _winAnimationComplete = false;
+                }
+                
+                // Animiere Scale nur einmal von 0 bis 1.0 (ohne Überschwingen)
+                if (!_winAnimationComplete)
+                {
+                    _winAnimationScale += 0.08;
+                    if (_winAnimationScale >= 1.0)
+                    {
+                        _winAnimationScale = 1.0;
+                        _winAnimationComplete = true;
+                    }
+                }
+                
+                DrawWinAnimation(canvas);
+            }
+            else
+            {
+                _isWinAnimationActive = false;
+                _winAnimationComplete = false;
+                _winAnimationScale = 0;
+            }
+        }
+        
+        private void DrawWinAnimation(Canvas canvas)
+        {
+            double canvasWidth = canvas.ActualWidth > 0 ? canvas.ActualWidth : 640;
+            double canvasHeight = canvas.ActualHeight > 0 ? canvas.ActualHeight : 480;
+            
+            double centerX = canvasWidth / 2;
+            double centerY = canvasHeight / 2;
+            
+            // Halbtransparenter Hintergrund
+            var overlay = new Rectangle
+            {
+                Width = canvasWidth,
+                Height = canvasHeight,
+                Fill = new SolidColorBrush(Color.FromArgb(150, 0, 0, 0))
+            };
+            canvas.Children.Add(overlay);
+            
+            // "WIN!" Text mit Animation - GRÖSSERE SCHRIFT
+            var winText = new TextBlock
+            {
+                Text = "WIN!",
+                FontSize = 150 * _winAnimationScale,  // Erhöht von 80 auf 150
+                FontWeight = FontWeights.Bold,
+                Foreground = new SolidColorBrush(Color.FromRgb(255, 215, 0)), // Gold
+                Effect = new System.Windows.Media.Effects.DropShadowEffect
+                {
+                    Color = Colors.Black,
+                    BlurRadius = 15,
+                    ShadowDepth = 8,
+                    Opacity = 0.9
+                }
+            };
+            
+            // Zentriere den Text
+            winText.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            double textWidth = winText.DesiredSize.Width;
+            double textHeight = winText.DesiredSize.Height;
+            
+            Canvas.SetLeft(winText, centerX - textWidth / 2);
+            Canvas.SetTop(winText, centerY - textHeight / 2 - 40);
+            canvas.Children.Add(winText);
+            
+            // "🎉 Puzzle Gelöst 🎉" Text darunter - auf Deutsch mit Party-Emojis
+            var subText = new TextBlock
+            {
+                Text = "🎉 Puzzle Gelöst 🎉",
+                FontSize = 32,  // Auch etwas größer gemacht
+                FontWeight = FontWeights.Normal,
+                Foreground = Brushes.White,
+                Effect = new System.Windows.Media.Effects.DropShadowEffect
+                {
+                    Color = Colors.Black,
+                    BlurRadius = 5,
+                    ShadowDepth = 2,
+                    Opacity = 0.8
+                }
+            };
+            
+            subText.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            double subTextWidth = subText.DesiredSize.Width;
+            
+            Canvas.SetLeft(subText, centerX - subTextWidth / 2);
+            Canvas.SetTop(subText, centerY + 50);
+            canvas.Children.Add(subText);
         }
 
         private void DrawGrid(Canvas canvas, IA3_LEA_IQPuzzleField field)
@@ -989,43 +1091,49 @@ namespace OOPGames
 
         public override void OnMouseMoved(System.Windows.Input.MouseEventArgs e)
         {
-            // Berechne die Gitterposition unter der Maus (20 Pixel Offset, 40 Pixel Zellengröße)
-            var mousePos = e.GetPosition(null); // Mausposition relativ zum Fenster
             var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_IQPuzzleRules;
             if (rules != null)
             {
-                // Berechne Gitterkoordinaten
-                int gridX = (int)((mousePos.X - 20) / 40);
-                int gridY = (int)((mousePos.Y - 20) / 40);
-                
-                rules.MouseX = gridX;
-                rules.MouseY = gridY;
-            }
-
-            // Mausrad-Rotation (ScrollWheelDelta)
-            if (e is System.Windows.Input.MouseWheelEventArgs)
-            {
-                var wheelEvent = e as System.Windows.Input.MouseWheelEventArgs;
-                if (wheelEvent != null && _selectedPiece != null)
+                // Mausrad-Rotation ZUERST behandeln (vor Position-Update)
+                if (e is System.Windows.Input.MouseWheelEventArgs)
                 {
-                    if (wheelEvent.Delta > 0)
+                    var wheelEvent = e as System.Windows.Input.MouseWheelEventArgs;
+                    if (wheelEvent != null && _selectedPiece != null)
                     {
-                        // Mausrad nach oben = Drehen
-                        _selectedPiece = _selectedPiece.Rotate();
-                        if (rules != null)
+                        if (wheelEvent.Delta > 0)
                         {
+                            // Mausrad nach oben = Drehen
+                            _selectedPiece = _selectedPiece.Rotate();
+                            rules.SelectedPieceForPainting = _selectedPiece;
+                        }
+                        else if (wheelEvent.Delta < 0)
+                        {
+                            // Mausrad nach unten = Rückwärts drehen (3x vorwärts)
+                            _selectedPiece = _selectedPiece.Rotate().Rotate().Rotate();
                             rules.SelectedPieceForPainting = _selectedPiece;
                         }
                     }
-                    else if (wheelEvent.Delta < 0)
-                    {
-                        // Mausrad nach unten = Rückwärts drehen (3x vorwärts)
-                        _selectedPiece = _selectedPiece.Rotate().Rotate().Rotate();
-                        if (rules != null)
-                        {
-                            rules.SelectedPieceForPainting = _selectedPiece;
-                        }
-                    }
+                    // Bei Mausrad-Event: Position NICHT updaten, behalte aktuelle Position
+                    return;
+                }
+
+                // Position-Update nur bei normalen Mouse-Move Events
+                var mousePos = e.GetPosition(e.Source as System.Windows.IInputElement);
+                
+                // Berechne Gitterkoordinaten mit OFFSET_X=20, OFFSET_Y=20, CELL_SIZE=40
+                int gridX = (int)((mousePos.X - 30) / 40);
+                int gridY = (int)((mousePos.Y - 30) / 40);
+                
+                // Nur setzen, wenn innerhalb des Spielfelds (0-10 für X, 0-4 für Y)
+                if (gridX >= 0 && gridX < 11 && gridY >= 0 && gridY < 5)
+                {
+                    rules.MouseX = gridX;
+                    rules.MouseY = gridY;
+                }
+                else
+                {
+                    rules.MouseX = -1;
+                    rules.MouseY = -1;
                 }
             }
         }
