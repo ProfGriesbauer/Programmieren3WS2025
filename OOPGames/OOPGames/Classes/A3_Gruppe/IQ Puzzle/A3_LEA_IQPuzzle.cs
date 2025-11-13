@@ -986,14 +986,14 @@ namespace OOPGames
 
         private void DrawLevelButtons(Canvas canvas)
         {
-            // Easy Button als Rechteck (wie die Bausteine) - dadurch ist er anklickbar
-            double buttonX = 500;
+            // Easy Button (Level 1)
+            double buttonX1 = 500;
             double buttonY = 30;
             double buttonWidth = 100;
             double buttonHeight = 40;
             
-            // Button-Hintergrund
-            var buttonRect = new Rectangle
+            // Button 1 - Hintergrund
+            var buttonRect1 = new Rectangle
             {
                 Width = buttonWidth,
                 Height = buttonHeight,
@@ -1003,32 +1003,52 @@ namespace OOPGames
                 RadiusX = 5,
                 RadiusY = 5
             };
-            Canvas.SetLeft(buttonRect, buttonX);
-            Canvas.SetTop(buttonRect, buttonY);
-            canvas.Children.Add(buttonRect);
+            Canvas.SetLeft(buttonRect1, buttonX1);
+            Canvas.SetTop(buttonRect1, buttonY);
+            canvas.Children.Add(buttonRect1);
             
-            // Button-Text
-            var buttonText = new TextBlock
+            // Button 1 - Text
+            var buttonText1 = new TextBlock
             {
                 Text = "Easy",
                 FontSize = 18,
                 FontWeight = FontWeights.Bold,
                 Foreground = Brushes.White
             };
-            Canvas.SetLeft(buttonText, buttonX + 25);
-            Canvas.SetTop(buttonText, buttonY + 8);
-            canvas.Children.Add(buttonText);
+            Canvas.SetLeft(buttonText1, buttonX1 + 25);
+            Canvas.SetTop(buttonText1, buttonY + 8);
+            canvas.Children.Add(buttonText1);
+
+            // Challenge Button (Level 51)
+            double buttonY2 = 100;
+        
             
-            // Hinweis-Text darunter
-            var hintText = new TextBlock
+            // Button 2 - Hintergrund
+            var buttonRect2 = new Rectangle
             {
-                Text = "Click to load Level 1",
-                FontSize = 9,
-                Foreground = Brushes.Gray
+                Width = buttonWidth,
+                Height = buttonHeight,
+                Fill = new SolidColorBrush(Color.FromRgb(255, 165, 0)),
+                Stroke = Brushes.DarkOrange,
+                StrokeThickness = 2,
+                RadiusX = 5,
+                RadiusY = 5
             };
-            Canvas.SetLeft(hintText, buttonX);
-            Canvas.SetTop(hintText, buttonY + buttonHeight + 5);
-            canvas.Children.Add(hintText);
+            Canvas.SetLeft(buttonRect2, buttonX1);
+            Canvas.SetTop(buttonRect2, buttonY2);
+            canvas.Children.Add(buttonRect2);
+            
+            // Button 2 - Text
+            var buttonText2 = new TextBlock
+            {
+                Text = "Challenge",
+                FontSize = 14,
+                FontWeight = FontWeights.Bold,
+                Foreground = Brushes.White
+            };
+            Canvas.SetLeft(buttonText2, buttonX1 + 5);
+            Canvas.SetTop(buttonText2, buttonY2 + 10);
+            canvas.Children.Add(buttonText2);
         }
 
         private Color GetColorForPieceId(int pieceId)
@@ -1137,6 +1157,24 @@ namespace OOPGames
                     if (levelRules != null)
                     {
                         levelRules.LoadChallenge(1);
+
+                        // Zurücksetzen der Auswahl
+                        _selectedPiece = null;
+                        levelRules.SelectedPieceForPainting = null;
+                    }
+                    return null; // Kein Move, nur Button-Klick
+                }
+
+                // Prüfe ob auf den "Challenge" Button geklickt wurde (X: 500-600, Y: 100-140)
+                if (click.ChangedButton == 0 && // Linksklick
+                    click.XClickPos >= 500 && click.XClickPos <= 600 &&
+                    click.YClickPos >= 100 && click.YClickPos <= 140)
+                {
+                    // Lade Level 51
+                    var levelRules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_IQPuzzleRules;
+                    if (levelRules != null)
+                    {
+                        levelRules.LoadChallenge(51);
 
                         // Zurücksetzen der Auswahl
                         _selectedPiece = null;
