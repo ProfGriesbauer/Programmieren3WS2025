@@ -70,7 +70,7 @@ namespace OOPGames
             //A2 Painters
             OOPGamesManager.Singleton.RegisterPainter(new A2_Painter());
             OOPGamesManager.Singleton.RegisterRules(new A2_Rules());
-            //OOPGamesManager.Singleton.RegisterPlayer(new A2_HumanPlayer());  // Commented out as class is not implemented yet
+            OOPGamesManager.Singleton.RegisterPlayer(new A2_HumanPlayer());  
               
 
             //A3_LEA TicTacToe
@@ -97,6 +97,10 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeComputerPlayer());
             OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeHardComputer());
             OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeMediumComputer());
+            // Flappy Bird Registrierung
+        FlappyBird flappy = new FlappyBird();
+            flappy.Register();
+
 
             // B2 group (Moritz & Tobias)
             OOPGamesManager.Singleton.RegisterPainter(new B2_TicTacToePainter());
@@ -147,6 +151,7 @@ namespace OOPGames
                     };
                     humanPlayerWithMouse.OnMouseMoved(mouseEventArgs);
                 }
+            }
         }
 
         private void StartGame_Click(object sender, RoutedEventArgs e)
@@ -246,14 +251,11 @@ namespace OOPGames
                 if (_CurrentRules.MovesPossible &&
                     _CurrentPlayer is IHumanGamePlayer)
                 {
-                    // Create an A4-specific click selection (with canvas size) only for A4 group players.
                     IClickSelection sel;
                     var px = (int)e.GetPosition(PaintCanvas).X;
                     var py = (int)e.GetPosition(PaintCanvas).Y;
                     var btn = (int)e.ChangedButton;
-                    // Always include canvas dimensions in the click selection so
-                    // human players can map clicks to cells consistently.
-                    sel = new A4_ClickSelection(px, py, btn, (int)PaintCanvas.ActualWidth, (int)PaintCanvas.ActualHeight);
+                        sel = new A3_LEA_ClickSelection(px, py, btn);
 
                     IPlayMove pm = null;
 
@@ -276,6 +278,42 @@ namespace OOPGames
                         ScheduleRestartIfNeeded();
                     }
                 }
+            }
+        }
+
+        private void PaintCanvas_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            // Behandle Rechtsklick im Preview-Event (bevor Context-Menü öffnet)
+            int winner = _CurrentRules.CheckIfPLayerWon();
+            if (winner <= 0 && _CurrentRules.MovesPossible && _CurrentPlayer is IHumanGamePlayer)
+            {
+                // Erstelle Click-Selection für Rechtsklick (Button=1)
+                var px = (int)e.GetPosition(PaintCanvas).X;
+                var py = (int)e.GetPosition(PaintCanvas).Y;
+                    var sel = new A3_LEA_ClickSelection(px, py, 1);
+
+                IPlayMove pm = ((IHumanGamePlayer)_CurrentPlayer).GetMove(sel, _CurrentRules.CurrentField);
+                
+                if (pm != null)
+                {
+                    _CurrentRules.DoMove(pm);
+                    _CurrentPainter.PaintGameField(PaintCanvas, _CurrentRules.CurrentField);
+                    _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
+                    Status.Text = "Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
+                    DoComputerMoves();
+                }
+
+                // Markiere Event als verarbeitet, damit kein Context-Menü öffnet
+                e.Handled = true;
+            }
+        }
+
+        private void PaintCanvas_MouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            // Weitergabe des MouseWheel-Events an den IHumanGamePlayerWithMouse
+            if (_CurrentPlayer is IHumanGamePlayerWithMouse humanPlayerWithMouse)
+            {
+                humanPlayerWithMouse.OnMouseMoved(e);
             }
         }
 
