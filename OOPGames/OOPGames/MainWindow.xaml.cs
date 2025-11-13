@@ -79,7 +79,13 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterPainter(new A3_LEA_IQPuzzlePaint());
             OOPGamesManager.Singleton.RegisterRules(new A3_LEA_IQPuzzleRules());
             OOPGamesManager.Singleton.RegisterPlayer(new A3_LEA_IQPuzzleHumanPlayer());
-
+            
+            //A3_LEA Schiffe Versenken
+            OOPGamesManager.Singleton.RegisterPainter(new A3_LEA_SchiffePaint());
+            OOPGamesManager.Singleton.RegisterRules(new A3_LEA_SchiffeRules());
+            OOPGamesManager.Singleton.RegisterPlayer(new A3_LEA_HumanSchiffePlayer());
+            
+            
             // B3 Mika Röder TicTacToe
             OOPGamesManager.Singleton.RegisterPainter(new B3_Mika_Roeder_Paint());
             OOPGamesManager.Singleton.RegisterRules(new B3_Mika_Roeder_Rules());
@@ -93,10 +99,6 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeComputerPlayer());
             OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeHardComputer());
             OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeMediumComputer());
-            // Flappy Bird Registrierung
-        FlappyBird flappy = new FlappyBird();
-            flappy.Register();
-
 
             // B2 group (Moritz & Tobias)
             OOPGamesManager.Singleton.RegisterPainter(new B2_TicTacToePainter());
