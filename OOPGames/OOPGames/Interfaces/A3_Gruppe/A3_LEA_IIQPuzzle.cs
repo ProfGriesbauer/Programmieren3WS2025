@@ -182,11 +182,6 @@ namespace OOPGames
         /// Lädt eine vordefinierte Challenge
         /// </summary>
         void LoadChallenge(int challengeNumber);
-
-        /// <summary>
-        /// Löst das Puzzle automatisch
-        /// </summary>
-        bool SolvePuzzle();
     }
 
     /// <summary>

@@ -553,70 +553,6 @@ namespace OOPGames
                 }
             }
         }
-
-        public override bool SolvePuzzle()
-        {
-            return SolveRecursive();
-        }
-
-        private bool SolveRecursive()
-        {
-            if (_field.IsFull())
-                return true;
-
-            var available = AvailablePieces;
-            if (available.Count == 0)
-                return false;
-
-            foreach (var piece in available)
-            {
-                // Probiere alle Rotationen
-                var currentPiece = piece;
-                for (int rotation = 0; rotation < 4; rotation++)
-                {
-                    for (int y = 0; y < _field.Height; y++)
-                    {
-                        for (int x = 0; x < _field.Width; x++)
-                        {
-                            if (CanPlacePiece(currentPiece, x, y))
-                            {
-                                PlacePiece(currentPiece, x, y);
-
-                                if (SolveRecursive())
-                                    return true;
-
-                                RemovePiece(currentPiece);
-                            }
-                        }
-                    }
-                    currentPiece = currentPiece.Rotate();
-                }
-
-                // Probiere gespiegelt
-                currentPiece = piece.Flip();
-                for (int rotation = 0; rotation < 4; rotation++)
-                {
-                    for (int y = 0; y < _field.Height; y++)
-                    {
-                        for (int x = 0; x < _field.Width; x++)
-                        {
-                            if (CanPlacePiece(currentPiece, x, y))
-                            {
-                                PlacePiece(currentPiece, x, y);
-
-                                if (SolveRecursive())
-                                    return true;
-
-                                RemovePiece(currentPiece);
-                            }
-                        }
-                    }
-                    currentPiece = currentPiece.Rotate();
-                }
-            }
-
-            return false;
-        }
     }
 
     #endregion
@@ -1019,7 +955,7 @@ namespace OOPGames
             Canvas.SetTop(buttonText1, buttonY + 8);
             canvas.Children.Add(buttonText1);
 
-            // Challenge Button (Level 51)
+            // Challenge Button (Level 2)
             double buttonY2 = 100;
         
             
@@ -1308,11 +1244,6 @@ namespace OOPGames
                     {
                         return hint;
                     }
-                }
-                // S: Solve
-                else if (key.Key == System.Windows.Input.Key.S && rules != null)
-                {
-                    rules.SolvePuzzle();
                 }
             }
 
