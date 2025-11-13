@@ -632,6 +632,10 @@ namespace OOPGames
         private const double OFFSET_X = 20;
         private const double OFFSET_Y = 20;
         private const double PIECE_PREVIEW_Y = 250;
+        
+        private double _winAnimationScale = 0;
+        private bool _isWinAnimationActive = false;
+        private bool _winAnimationComplete = false;
 
         public override string Name => "A3 LEA IQ Puzzler Pro Paint";
 
@@ -669,6 +673,102 @@ namespace OOPGames
 
             // Zeichne Anleitung
             DrawInstructions(canvas);
+            
+            // Prüfe ob Puzzle gelöst ist und zeige Win-Animation
+            if (field.IsFull())
+            {
+                if (!_isWinAnimationActive)
+                {
+                    _isWinAnimationActive = true;
+                    _winAnimationScale = 0;
+                    _winAnimationComplete = false;
+                }
+                
+                // Animiere Scale nur einmal von 0 bis 1.0 (ohne Überschwingen)
+                if (!_winAnimationComplete)
+                {
+                    _winAnimationScale += 0.08;
+                    if (_winAnimationScale >= 1.0)
+                    {
+                        _winAnimationScale = 1.0;
+                        _winAnimationComplete = true;
+                    }
+                }
+                
+                DrawWinAnimation(canvas);
+            }
+            else
+            {
+                _isWinAnimationActive = false;
+                _winAnimationComplete = false;
+                _winAnimationScale = 0;
+            }
+        }
+        
+        private void DrawWinAnimation(Canvas canvas)
+        {
+            double canvasWidth = canvas.ActualWidth > 0 ? canvas.ActualWidth : 640;
+            double canvasHeight = canvas.ActualHeight > 0 ? canvas.ActualHeight : 480;
+            
+            double centerX = canvasWidth / 2;
+            double centerY = canvasHeight / 2;
+            
+            // Halbtransparenter Hintergrund
+            var overlay = new Rectangle
+            {
+                Width = canvasWidth,
+                Height = canvasHeight,
+                Fill = new SolidColorBrush(Color.FromArgb(150, 0, 0, 0))
+            };
+            canvas.Children.Add(overlay);
+            
+            // "WIN!" Text mit Animation - GRÖSSERE SCHRIFT
+            var winText = new TextBlock
+            {
+                Text = "WIN!",
+                FontSize = 150 * _winAnimationScale,  // Erhöht von 80 auf 150
+                FontWeight = FontWeights.Bold,
+                Foreground = new SolidColorBrush(Color.FromRgb(255, 215, 0)), // Gold
+                Effect = new System.Windows.Media.Effects.DropShadowEffect
+                {
+                    Color = Colors.Black,
+                    BlurRadius = 15,
+                    ShadowDepth = 8,
+                    Opacity = 0.9
+                }
+            };
+            
+            // Zentriere den Text
+            winText.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            double textWidth = winText.DesiredSize.Width;
+            double textHeight = winText.DesiredSize.Height;
+            
+            Canvas.SetLeft(winText, centerX - textWidth / 2);
+            Canvas.SetTop(winText, centerY - textHeight / 2 - 40);
+            canvas.Children.Add(winText);
+            
+            // "🎉 Puzzle Gelöst 🎉" Text darunter - auf Deutsch mit Party-Emojis
+            var subText = new TextBlock
+            {
+                Text = "🎉 Puzzle Gelöst 🎉",
+                FontSize = 32,  // Auch etwas größer gemacht
+                FontWeight = FontWeights.Normal,
+                Foreground = Brushes.White,
+                Effect = new System.Windows.Media.Effects.DropShadowEffect
+                {
+                    Color = Colors.Black,
+                    BlurRadius = 5,
+                    ShadowDepth = 2,
+                    Opacity = 0.8
+                }
+            };
+            
+            subText.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            double subTextWidth = subText.DesiredSize.Width;
+            
+            Canvas.SetLeft(subText, centerX - subTextWidth / 2);
+            Canvas.SetTop(subText, centerY + 50);
+            canvas.Children.Add(subText);
         }
 
         private void DrawGrid(Canvas canvas, IA3_LEA_IQPuzzleField field)
