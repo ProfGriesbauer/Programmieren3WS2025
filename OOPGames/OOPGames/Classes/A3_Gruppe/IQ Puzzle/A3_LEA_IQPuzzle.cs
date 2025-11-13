@@ -862,7 +862,7 @@ namespace OOPGames
 
             var label = new TextBlock
             {
-                Text = "Available Pieces (Click to select, R to rotate, F to flip):",
+                Text = "Ziel: Platziere alle Teile im Spielfeld ohne Überlappung!",
                 FontSize = 12,
                 FontWeight = FontWeights.Bold
             };
@@ -975,7 +975,7 @@ namespace OOPGames
         {
             var text = new TextBlock
             {
-                Text = "LEFT CLICK: Select piece | LEFT CLICK on grid: Place piece | RIGHT CLICK: Remove | R: Rotate | F: Flip",
+                Text = "LINKSKLICK: Teil wählen/platzieren | R/MAUSRAD: Drehen | F/RECHTSKLICK: Spiegeln | ESC: Ablegen",
                 FontSize = 10,
                 Foreground = Brushes.DarkGray
             };
@@ -1010,19 +1010,19 @@ namespace OOPGames
             // Button-Text
             var buttonText = new TextBlock
             {
-                Text = "Easy",
+                Text = "Einfach",
                 FontSize = 18,
                 FontWeight = FontWeights.Bold,
                 Foreground = Brushes.White
             };
-            Canvas.SetLeft(buttonText, buttonX + 25);
+            Canvas.SetLeft(buttonText, buttonX + 15);
             Canvas.SetTop(buttonText, buttonY + 8);
             canvas.Children.Add(buttonText);
             
             // Hinweis-Text darunter
             var hintText = new TextBlock
             {
-                Text = "Click to load Level 1",
+                Text = "Klicken für Level 1",
                 FontSize = 9,
                 Foreground = Brushes.Gray
             };
@@ -1151,19 +1151,27 @@ namespace OOPGames
                 if (click.ChangedButton == 0) // Left button
                 {
                     // Prüfe ob in Piece-Auswahl geklickt wurde (unten)
-                    if (click.YClickPos > 250)
+                    if (click.YClickPos >= 250)
                     {
-                        // Die verfügbaren Teile werden in Reihen gezeichnet (7 Spalten pro Reihe)
-                        int colsPerRow = 7; // entspricht der Zeichnungslogik (OFFSET_X=20, Schritt=60, wrap bei >400)
-                        int col = (int)((click.XClickPos - 20) / 60);
-                        int row = (int)((click.YClickPos - 250) / 80);
-
-                        if (col >= 0 && row >= 0)
+                        // Simuliere die Zeichenlogik für präzise Erkennung
+                        const double PIECE_OFFSET_X = 20;
+                        const double PIECE_START_Y = 250;
+                        const double PIECE_SPACING_X = 60;
+                        const double PIECE_SPACING_Y = 80;
+                        const double PIECE_CLICK_RADIUS = 30; // Klickbereich um jedes Piece
+                        
+                        double currentX = PIECE_OFFSET_X;
+                        double currentY = PIECE_START_Y;
+                        
+                        for (int i = 0; i < availablePieces.Count; i++)
                         {
-                            int pieceIndex = row * colsPerRow + col;
-                            if (pieceIndex >= 0 && pieceIndex < availablePieces.Count)
+                            // Prüfe ob Klick in der Nähe dieses Pieces ist
+                            double distanceX = Math.Abs(click.XClickPos - (currentX + 15)); // +15 für Mitte des Pieces
+                            double distanceY = Math.Abs(click.YClickPos - (currentY + 15));
+                            
+                            if (distanceX < PIECE_CLICK_RADIUS && distanceY < PIECE_CLICK_RADIUS)
                             {
-                                _selectedPiece = availablePieces[pieceIndex];
+                                _selectedPiece = availablePieces[i];
 
                                 // Speichere Auswahl in Rules für Painter
                                 if (rules != null)
@@ -1173,10 +1181,18 @@ namespace OOPGames
 
                                 return null; // Nur Auswahl, kein Zug
                             }
+                            
+                            // Nächste Position berechnen (genau wie in DrawAvailablePieces)
+                            currentX += PIECE_SPACING_X;
+                            if (currentX > 400)
+                            {
+                                currentX = PIECE_OFFSET_X;
+                                currentY += PIECE_SPACING_Y;
+                            }
                         }
                     }
                     // Klick auf Spielfeld
-                    else
+                    else if (click.YClickPos >= 20 && click.YClickPos < 220 && click.XClickPos >= 20)
                     {
                         int x = (int)((click.XClickPos - 20) / 40);
                         int y = (int)((click.YClickPos - 20) / 40);
