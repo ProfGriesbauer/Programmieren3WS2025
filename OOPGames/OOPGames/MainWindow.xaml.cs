@@ -106,6 +106,8 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeComputerPlayer());
             OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeHardComputer());
             OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeMediumComputer());
+            FlappyBird flappy = new FlappyBird();
+            flappy.Register();
 
             // B2 group (Moritz & Tobias)
             OOPGamesManager.Singleton.RegisterPainter(new B2_TicTacToePainter());
