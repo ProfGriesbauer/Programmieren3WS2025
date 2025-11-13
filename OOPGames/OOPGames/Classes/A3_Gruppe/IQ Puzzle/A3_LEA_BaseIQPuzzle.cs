@@ -121,7 +121,6 @@ namespace OOPGames
         public abstract void DoIQPuzzleMove(IA3_LEA_IQPuzzleMove move);
         public abstract IA3_LEA_IQPuzzleMove GetHint();
         public abstract void LoadChallenge(int challengeNumber);
-        public abstract bool SolvePuzzle();
 
         public IGameField CurrentField { get { return IQPuzzleField; } }
 
