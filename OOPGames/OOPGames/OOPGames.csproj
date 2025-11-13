@@ -10,7 +10,7 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <Content Include="Assets\Snake\grass.png">
+    <Content Include="Assets\Snake\grass_new.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Assets\Snake\snake.png">

@@ -19,7 +19,7 @@ namespace OOPGames
         private static ImageBrush _foodBrush;
         private static bool _imagesLoaded = false;
 
-        private const string GRASS_IMAGE = "grass.png";
+        private const string GRASS_IMAGE = "grass_new.png";
         private const string SNAKE_IMAGE = "snake.png";
         private const string TAIL_IMAGE = "tail.png";
         private const string FOOD_IMAGE = "strawberry.png";
@@ -47,7 +47,7 @@ namespace OOPGames
                 var bitmap = new BitmapImage();
                 bitmap.BeginInit();
                 bitmap.UriSource = new Uri(imagePath, UriKind.Absolute);
-                bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                bitmap.CacheOption = BitmapCacheOption.None; // Disable caching to force reload
                 bitmap.CreateOptions = BitmapCreateOptions.PreservePixelFormat | 
                                       BitmapCreateOptions.IgnoreColorProfile;
                 bitmap.EndInit();
