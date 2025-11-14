@@ -109,12 +109,7 @@ namespace OOPGames
             FlappyBird flappy = new FlappyBird();
             flappy.Register();
 
-            FroggoGame froggo = new FroggoGame();
-            froggo.Register();
-            
-            
-
-            
+            FroggoGame froggo = new FroggoGame(); 
 
 
             // B2 group (Moritz & Tobias)

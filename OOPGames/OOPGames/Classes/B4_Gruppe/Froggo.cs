@@ -70,20 +70,14 @@ namespace OOPGames
             }
             Console.WriteLine();
         }
-    }
 
-    // Beispielhafte Nutzung
-    public class Register
-    {
-        public static void Main()
+        // Register Froggo components with the game manager
+        public void Register()
         {
-            IOOPGame game = new FroggoGame();
-            game.Start();
-            game.Render();
-            game.MovePlayer(Direction.Up);
-            game.Render();
+            // TODO: Implement painter, rules, and player registration similar to FlappyBird
+            // OOPGamesManager.Singleton.RegisterPainter(...);
+            // OOPGamesManager.Singleton.RegisterRules(...);
+            // OOPGamesManager.Singleton.RegisterPlayer(...);
         }
     }
-
-
 }
