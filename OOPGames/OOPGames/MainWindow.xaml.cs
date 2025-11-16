@@ -119,9 +119,10 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterRules(new B2_TicTacToeRules());
             OOPGamesManager.Singleton.RegisterPlayer(new B2_HumanTicTacToePlayer());
             OOPGamesManager.Singleton.RegisterPlayer(new B2_ComputerTicTacToePlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new B2_SmartComputerTicTacToePlayer());
 
-            // B2 group (Moritz & Tobias) - Maze Game
-            OOPGamesManager.Singleton.RegisterPainter(new B2_MazePainter());
+            // B2 group (Moritz & Tobias) - Maze Game (2 Players)
+            OOPGamesManager.Singleton.RegisterPainter(new B2_MazePainter2Player());
             OOPGamesManager.Singleton.RegisterRules(new B2_MazeRules());
             OOPGamesManager.Singleton.RegisterPlayer(new B2_MazeHumanPlayer());
 

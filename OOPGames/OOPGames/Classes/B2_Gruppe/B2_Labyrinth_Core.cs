@@ -22,9 +22,10 @@ namespace OOPGames
     {
         Wall = 0,      // Wand - nicht passierbar
         Path = 1,      // Weg - passierbar
-        Player = 2,    // Spielerposition
-        Goal = 3,      // Ziel
-        Visited = 4    // Bereits besuchter Weg
+        Player1 = 2,   // Spieler 1 Position
+        Player2 = 3,   // Spieler 2 Position
+        Goal = 4,      // Ziel
+        Visited = 5    // Bereits besuchter Weg
     }
 
     /// <summary>
@@ -48,8 +49,10 @@ namespace OOPGames
     public abstract class B2_AbstractMazeField : IGameField
     {
         protected B2_MazeCellType[,] grid;
-        protected int playerRow;
-        protected int playerCol;
+        protected int player1Row;
+        protected int player1Col;
+        protected int player2Row;
+        protected int player2Col;
         protected int goalRow;
         protected int goalCol;
         protected int rows;
@@ -58,8 +61,10 @@ namespace OOPGames
 
         public virtual int Rows => rows;
         public virtual int Cols => cols;
-        public virtual int PlayerRow => playerRow;
-        public virtual int PlayerCol => playerCol;
+        public virtual int Player1Row => player1Row;
+        public virtual int Player1Col => player1Col;
+        public virtual int Player2Row => player2Row;
+        public virtual int Player2Col => player2Col;
         public virtual int GoalRow => goalRow;
         public virtual int GoalCol => goalCol;
 
@@ -241,63 +246,117 @@ namespace OOPGames
                 }
             }
 
-            // Setze Spieler-Startposition (oben links im freien Bereich)
-            playerRow = 1;
-            playerCol = 1;
-            grid[playerRow, playerCol] = B2_MazeCellType.Player;
-            visitedCells.Add((playerRow, playerCol));
+            // Setze Spieler 1 Startposition (oben links)
+            player1Row = 1;
+            player1Col = 1;
+            grid[player1Row, player1Col] = B2_MazeCellType.Player1;
+            visitedCells.Add((player1Row, player1Col));
 
-            // Setze Ziel (unten rechts im freien Bereich)
-            goalRow = rows - 2;
-            goalCol = cols - 2;
+            // Setze Spieler 2 Startposition (unten rechts)
+            player2Row = rows - 2;
+            player2Col = cols - 2;
+            grid[player2Row, player2Col] = B2_MazeCellType.Player2;
+            visitedCells.Add((player2Row, player2Col));
+
+            // Setze Ziel (Mitte des Labyrinths)
+            goalRow = rows / 2;
+            goalCol = cols / 2;
+            // Stelle sicher dass Ziel begehbar ist
             grid[goalRow, goalCol] = B2_MazeCellType.Goal;
         }
 
         /// <summary>
-        /// Bewegt den Spieler in eine Richtung
+        /// Prüft ob eine Position eine Kreuzung ist (mehr als 2 Ausgänge)
         /// </summary>
-        public bool MovePlayer(B2_MazeDirection direction)
+        private bool IsIntersection(int row, int col)
         {
-            int newRow = playerRow;
-            int newCol = playerCol;
+            if (!IsWalkable(row, col)) return false;
+            
+            int walkableNeighbors = 0;
+            if (IsWalkable(row - 1, col)) walkableNeighbors++;
+            if (IsWalkable(row + 1, col)) walkableNeighbors++;
+            if (IsWalkable(row, col - 1)) walkableNeighbors++;
+            if (IsWalkable(row, col + 1)) walkableNeighbors++;
+            
+            return walkableNeighbors > 2;
+        }
 
+        /// <summary>
+        /// Bewegt den Spieler in eine Richtung bis zur nächsten Kreuzung
+        /// </summary>
+        public bool MovePlayer(int playerNumber, B2_MazeDirection direction)
+        {
+            int currentRow = playerNumber == 1 ? player1Row : player2Row;
+            int currentCol = playerNumber == 1 ? player1Col : player2Col;
+            B2_MazeCellType playerType = playerNumber == 1 ? B2_MazeCellType.Player1 : B2_MazeCellType.Player2;
+
+            int newRow = currentRow;
+            int newCol = currentCol;
+
+            // Bestimme Richtungsvektor
+            int dr = 0, dc = 0;
             switch (direction)
             {
-                case B2_MazeDirection.Up:
-                    newRow--;
+                case B2_MazeDirection.Up: dr = -1; break;
+                case B2_MazeDirection.Down: dr = 1; break;
+                case B2_MazeDirection.Left: dc = -1; break;
+                case B2_MazeDirection.Right: dc = 1; break;
+            }
+
+            // Erste Bewegung prüfen
+            int nextRow = currentRow + dr;
+            int nextCol = currentCol + dc;
+            if (!IsWalkable(nextRow, nextCol))
+                return false;
+
+            // Bewege bis zur nächsten Kreuzung oder bis Weg endet
+            bool moved = false;
+            while (true)
+            {
+                nextRow = newRow + dr;
+                nextCol = newCol + dc;
+
+                // Prüfe ob Bewegung möglich ist
+                if (!IsWalkable(nextRow, nextCol))
                     break;
-                case B2_MazeDirection.Down:
-                    newRow++;
-                    break;
-                case B2_MazeDirection.Left:
-                    newCol--;
-                    break;
-                case B2_MazeDirection.Right:
-                    newCol++;
+
+                // Bewege einen Schritt
+                newRow = nextRow;
+                newCol = nextCol;
+                moved = true;
+                MarkVisited(newRow, newCol);
+
+                // Stoppe bei Kreuzung oder am Ziel
+                if (IsIntersection(newRow, newCol) || 
+                    (newRow == goalRow && newCol == goalCol))
                     break;
             }
 
-            // Prüfe ob Bewegung gültig ist
-            if (!IsWalkable(newRow, newCol))
+            if (!moved)
                 return false;
 
-            // Alte Position als besucht markieren
-            if (grid[playerRow, playerCol] == B2_MazeCellType.Player)
+            // Alte Position zurücksetzen
+            if (grid[currentRow, currentCol] == playerType)
             {
-                grid[playerRow, playerCol] = B2_MazeCellType.Visited;
+                grid[currentRow, currentCol] = B2_MazeCellType.Visited;
             }
 
             // Neue Position setzen
-            playerRow = newRow;
-            playerCol = newCol;
-            
-            // Markiere als besucht
-            MarkVisited(newRow, newCol);
+            if (playerNumber == 1)
+            {
+                player1Row = newRow;
+                player1Col = newCol;
+            }
+            else
+            {
+                player2Row = newRow;
+                player2Col = newCol;
+            }
 
             // Update Grid (außer wenn es das Ziel ist)
-            if (grid[playerRow, playerCol] != B2_MazeCellType.Goal)
+            if (grid[newRow, newCol] != B2_MazeCellType.Goal)
             {
-                grid[playerRow, playerCol] = B2_MazeCellType.Player;
+                grid[newRow, newCol] = playerType;
             }
 
             return true;
@@ -335,11 +394,18 @@ namespace OOPGames
             var mazeField = field as B2_MazeField;
             if (mazeField == null) return -1;
 
-            // Spieler hat gewonnen, wenn er das Ziel erreicht hat
-            if (mazeField.PlayerRow == mazeField.GoalRow && 
-                mazeField.PlayerCol == mazeField.GoalCol)
+            // Spieler 1 hat gewonnen
+            if (mazeField.Player1Row == mazeField.GoalRow && 
+                mazeField.Player1Col == mazeField.GoalCol)
             {
-                return 1; // Player 1 gewinnt
+                return 1;
+            }
+
+            // Spieler 2 hat gewonnen
+            if (mazeField.Player2Row == mazeField.GoalRow && 
+                mazeField.Player2Col == mazeField.GoalCol)
+            {
+                return 2;
             }
 
             return -1; // Noch kein Gewinner
@@ -357,8 +423,8 @@ namespace OOPGames
             if (!(move is B2_AbstractMazeMove mazeMove)) return;
             if (!(field is B2_MazeField mazeField)) return;
 
-            // Führe Bewegung aus
-            mazeField.MovePlayer(mazeMove.Direction);
+            // Führe Bewegung aus (mit Spielernummer)
+            mazeField.MovePlayer(mazeMove.PlayerNumber, mazeMove.Direction);
         }
     }
 
