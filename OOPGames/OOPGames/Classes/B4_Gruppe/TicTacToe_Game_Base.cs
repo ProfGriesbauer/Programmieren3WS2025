@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
+//HALLO
 
 namespace OOPGames
 {
@@ -86,6 +87,7 @@ namespace OOPGames
             }
         }
     }
+
 
     public abstract class B4_BaseComputerTicTacToePlayer : IB4_ComputerTicTacToePlayer
     {

@@ -26,12 +26,15 @@ namespace OOPGames
         IGameRules _CurrentRules = null;
         IGamePlayer _CurrentPlayer1 = null;
         IGamePlayer _CurrentPlayer2 = null;
+        B3_Jarde_Roeder b3Fishing;
+
 
         System.Windows.Threading.DispatcherTimer _PaintTimer = null;
 
         public MainWindow()
         {
             //REGISTER YOUR CLASSES HERE
+            
             //Register A5 Classes first
             A5_Gomeringer register = new A5_Gomeringer();
             register.Register();
@@ -66,7 +69,8 @@ namespace OOPGames
             //A2 Painters
             OOPGamesManager.Singleton.RegisterPainter(new A2_Painter());
             OOPGamesManager.Singleton.RegisterRules(new A2_Rules());
-            //OOPGamesManager.Singleton.RegisterPlayer(new A2_HumanPlayer()); // Klasse fehlt
+            OOPGamesManager.Singleton.RegisterPlayer(new A2_HumanPlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new A2_ComputerPlayer());  
               
 
             //A3_LEA TicTacToe
@@ -79,13 +83,42 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterPainter(new A3_LEA_IQPuzzlePaint());
             OOPGamesManager.Singleton.RegisterRules(new A3_LEA_IQPuzzleRules());
             OOPGamesManager.Singleton.RegisterPlayer(new A3_LEA_IQPuzzleHumanPlayer());
+            
+            //A3_LEA Schiffe Versenken
+            OOPGamesManager.Singleton.RegisterPainter(new A3_LEA_SchiffePaint());
+            OOPGamesManager.Singleton.RegisterRules(new A3_LEA_SchiffeRules());
+            OOPGamesManager.Singleton.RegisterPlayer(new A3_LEA_HumanSchiffePlayer());
+            
+            
+            // B3 Jarde_Roeder
+            b3Fishing = new B3_Jarde_Roeder();
+            OOPGamesManager.Singleton.RegisterPainter(b3Fishing);
+            OOPGamesManager.Singleton.RegisterRules(b3Fishing);
+            OOPGamesManager.Singleton.RegisterPainter(new B3_Mika_Roeder_Paint());
+            OOPGamesManager.Singleton.RegisterRules(new B3_Mika_Roeder_Rules());
+            OOPGamesManager.Singleton.RegisterPlayer(new B3_Mika_Roeder_HumanPlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new B3_Mika_Roeder_ComputerPlayer());
+
+            //B4 TicTacToe (Justus_Lorenz)
+            OOPGamesManager.Singleton.RegisterPainter(new B4_TicTacToePaint());
+            OOPGamesManager.Singleton.RegisterRules(new B4_TicTacToeRules());
+            OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeHumanPlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeComputerPlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeHardComputer());
+            OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeMediumComputer());
+            
+            FlappyBird flappy = new FlappyBird();
+            flappy.Register();
+
+            FroggoGame froggo = new FroggoGame();
+            froggo.Register();
+
 
             // B2 group (Moritz & Tobias) - TicTacToe
             OOPGamesManager.Singleton.RegisterPainter(new B2_TicTacToePainter());
             OOPGamesManager.Singleton.RegisterRules(new B2_TicTacToeRules());
             OOPGamesManager.Singleton.RegisterPlayer(new B2_HumanTicTacToePlayer());
             OOPGamesManager.Singleton.RegisterPlayer(new B2_ComputerTicTacToePlayer());
-            OOPGamesManager.Singleton.RegisterPlayer(new B2_SmartComputerTicTacToePlayer());
 
             // B2 group (Moritz & Tobias) - Maze Game
             OOPGamesManager.Singleton.RegisterPainter(new B2_MazePainter());
@@ -121,6 +154,19 @@ namespace OOPGames
                 if (_CurrentRules is IGameRules2)
                 {
                     ((IGameRules2)_CurrentRules).TickGameCall();
+                }
+
+                //Call MouseMoved event for HumanGamePlayers with mouse support
+                if (_CurrentPlayer is IHumanGamePlayerWithMouse humanPlayerWithMouse)
+                {
+                    //  get the current mouse event args on PaintCanvas
+                    var mousePos = Mouse.GetPosition(PaintCanvas);
+                    MouseEventArgs mouseEventArgs = new MouseEventArgs(Mouse.PrimaryDevice, 0)
+                    {
+                        RoutedEvent = Mouse.MouseMoveEvent,
+                        Source = this
+                    };
+                    humanPlayerWithMouse.OnMouseMoved(mouseEventArgs);
                 }
             }
         }
@@ -222,14 +268,11 @@ namespace OOPGames
                 if (_CurrentRules.MovesPossible &&
                     _CurrentPlayer is IHumanGamePlayer)
                 {
-                    // Create an A4-specific click selection (with canvas size) only for A4 group players.
                     IClickSelection sel;
                     var px = (int)e.GetPosition(PaintCanvas).X;
                     var py = (int)e.GetPosition(PaintCanvas).Y;
                     var btn = (int)e.ChangedButton;
-                    // Always include canvas dimensions in the click selection so
-                    // human players can map clicks to cells consistently.
-                    sel = new A4_ClickSelection(px, py, btn, (int)PaintCanvas.ActualWidth, (int)PaintCanvas.ActualHeight);
+                        sel = new A3_LEA_ClickSelection(px, py, btn);
 
                     IPlayMove pm = null;
 
@@ -252,6 +295,42 @@ namespace OOPGames
                         ScheduleRestartIfNeeded();
                     }
                 }
+            }
+        }
+
+        private void PaintCanvas_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            // Behandle Rechtsklick im Preview-Event (bevor Context-Menü öffnet)
+            int winner = _CurrentRules.CheckIfPLayerWon();
+            if (winner <= 0 && _CurrentRules.MovesPossible && _CurrentPlayer is IHumanGamePlayer)
+            {
+                // Erstelle Click-Selection für Rechtsklick (Button=1)
+                var px = (int)e.GetPosition(PaintCanvas).X;
+                var py = (int)e.GetPosition(PaintCanvas).Y;
+                    var sel = new A3_LEA_ClickSelection(px, py, 1);
+
+                IPlayMove pm = ((IHumanGamePlayer)_CurrentPlayer).GetMove(sel, _CurrentRules.CurrentField);
+                
+                if (pm != null)
+                {
+                    _CurrentRules.DoMove(pm);
+                    _CurrentPainter.PaintGameField(PaintCanvas, _CurrentRules.CurrentField);
+                    _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
+                    Status.Text = "Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
+                    DoComputerMoves();
+                }
+
+                // Markiere Event als verarbeitet, damit kein Context-Menü öffnet
+                e.Handled = true;
+            }
+        }
+
+        private void PaintCanvas_MouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            // Weitergabe des MouseWheel-Events an den IHumanGamePlayerWithMouse
+            if (_CurrentPlayer is IHumanGamePlayerWithMouse humanPlayerWithMouse)
+            {
+                humanPlayerWithMouse.OnMouseMoved(e);
             }
         }
 

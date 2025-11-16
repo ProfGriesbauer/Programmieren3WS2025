@@ -23,6 +23,8 @@ namespace OOPGames
         private PlayerSymbol player1Symbol = PlayerSymbol.Cross;
         private PlayerSymbol player2Symbol = PlayerSymbol.Circle;
         private readonly SolidColorBrush blackBrush = new SolidColorBrush(Colors.Black);
+        private readonly SolidColorBrush player1Brush = new SolidColorBrush(Colors.Blue);
+        private readonly SolidColorBrush player2Brush = new SolidColorBrush(Colors.Red);
 
         public override string Name { get { return "B4_TicTacToe_Paint"; } }
 
@@ -34,13 +36,15 @@ namespace OOPGames
                 player2Symbol = symbol;
         }
 
-        private void DrawSymbol(Canvas canvas, PlayerSymbol symbol, int x, int y)
+        private void DrawSymbol(Canvas canvas, PlayerSymbol symbol, int x, int y, bool isPlayer1)
         {
+            var brush = isPlayer1 ? player1Brush : player2Brush;
+            
             switch (symbol)
             {
                 case PlayerSymbol.Cross:
-                    Line X1 = new Line() { X1 = x, Y1 = y, X2 = x + 100, Y2 = y + 100, Stroke = blackBrush, StrokeThickness = 3.0 };
-                    Line X2 = new Line() { X1 = x, Y1 = y + 100, X2 = x + 100, Y2 = y, Stroke = blackBrush, StrokeThickness = 3.0 };
+                    Line X1 = new Line() { X1 = x, Y1 = y, X2 = x + 100, Y2 = y + 100, Stroke = brush, StrokeThickness = 3.0 };
+                    Line X2 = new Line() { X1 = x, Y1 = y + 100, X2 = x + 100, Y2 = y, Stroke = brush, StrokeThickness = 3.0 };
                     canvas.Children.Add(X1);
                     canvas.Children.Add(X2);
                     break;
@@ -50,7 +54,7 @@ namespace OOPGames
                     { 
                         Width = 80, 
                         Height = 80, 
-                        Stroke = blackBrush, 
+                        Stroke = brush, 
                         StrokeThickness = 3.0,
                         Margin = new Thickness(x + 10, y + 10, 0, 0)
                     };
@@ -66,7 +70,7 @@ namespace OOPGames
                             new Point(x + 90, y + 90),      // Rechts unten
                             new Point(x + 10, y + 90)       // Links unten
                         },
-                        Stroke = blackBrush,
+                        Stroke = brush,
                         StrokeThickness = 3.0,
                         Fill = null
                     };
@@ -78,7 +82,7 @@ namespace OOPGames
                     {
                         Width = 80,
                         Height = 80,
-                        Stroke = blackBrush,
+                        Stroke = brush,
                         StrokeThickness = 3.0,
                         Margin = new Thickness(x + 10, y + 10, 0, 0)
                     };
@@ -109,11 +113,11 @@ namespace OOPGames
                 {
                     if (currentField[i, j] == 1)
                     {
-                        DrawSymbol(canvas, player1Symbol, 20 + (j * 100), 20 + (i * 100));
+                        DrawSymbol(canvas, player1Symbol, 20 + (j * 100), 20 + (i * 100), true);
                     }
                     else if (currentField[i, j] == 2)
                     {
-                        DrawSymbol(canvas, player2Symbol, 20 + (j * 100), 20 + (i * 100));
+                        DrawSymbol(canvas, player2Symbol, 20 + (j * 100), 20 + (i * 100), false);
                     }
                 }
             }
@@ -245,7 +249,7 @@ namespace OOPGames
     {
         int _PlayerNumber = 0;
 
-        public override string Name { get { return "B4_HumanPlayer_01"; } }
+        public override string Name { get { return "B4_HumanPlayer"; } }
 
         public override int PlayerNumber { get { return _PlayerNumber; } }
 
@@ -288,7 +292,7 @@ namespace OOPGames
     {
         int _PlayerNumber = 0;
 
-        public override string Name { get { return "B4_ComputerPlayer"; } }
+        public override string Name { get { return "B4_TicTacToeEasyComputer"; } }
 
         public override int PlayerNumber { get { return _PlayerNumber; } }
 
