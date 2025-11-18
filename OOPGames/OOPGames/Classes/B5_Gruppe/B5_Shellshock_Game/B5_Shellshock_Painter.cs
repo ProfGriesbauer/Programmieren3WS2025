@@ -29,6 +29,10 @@ namespace OOPGames
             // Draw terrain
             DrawTerrain(canvas, field.Terrain, scaleX, scaleY);
 
+            // Highlight active tank similar to B2 visibility emphasis (draw BEFORE tanks as background)
+            B5_Shellshock_Tank activeTank = field.ActiveTankNumber == 1 ? field.Tank1 : field.Tank2;
+            DrawActiveTankHalo(canvas, activeTank, scaleX, scaleY);
+
             // Draw tanks
             DrawTank(canvas, field.Tank1, scaleX, scaleY);
             DrawTank(canvas, field.Tank2, scaleX, scaleY);
@@ -36,6 +40,7 @@ namespace OOPGames
             // Draw projectile if active
             if (field.Projectile != null && field.Projectile.IsActive)
             {
+                System.Diagnostics.Debug.WriteLine($"Drawing projectile at ({field.Projectile.X}, {field.Projectile.Y})");
                 DrawProjectile(canvas, field.Projectile, scaleX, scaleY);
             }
 
@@ -47,6 +52,25 @@ namespace OOPGames
         {
             // Repaint entire field for smooth animation
             PaintGameField(canvas, currentField);
+        }
+
+        private void DrawActiveTankHalo(Canvas canvas, B5_Shellshock_Tank tank, double scaleX, double scaleY)
+        {
+            if (!tank.IsAlive) return;
+            double x = tank.X * scaleX;
+            double y = tank.Y * scaleY;
+            // Halo ellipse behind tank to indicate active turn (inspired by B2 view radius concept)
+            Ellipse halo = new Ellipse
+            {
+                Width = 40,
+                Height = 20,
+                Fill = new SolidColorBrush(Color.FromArgb(60, 255, 255, 0)),
+                Stroke = new SolidColorBrush(Color.FromRgb(255, 215, 0)),
+                StrokeThickness = 2
+            };
+            Canvas.SetLeft(halo, x - halo.Width / 2);
+            Canvas.SetTop(halo, y - halo.Height / 2 - 5);
+            canvas.Children.Add(halo);
         }
 
         private void DrawTerrain(Canvas canvas, B5_Shellshock_Terrain terrain, double scaleX, double scaleY)

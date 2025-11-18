@@ -53,10 +53,12 @@ namespace OOPGames
 
             // Convert angle to radians and calculate initial velocity
             double angleRad = angle * Math.PI / 180.0;
-            double initialVelocity = power * 0.8; // Scale power to velocity
+            // Velocity scaled for normalized coordinates: X in pixel space (0-800), Y in 0-1 space
+            double initialVelocityX = power * 2.5; // X velocity in pixels per second (increased from 0.8)
+            double initialVelocityY = power * 0.003; // Y velocity in normalized units per second (increased from 0.001)
 
-            _velocityX = initialVelocity * Math.Cos(angleRad);
-            _velocityY = -initialVelocity * Math.Sin(angleRad); // Negative because Y increases downward
+            _velocityX = initialVelocityX * Math.Cos(angleRad);
+            _velocityY = -initialVelocityY * Math.Sin(angleRad); // Negative because Y increases downward
         }
 
         public void UpdatePosition(double gravity, double wind, double deltaTime)
@@ -64,7 +66,8 @@ namespace OOPGames
             if (!_isActive) return;
 
             // Apply physics: velocity changes due to gravity and wind
-            _velocityY += gravity * deltaTime;
+            // Gravity scaled for normalized Y coordinates (0-1 range) - increased to flatten arc
+            _velocityY += gravity * deltaTime * 0.000005; // Increased from 0.0001 for faster, flatter trajectory
             _velocityX += wind * deltaTime * 0.1; // Wind has less effect
 
             // Update position based on velocity
