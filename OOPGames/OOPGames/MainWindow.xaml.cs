@@ -44,19 +44,16 @@ namespace OOPGames
 
             //Painters
             OOPGamesManager.Singleton.RegisterPainter(new X_TicTacToePaint());
-            //OOPGamesManager.Singleton.RegisterPainter(new B5_TicTacToePaint());
-            //OOPGamesManager.Singleton.RegisterPainter(new B5_TicTacToeAnimatedPaint());
+            OOPGamesManager.Singleton.RegisterPainter(new B5_TicTacToePaint());
 
             //Rules
             OOPGamesManager.Singleton.RegisterRules(new X_TicTacToeRules());
-            //OOPGamesManager.Singleton.RegisterRules(new B5_TicTacToeRules());
+            
             
             //Players
             OOPGamesManager.Singleton.RegisterPlayer(new X_TicTacToeHumanPlayer());
             OOPGamesManager.Singleton.RegisterPlayer(new X_TicTacToeComputerPlayer());
-            //OOPGamesManager.Singleton.RegisterPlayer(new B5_TicTacToeHumanPlayer());
-            //OOPGamesManager.Singleton.RegisterPlayer(new B5_TicTacToeComputerPlayer());
-            //OOPGamesManager.Singleton.RegisterPlayer(new B5_TicTacToeSmartComputerPlayer());
+
 
             //A4 Painters
             OOPGamesManager.Singleton.RegisterPainter(new A4_TicTacToePaint());
@@ -80,6 +77,7 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterRules(new A2_Rules());
             OOPGamesManager.Singleton.RegisterPlayer(new A2_HumanPlayer());
             OOPGamesManager.Singleton.RegisterPlayer(new A2_ComputerPlayer());  
+            //OOPGamesManager.Singleton.RegisterPlayer(new A2_HumanPlayer());  
               
 
             //A3_LEA TicTacToe
@@ -123,18 +121,37 @@ namespace OOPGames
             froggo.Register();
 
 
-            // B2 group (Moritz & Tobias)
+            // B2 group (Moritz & Tobias) - TicTacToe
             OOPGamesManager.Singleton.RegisterPainter(new B2_TicTacToePainter());
             OOPGamesManager.Singleton.RegisterRules(new B2_TicTacToeRules());
             OOPGamesManager.Singleton.RegisterPlayer(new B2_HumanTicTacToePlayer());
             OOPGamesManager.Singleton.RegisterPlayer(new B2_ComputerTicTacToePlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new B2_SmartComputerTicTacToePlayer());
+
+            // B2 group (Moritz & Tobias) - Maze Game (2 Players)
+            OOPGamesManager.Singleton.RegisterPainter(new B2_MazePainter2Player());
+            OOPGamesManager.Singleton.RegisterRules(new B2_MazeRules());
+            OOPGamesManager.Singleton.RegisterPlayer(new B2_MazeHumanPlayer());
+
+            //b5 TicTacToe (Felix_Anton)
+            OOPGamesManager.Singleton.RegisterPainter(new B5_TicTacToe_Painter());
+            OOPGamesManager.Singleton.RegisterRules(new B5_TicTacToe_Rules());
+            OOPGamesManager.Singleton.RegisterPlayer(new B5_TicTacToe_HumanPlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new B5_TicTacToe_ComputerPlayer());
+
+            //b5 Shellshock (Felix_Anton)
+            OOPGamesManager.Singleton.RegisterPainter(new B5_Shellshock_Painter());
+            OOPGamesManager.Singleton.RegisterRules(new B5_Shellshock_Rules());
+            OOPGamesManager.Singleton.RegisterPlayer(new B5_Shellshock_HumanPlayer());
 
 
-            InitializeComponent();
-            PaintList.ItemsSource = OOPGamesManager.Singleton.Painters;
-            Player1List.ItemsSource = OOPGamesManager.Singleton.Players;
-            Player2List.ItemsSource = OOPGamesManager.Singleton.Players;
-            RulesList.ItemsSource = OOPGamesManager.Singleton.Rules;
+            // B5 group (Anton & Felix)
+            OOPGamesManager.Singleton.RegisterPainter(new B5_TicTacToePaint());
+            OOPGamesManager.Singleton.RegisterRules(new B5_GameRules());
+            //OOPGamesManager.Singleton.RegisterPlayer(new B5_HumanPlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new B5_TicTacToePlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new B5_TicTacToeComputerPlayer());
+            
 
             
             _PaintTimer = new System.Windows.Threading.DispatcherTimer();
