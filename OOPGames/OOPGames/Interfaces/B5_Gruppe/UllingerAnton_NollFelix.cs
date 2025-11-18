@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,8 +10,15 @@ namespace OOPGames
     {
         int GetFieldValue(int row, int col);
     }
+
     public interface IB5_TicTacToeRules : IGameRules
     {
-        
+
+    }
+
+    public interface IB5_TicTacToeMove : IPlayMove
+    {
+        int Row { get; }
+        int Col { get; }
     }
 }
