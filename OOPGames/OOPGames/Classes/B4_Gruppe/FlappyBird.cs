@@ -37,7 +37,7 @@ namespace OOPGames
             {
                 if (Obstacles.Count == 0) return true;
                 var last = Obstacles[Obstacles.Count - 1];
-                return last.X < 400;
+                return last.X < 200; //Abstand zwsichen den Röhren horizontal( Größer=Kleiner)
             }
         }
 
@@ -45,11 +45,11 @@ namespace OOPGames
 
         public void CreateObstacle()
         {
-            double gap = 250;
+            double gap = 140; //Lücke vertikal
             double gapY = _rand.Next(50, (int)(FieldHeight - gap - 50));
 
-            Obstacles.Add(new Obstacle(480, 0, 50, gapY, true));
-            Obstacles.Add(new Obstacle(480, gapY + gap, 50, FieldHeight - gapY - gap, false));
+            Obstacles.Add(new Obstacle(480, 0, 75, gapY, true)); 
+            Obstacles.Add(new Obstacle(480, gapY + gap, 75, FieldHeight - gapY - gap, false));
         }
 
         public void UpdateScoreIfPassed()
@@ -206,8 +206,8 @@ namespace OOPGames
 
         private FlappyBirdField _field;
 
-        private const double Gravity = 0.5;
-        private const double JumpForce = -8;
+        private const double Gravity = 2.9; //Gravitationsstärke
+        private const double JumpForce = -18;
         private double _birdVelocity = 0;
 
         public IGameField CurrentField => _field;
