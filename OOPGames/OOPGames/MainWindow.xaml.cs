@@ -70,6 +70,10 @@ namespace OOPGames
             // Register A4 computer players so they appear in the Player dropdowns
             OOPGamesManager.Singleton.RegisterPlayer(new A4_ComputerNormal());
             OOPGamesManager.Singleton.RegisterPlayer(new A4_ComputerUnbeatable());
+            // A4 ShellStrikeLegends registration (painter, rules, and computer player)
+            OOPGamesManager.Singleton.RegisterPainter(new A4_ShellStrike_Painter());
+            OOPGamesManager.Singleton.RegisterRules(new A4_ShellStrike_Rules());
+            OOPGamesManager.Singleton.RegisterPlayer(new A4_ShellStrike_ComputerPlayer());
 
             //A2 Painters
             OOPGamesManager.Singleton.RegisterPainter(new A2_Painter());
