@@ -21,6 +21,9 @@ namespace OOPGames
     /// Kommentar zu GitHub Desktop
     public partial class MainWindow : Window
     {
+        // rectangle used to show hover/highlight cell in overlay canvas
+        private System.Windows.Shapes.Rectangle _hoverRect = null;
+
         IGamePlayer _CurrentPlayer = null;
         IPaintGame _CurrentPainter = null;
         IGameRules _CurrentRules = null;
@@ -270,44 +273,115 @@ namespace OOPGames
 
         private void PaintCanvas_MouseDown(object sender, MouseButtonEventArgs e)
         {
+            MessageBox.Show($"Click at {e.GetPosition(PaintCanvas).X}, {e.GetPosition(PaintCanvas).Y}");
+
+            if (_CurrentRules == null) return;
             int winner = _CurrentRules.CheckIfPLayerWon();
             if (winner > 0)
             {
                 Status.Text = "Player " + winner + " Won!";
+                return;
+            }
+
+            if (!(_CurrentRules.MovesPossible && _CurrentPlayer is IHumanGamePlayer)) return;
+
+            Console.WriteLine($"DEBUG MainWindow: Processing click for player {_CurrentPlayer.GetType().Name}");
+            
+            var px = (int)e.GetPosition(PaintCanvas).X;
+            var py = (int)e.GetPosition(PaintCanvas).Y;
+            var btn = (int)e.ChangedButton;
+
+            // Determine if we should use A4 or standard click selection
+            IClickSelection sel;
+            if (_CurrentPlayer != null && _CurrentPlayer.GetType().Name.StartsWith("B2_"))
+            {
+                sel = new ClickSelection(px, py, btn);
+                Console.WriteLine($"DEBUG MainWindow: Using standard ClickSelection for B2 player");
             }
             else
             {
-                if (_CurrentRules.MovesPossible &&
-                    _CurrentPlayer is IHumanGamePlayer)
-                {
-                    IClickSelection sel;
-                    var px = (int)e.GetPosition(PaintCanvas).X;
-                    var py = (int)e.GetPosition(PaintCanvas).Y;
-                    var btn = (int)e.ChangedButton;
-                        sel = new A3_LEA_ClickSelection(px, py, btn);
-
-                    IPlayMove pm = null;
-
-                    // Let the player's GetMove method handle the click mapping
-                    pm = ((IHumanGamePlayer)_CurrentPlayer).GetMove(sel, _CurrentRules.CurrentField);
-                    
-                    if (pm != null)
-                    {
-                        _CurrentRules.DoMove(pm);
-                        _CurrentPainter.PaintGameField(PaintCanvas, _CurrentRules.CurrentField);
-                        _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
-                        Status.Text = "Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
-                    }
-
-                    DoComputerMoves();
-                    // If the human move caused a win, schedule restart von Gruppe A4 :)
-                    winner = _CurrentRules.CheckIfPLayerWon();
-                    if (winner > 0)
-                    {
-                        ScheduleRestartIfNeeded();
-                    }
-                }
+                // For non-B2 players use the A4 click mapping which needs canvas size
+                sel = new A4_ClickSelection(px, py, btn, (int)PaintCanvas.ActualWidth, (int)PaintCanvas.ActualHeight);
+                Console.WriteLine($"DEBUG MainWindow: Using A4_ClickSelection");
             }
+
+            Console.WriteLine($"DEBUG MainWindow: Click at ({px},{py}), ActualSize=({PaintCanvas.ActualWidth},{PaintCanvas.ActualHeight})");
+            IPlayMove pm = ((IHumanGamePlayer)_CurrentPlayer).GetMove(sel, _CurrentRules.CurrentField);
+            Console.WriteLine($"DEBUG MainWindow: GetMove returned {(pm != null ? "valid move" : "null")}");
+
+            // DEBUG: show selection info
+            try
+            {
+                Status.Text = $"DEBUG: Click at ({px},{py}), button={btn}, selType={sel.GetType().Name}";
+                Console.WriteLine(Status.Text);
+            }
+            catch { }
+
+            if (pm != null)
+            {
+                _CurrentRules.DoMove(pm);
+                _CurrentPainter.PaintGameField(PaintCanvas, _CurrentRules.CurrentField);
+                _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
+                Status.Text = "Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
+            }
+
+            DoComputerMoves();
+
+            // If the human move caused a win, schedule restart
+            winner = _CurrentRules.CheckIfPLayerWon();
+            if (winner > 0)
+            {
+                ScheduleRestartIfNeeded();
+            }
+        }
+
+        private void PaintCanvas_MouseMove(object sender, MouseEventArgs e)
+        {
+            try
+            {
+                if (PaintCanvas == null || OverlayCanvas == null) return;
+
+                // ensure overlay exactly matches paint canvas size
+                OverlayCanvas.Width = PaintCanvas.RenderSize.Width;
+                OverlayCanvas.Height = PaintCanvas.RenderSize.Height;
+
+                var px = e.GetPosition(PaintCanvas).X;
+                var py = e.GetPosition(PaintCanvas).Y;
+
+                double w = PaintCanvas.RenderSize.Width;
+                double h = PaintCanvas.RenderSize.Height;
+                if (w <= 0 || h <= 0) return;
+
+                double cellW = w / 3.0;
+                double cellH = h / 3.0;
+
+                // precise mapping using px/cellW and clamp
+                int col = (int)Math.Min(2, Math.Max(0, Math.Floor(px / cellW)));
+                int row = (int)Math.Min(2, Math.Max(0, Math.Floor(py / cellH)));
+
+                // create hover rectangle if needed
+                if (_hoverRect == null)
+                {
+                    _hoverRect = new System.Windows.Shapes.Rectangle()
+                    {
+                        Fill = new SolidColorBrush(Color.FromArgb(100, 30, 144, 30)),
+                        Stroke = new SolidColorBrush(Color.FromArgb(200, 30, 144, 30)),
+                        StrokeThickness = 1,
+                        RadiusX = 2,
+                        RadiusY = 2
+                    };
+                    OverlayCanvas.Children.Add(_hoverRect);
+                }
+
+                _hoverRect.Width = Math.Round(cellW);
+                _hoverRect.Height = Math.Round(cellH);
+                Canvas.SetLeft(_hoverRect, Math.Round(col * cellW));
+                Canvas.SetTop(_hoverRect, Math.Round(row * cellH));
+
+                // force immediate layout update to reduce perceived lag
+                OverlayCanvas.UpdateLayout();
+            }
+            catch { }
         }
 
         private void PaintCanvas_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)

@@ -26,11 +26,25 @@
                 <RowDefinition Height="1*"/>
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
-            <Canvas x:Name="PaintCanvas" Grid.Row="0" 
-                    HorizontalAlignment="Stretch" VerticalAlignment="Stretch" 
-                    Margin="5,5,5,5" MouseDown="PaintCanvas_MouseDown" MouseWheel="PaintCanvas_MouseWheel" PreviewMouseRightButtonDown="PaintCanvas_PreviewMouseRightButtonDown"
-                    Focusable="True"
-                    KeyboardNavigation.TabNavigation="None"/>
+<<<<<<< HEAD
+            <Grid Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="5,5,5,5">
+                <!-- Back canvas for painting game content -->
+                <Canvas x:Name="PaintCanvas"
+                        HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                        MouseDown="PaintCanvas_MouseDown"
+                        MouseMove="PaintCanvas_MouseMove"
+                        MouseWheel="PaintCanvas_MouseWheel"
+                        PreviewMouseRightButtonDown="PaintCanvas_PreviewMouseRightButtonDown"
+                        Focusable="True"
+                        KeyboardNavigation.TabNavigation="None" />
+
+                <!-- Overlay canvas for hover/debug visualization; not hit-test visible so clicks go through -->
+                <Canvas x:Name="OverlayCanvas"
+                        IsHitTestVisible="False"
+                        HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                        Panel.ZIndex="100" />
+            </Grid>
+>>>>>>> e8a9283 (nichts)
             <Grid Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
