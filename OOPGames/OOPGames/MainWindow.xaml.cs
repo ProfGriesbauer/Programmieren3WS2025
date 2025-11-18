@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -66,7 +66,7 @@ namespace OOPGames
             //A2 Painters
             OOPGamesManager.Singleton.RegisterPainter(new A2_Painter());
             OOPGamesManager.Singleton.RegisterRules(new A2_Rules());
-            OOPGamesManager.Singleton.RegisterPlayer(new A2_HumanPlayer());  
+            //OOPGamesManager.Singleton.RegisterPlayer(new A2_HumanPlayer());  // Commented out as class is not implemented yet
               
 
             //A3_LEA TicTacToe
@@ -80,11 +80,24 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterRules(new A3_LEA_IQPuzzleRules());
             OOPGamesManager.Singleton.RegisterPlayer(new A3_LEA_IQPuzzleHumanPlayer());
 
-            // B1 group TicTacToe (our implementation)
-            OOPGamesManager.Singleton.RegisterPainter(new B1_TicTacToePaint());
-            OOPGamesManager.Singleton.RegisterRules(new B1_TicTacToeRules());
-            OOPGamesManager.Singleton.RegisterPlayer(new B1_TicTacToeHumanPlayer());
-            OOPGamesManager.Singleton.RegisterPlayer(new B1_TicTacToeComputerPlayer());
+            // B3 Mika Röder TicTacToe
+            OOPGamesManager.Singleton.RegisterPainter(new B3_Mika_Roeder_Paint());
+            OOPGamesManager.Singleton.RegisterRules(new B3_Mika_Roeder_Rules());
+            OOPGamesManager.Singleton.RegisterPlayer(new B3_Mika_Roeder_HumanPlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new B3_Mika_Roeder_ComputerPlayer());
+
+            //B4 TicTacToe (Justus_Lorenz)
+            OOPGamesManager.Singleton.RegisterPainter(new B4_TicTacToePaint());
+            OOPGamesManager.Singleton.RegisterRules(new B4_TicTacToeRules());
+            OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeHumanPlayer_01());
+            OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeHumanPlayer_02());
+            OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeComputerPlayer());
+
+            // B2 group (Moritz & Tobias)
+            OOPGamesManager.Singleton.RegisterPainter(new B2_TicTacToePainter());
+            OOPGamesManager.Singleton.RegisterRules(new B2_TicTacToeRules());
+            OOPGamesManager.Singleton.RegisterPlayer(new B2_HumanTicTacToePlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new B2_ComputerTicTacToePlayer());
 
             // B1 group: Mensch Ärgere Dich Nicht
             OOPGamesManager.Singleton.RegisterPainter(new OOPGames.B1_Gruppe.MenschAergereDichNicht.B1_MAN_Paint());
@@ -100,6 +113,7 @@ namespace OOPGames
             Player2List.ItemsSource = OOPGamesManager.Singleton.Players;
             RulesList.ItemsSource = OOPGamesManager.Singleton.Rules;
 
+            
             _PaintTimer = new System.Windows.Threading.DispatcherTimer();
             _PaintTimer.Interval = new TimeSpan(0, 0, 0, 0, 40);
             _PaintTimer.Tick += _PaintTimer_Tick; 
@@ -238,9 +252,7 @@ namespace OOPGames
                     var px = (int)e.GetPosition(PaintCanvas).X;
                     var py = (int)e.GetPosition(PaintCanvas).Y;
                     var btn = (int)e.ChangedButton;
-                    if (_CurrentPlayer != null && (
-                        _CurrentPlayer.GetType().Name.StartsWith("A4_") ||
-                        _CurrentPlayer.GetType().Name.StartsWith("B1_MAN_")))
+                    if (_CurrentPlayer != null && _CurrentPlayer.GetType().Name.StartsWith("A4_"))
                     {
                         sel = new A4_ClickSelection(px, py, btn, (int)PaintCanvas.ActualWidth, (int)PaintCanvas.ActualHeight);
                     }
