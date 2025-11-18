@@ -37,7 +37,7 @@ namespace OOPGames
             {
                 if (Obstacles.Count == 0) return true;
                 var last = Obstacles[Obstacles.Count - 1];
-                return last.X < 200;  //Abstand zwischen den Röhren (Je größer die Zahl, desto näher die Röhren)
+                return last.X < 200;  //Abstand zwischen den Röhren (Je größer Zahl, desto näher Röhren)
             }
         }
 
@@ -207,7 +207,7 @@ namespace OOPGames
         private FlappyBirdField _field;
 
         private const double Gravity = 2.9;  //Gravitationskraft
-        private const double JumpForce = -18;  //Kraft des Sprungs
+        private const double JumpForce = -18;  //Sprungkraft
         private double _birdVelocity = 0;
 
         public IGameField CurrentField => _field;
