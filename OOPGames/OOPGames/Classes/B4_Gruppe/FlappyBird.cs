@@ -14,10 +14,7 @@ namespace OOPGames
     public class FlappyBirdJumpMove : IPlayMove
     {
         public int PlayerNumber { get; private set; }
-        public FlappyBirdJumpMove(int playerNumber)
-        {
-            PlayerNumber = playerNumber;
-        }
+        public FlappyBirdJumpMove(int playerNumber) => PlayerNumber = playerNumber;
     }
 
     public class FlappyBirdField : IGameField
@@ -241,9 +238,20 @@ namespace OOPGames
 
         public static bool GameOver = false;
 
-        private static readonly string HighscoreFile = System.IO.Path.Combine(
-            System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "",
-            "highscores.json");
+        // Pfad zur Highscore-Datei im Unterordner Classes\B4_Gruppe des Projekt-Hauptordners
+        private static readonly string HighscoreFile = GetProjectFolderPath();
+
+        private static string GetProjectFolderPath()
+        {
+            string exePath = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "";
+            string projectFolder = System.IO.Path.GetFullPath(System.IO.Path.Combine(exePath, @"..\..\.."));
+            string targetFolder = System.IO.Path.Combine(projectFolder, "Classes", "B4_Gruppe");
+
+            if (!Directory.Exists(targetFolder))
+                Directory.CreateDirectory(targetFolder);
+
+            return System.IO.Path.Combine(targetFolder, "FlappyBirdHighscore.json");
+        }
 
         public FlappyBirdRules()
         {
@@ -264,8 +272,16 @@ namespace OOPGames
                         Highscores.Clear();
                         Highscores.AddRange(loaded);
                     }
+                    System.Diagnostics.Debug.WriteLine($"Highscores geladen von: {HighscoreFile}");
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Fehler beim Laden der Highscores: {ex.Message}");
+                }
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"Highscore-Datei nicht gefunden: {HighscoreFile}");
             }
         }
 
@@ -273,10 +289,19 @@ namespace OOPGames
         {
             try
             {
+                string directory = System.IO.Path.GetDirectoryName(HighscoreFile);
+                if (!Directory.Exists(directory))
+                    Directory.CreateDirectory(directory);
+
                 string json = JsonSerializer.Serialize(Highscores);
                 File.WriteAllText(HighscoreFile, json);
+
+                System.Diagnostics.Debug.WriteLine($"Highscores gespeichert in: {HighscoreFile}");
             }
-            catch { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Fehler beim Speichern der Highscores: {ex.Message}");
+            }
         }
 
         public void ClearField()
@@ -369,20 +394,11 @@ namespace OOPGames
         private int _playerNumber;
         public int PlayerNumber => _playerNumber;
 
-        public void SetPlayerNumber(int number)
-        {
-            _playerNumber = number;
-        }
+        public void SetPlayerNumber(int number) => _playerNumber = number;
 
-        public IGamePlayer Clone()
-        {
-            return new FlappyBirdHumanPlayer();
-        }
+        public IGamePlayer Clone() => new FlappyBirdHumanPlayer();
 
-        public bool CanBeRuledBy(IGameRules rules)
-        {
-            return rules is FlappyBirdRules;
-        }
+        public bool CanBeRuledBy(IGameRules rules) => rules is FlappyBirdRules;
 
         public IPlayMove GetMove(IMoveSelection selection, IGameField field)
         {
