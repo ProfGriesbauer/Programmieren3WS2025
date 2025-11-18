@@ -33,6 +33,8 @@ namespace OOPGames
 
         public MainWindow()
         {
+            InitializeComponent();
+            
             //REGISTER YOUR CLASSES HERE
             
             //Register A5 Classes first
@@ -44,7 +46,6 @@ namespace OOPGames
 
             //Painters
             OOPGamesManager.Singleton.RegisterPainter(new X_TicTacToePaint());
-            OOPGamesManager.Singleton.RegisterPainter(new B5_TicTacToePaint());
 
             //Rules
             OOPGamesManager.Singleton.RegisterRules(new X_TicTacToeRules());
@@ -56,6 +57,7 @@ namespace OOPGames
 
 
             //A4 Painters
+       
             OOPGamesManager.Singleton.RegisterPainter(new A4_TicTacToePaint());
             OOPGamesManager.Singleton.RegisterRules(new A4_TicTacToeRules());
             OOPGamesManager.Singleton.RegisterPlayer(new A4_TicTacToeHumanPlayer());
@@ -135,15 +137,13 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterRules(new B5_Shellshock_Rules());
             OOPGamesManager.Singleton.RegisterPlayer(new B5_Shellshock_HumanPlayer());
 
-
-            // B5 group (Anton & Felix)
-            OOPGamesManager.Singleton.RegisterPainter(new B5_TicTacToePaint());
-            OOPGamesManager.Singleton.RegisterRules(new B5_GameRules());
-            //OOPGamesManager.Singleton.RegisterPlayer(new B5_HumanPlayer());
-            OOPGamesManager.Singleton.RegisterPlayer(new B5_TicTacToePlayer());
-            OOPGamesManager.Singleton.RegisterPlayer(new B5_TicTacToeComputerPlayer());
             
 
+            // Populate ListBoxes with registered items
+            PaintList.ItemsSource = OOPGamesManager.Singleton.Painters;
+            Player1List.ItemsSource = OOPGamesManager.Singleton.Players;
+            Player2List.ItemsSource = OOPGamesManager.Singleton.Players;
+            RulesList.ItemsSource = OOPGamesManager.Singleton.Rules;
             
             _PaintTimer = new System.Windows.Threading.DispatcherTimer();
             _PaintTimer.Interval = new TimeSpan(0, 0, 0, 0, 40);
