@@ -114,11 +114,17 @@ namespace OOPGames
             froggo.Register();
 
 
-            // B2 group (Moritz & Tobias)
+            // B2 group (Moritz & Tobias) - TicTacToe
             OOPGamesManager.Singleton.RegisterPainter(new B2_TicTacToePainter());
             OOPGamesManager.Singleton.RegisterRules(new B2_TicTacToeRules());
             OOPGamesManager.Singleton.RegisterPlayer(new B2_HumanTicTacToePlayer());
             OOPGamesManager.Singleton.RegisterPlayer(new B2_ComputerTicTacToePlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new B2_SmartComputerTicTacToePlayer());
+
+            // B2 group (Moritz & Tobias) - Maze Game (2 Players)
+            OOPGamesManager.Singleton.RegisterPainter(new B2_MazePainter2Player());
+            OOPGamesManager.Singleton.RegisterRules(new B2_MazeRules());
+            OOPGamesManager.Singleton.RegisterPlayer(new B2_MazeHumanPlayer());
 
             //b5 TicTacToe (Felix_Anton)
             OOPGamesManager.Singleton.RegisterPainter(new B5_TicTacToe_Painter());
