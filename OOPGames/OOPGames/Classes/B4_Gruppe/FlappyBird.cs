@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
 namespace OOPGames
@@ -89,6 +90,29 @@ namespace OOPGames
         public string Name => "Flappy Bird";
 
         private static readonly Brush Bronze = new SolidColorBrush(Color.FromRgb(205, 127, 50));
+        private ImageSource _pipeImage;
+        private ImageSource _birdImage;
+        private ImageSource _backgroundImage;
+
+        public FlappyBirdPainter()
+        {
+            string projectRoot = FlappyBirdRules.GetProjectFolderPath();
+            string graphicsPath = System.IO.Path.Combine(projectRoot, "Classes", "B4_Gruppe", "Grafics");
+
+            _pipeImage = LoadImage(System.IO.Path.Combine(graphicsPath, "pipe.png"));
+            _birdImage = LoadImage(System.IO.Path.Combine(graphicsPath, "bird.png"));
+            _backgroundImage = LoadImage(System.IO.Path.Combine(graphicsPath, "background.png"));
+        }
+
+        private ImageSource LoadImage(string fullPath)
+        {
+            var bitmap = new BitmapImage();
+            bitmap.BeginInit();
+            bitmap.UriSource = new Uri(fullPath, UriKind.Absolute);
+            bitmap.CacheOption = BitmapCacheOption.OnLoad;
+            bitmap.EndInit();
+            return bitmap;
+        }
 
         public void PaintGameField(Canvas canvas, IGameField field)
         {
@@ -97,35 +121,49 @@ namespace OOPGames
             {
                 f.FieldHeight = canvas.ActualHeight;
 
-                var bg = new Rectangle()
+                var bgImage = new Image()
                 {
+                    Source = _backgroundImage,
                     Width = canvas.ActualWidth,
                     Height = canvas.ActualHeight,
-                    Fill = Brushes.SkyBlue
+                    Stretch = Stretch.Fill
                 };
-                canvas.Children.Add(bg);
+                canvas.Children.Add(bgImage);
 
-                var bird = new Ellipse()
+                // Bird-Image: größer und zentriert auf Hitbox
+                double birdDrawFactor = 1.5; // hier anpassen für gewünschte Größe
+                double drawBirdSize = f.BirdSize * birdDrawFactor;
+
+                var bird = new Image()
                 {
-                    Width = f.BirdSize,
-                    Height = f.BirdSize,
-                    Fill = Brushes.Yellow
+                    Source = _birdImage,
+                    Width = drawBirdSize,
+                    Height = drawBirdSize,
+                    Stretch = Stretch.Fill
                 };
-                Canvas.SetLeft(bird, f.BirdX);
-                Canvas.SetTop(bird, f.BirdY);
+                Canvas.SetLeft(bird, f.BirdX + (f.BirdSize - drawBirdSize) / 2);
+                Canvas.SetTop(bird, f.BirdY + (f.BirdSize - drawBirdSize) / 2);
                 canvas.Children.Add(bird);
 
+                // Pipes exakt auf Hitboxgröße; obere Pipes werden gedreht
                 foreach (var obs in f.Obstacles)
                 {
-                    var rect = new Rectangle()
+                    var pipe = new Image()
                     {
+                        Source = _pipeImage,
                         Width = obs.Width,
                         Height = obs.Height,
-                        Fill = Brushes.Green
+                        Stretch = Stretch.Fill
                     };
-                    Canvas.SetLeft(rect, obs.X);
-                    Canvas.SetTop(rect, obs.Y);
-                    canvas.Children.Add(rect);
+                    Canvas.SetLeft(pipe, obs.X);
+                    Canvas.SetTop(pipe, obs.Y);
+
+                    if (obs.IsTop)
+                    {
+                        pipe.RenderTransformOrigin = new Point(0.5, 0.5);
+                        pipe.RenderTransform = new RotateTransform(180);
+                    }
+                    canvas.Children.Add(pipe);
                 }
 
                 var scoreText = new TextBlock()
@@ -235,22 +273,13 @@ namespace OOPGames
         public bool MovesPossible { get; private set; } = true;
 
         public static readonly List<int> Highscores = new List<int>();
-
         public static bool GameOver = false;
 
-        // Pfad zur Highscore-Datei im Unterordner Classes\B4_Gruppe des Projekt-Hauptordners
-        private static readonly string HighscoreFile = GetProjectFolderPath();
-
-        private static string GetProjectFolderPath()
+        public static string GetProjectFolderPath()
         {
             string exePath = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "";
             string projectFolder = System.IO.Path.GetFullPath(System.IO.Path.Combine(exePath, @"..\..\.."));
-            string targetFolder = System.IO.Path.Combine(projectFolder, "Classes", "B4_Gruppe");
-
-            if (!Directory.Exists(targetFolder))
-                Directory.CreateDirectory(targetFolder);
-
-            return System.IO.Path.Combine(targetFolder, "FlappyBirdHighscore.json");
+            return projectFolder;
         }
 
         public FlappyBirdRules()
@@ -261,18 +290,19 @@ namespace OOPGames
 
         private void LoadHighscores()
         {
-            if (File.Exists(HighscoreFile))
+            string file = System.IO.Path.Combine(GetProjectFolderPath(), "Classes", "B4_Gruppe", "FlappyBirdHighscore.json");
+            if (File.Exists(file))
             {
                 try
                 {
-                    string json = File.ReadAllText(HighscoreFile);
+                    string json = File.ReadAllText(file);
                     var loaded = JsonSerializer.Deserialize<List<int>>(json);
                     if (loaded != null)
                     {
                         Highscores.Clear();
                         Highscores.AddRange(loaded);
                     }
-                    System.Diagnostics.Debug.WriteLine($"Highscores geladen von: {HighscoreFile}");
+                    System.Diagnostics.Debug.WriteLine($"Highscores geladen.");
                 }
                 catch (Exception ex)
                 {
@@ -281,22 +311,23 @@ namespace OOPGames
             }
             else
             {
-                System.Diagnostics.Debug.WriteLine($"Highscore-Datei nicht gefunden: {HighscoreFile}");
+                System.Diagnostics.Debug.WriteLine($"Highscore-Datei nicht gefunden.");
             }
         }
 
         private void SaveHighscores()
         {
+            string file = System.IO.Path.Combine(GetProjectFolderPath(), "Classes", "B4_Gruppe", "FlappyBirdHighscore.json");
             try
             {
-                string directory = System.IO.Path.GetDirectoryName(HighscoreFile);
+                string directory = System.IO.Path.GetDirectoryName(file);
                 if (!Directory.Exists(directory))
                     Directory.CreateDirectory(directory);
 
                 string json = JsonSerializer.Serialize(Highscores);
-                File.WriteAllText(HighscoreFile, json);
+                File.WriteAllText(file, json);
 
-                System.Diagnostics.Debug.WriteLine($"Highscores gespeichert in: {HighscoreFile}");
+                System.Diagnostics.Debug.WriteLine($"Highscores gespeichert.");
             }
             catch (Exception ex)
             {
