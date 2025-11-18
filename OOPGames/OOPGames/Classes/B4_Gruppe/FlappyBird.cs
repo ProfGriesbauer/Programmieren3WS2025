@@ -9,9 +9,44 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using System.Media;
 
 namespace OOPGames
 {
+    public class SoundManager
+    {
+        private SoundPlayer jumpSound;
+        private SoundPlayer hitSound;
+        private SoundPlayer scoreSound;
+        private MediaPlayer backgroundMusic;
+
+        public SoundManager(string basePath)
+        {
+            jumpSound = new SoundPlayer(System.IO.Path.Combine(basePath, "jump.wav"));
+            hitSound = new SoundPlayer(System.IO.Path.Combine(basePath, "hit.wav"));
+            scoreSound = new SoundPlayer(System.IO.Path.Combine(basePath, "score.wav"));
+
+            backgroundMusic = new MediaPlayer();
+            backgroundMusic.Open(new Uri(System.IO.Path.Combine(basePath, "background.mp3"), UriKind.Absolute));
+            backgroundMusic.Volume = 0.3;
+            backgroundMusic.MediaEnded += (s, e) => backgroundMusic.Position = TimeSpan.Zero;
+
+            // Kein automatischer Start mehr hier
+        }
+
+        public void PlayJump() => jumpSound.Play();
+        public void PlayHit() => hitSound.Play();
+        public void PlayScore() => scoreSound.Play();
+
+        public void StartBackgroundMusic()
+        {
+            backgroundMusic.Position = TimeSpan.Zero;
+            backgroundMusic.Play();
+        }
+
+        public void StopMusic() => backgroundMusic.Stop();
+    }
+
     public class FlappyBirdJumpMove : IPlayMove
     {
         public int PlayerNumber { get; private set; }
@@ -51,6 +86,7 @@ namespace OOPGames
             double yBottom = gapY + gap;
             double heightBottom = FieldHeight - yBottom;
             Obstacles.Add(new Obstacle(480, yBottom, 75, heightBottom, false));
+            System.Diagnostics.Debug.WriteLine($"Obstacle created: gapY={gapY}, bottomHeight={heightBottom}");
         }
 
         public void UpdateScoreIfPassed()
@@ -61,6 +97,7 @@ namespace OOPGames
                 {
                     obs.Passed = true;
                     Score++;
+                    System.Diagnostics.Debug.WriteLine($"Score updated: {Score}");
                 }
             }
         }
@@ -130,8 +167,7 @@ namespace OOPGames
                 };
                 canvas.Children.Add(bgImage);
 
-                // Bird-Image: größer und zentriert auf Hitbox
-                double birdDrawFactor = 1.5; // hier anpassen für gewünschte Größe
+                double birdDrawFactor = 1.35;
                 double drawBirdSize = f.BirdSize * birdDrawFactor;
 
                 var bird = new Image()
@@ -145,7 +181,6 @@ namespace OOPGames
                 Canvas.SetTop(bird, f.BirdY + (f.BirdSize - drawBirdSize) / 2);
                 canvas.Children.Add(bird);
 
-                // Pipes exakt auf Hitboxgröße; obere Pipes werden gedreht
                 foreach (var obs in f.Obstacles)
                 {
                     var pipe = new Image()
@@ -165,6 +200,7 @@ namespace OOPGames
                     }
                     canvas.Children.Add(pipe);
                 }
+                System.Diagnostics.Debug.WriteLine($"Painting obstacles: count={f.Obstacles.Count}");
 
                 var scoreText = new TextBlock()
                 {
@@ -275,6 +311,17 @@ namespace OOPGames
         public static readonly List<int> Highscores = new List<int>();
         public static bool GameOver = false;
 
+        private readonly SoundManager soundManager;
+
+        public FlappyBirdRules()
+        {
+            string basePath = GetProjectFolderPath() + @"\Classes\B4_Gruppe\Grafics";
+            soundManager = new SoundManager(basePath);
+
+            LoadHighscores();
+            ClearField();
+        }
+
         public static string GetProjectFolderPath()
         {
             string exePath = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "";
@@ -282,13 +329,88 @@ namespace OOPGames
             return projectFolder;
         }
 
-        public FlappyBirdRules()
+        public void DoMove(IPlayMove move)
         {
-            LoadHighscores();
-            ClearField();
+            if (!MovesPossible) return;
+            if (move is FlappyBirdJumpMove jumpMove)
+            {
+                if (jumpMove.PlayerNumber == 1 || jumpMove.PlayerNumber == 2)
+                {
+                    _birdVelocity = JumpForce;
+                    soundManager.PlayJump();
+                }
+            }
         }
 
-        private void LoadHighscores()
+        public void TickGameCall()
+        {
+            if (!MovesPossible) return;
+
+            _birdVelocity += Gravity;
+            _field.BirdY += _birdVelocity;
+
+            for (int i = _field.Obstacles.Count - 1; i >= 0; i--)
+            {
+                var obs = _field.Obstacles[i];
+                obs.X -= 5;
+                if (obs.X + obs.Width < 0)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Obstacle removed at X={obs.X}");
+                    _field.Obstacles.RemoveAt(i);
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine($"Obstacle position: X={obs.X}");
+                }
+            }
+
+            if (_field.NeedsObstacle)
+            {
+                _field.CreateObstacle();
+                System.Diagnostics.Debug.WriteLine("New obstacles created");
+            }
+
+            int oldScore = _field.Score;
+            _field.UpdateScoreIfPassed();
+            if (_field.Score > oldScore)
+            {
+                soundManager.PlayScore();
+            }
+
+            if (_field.BirdY < 0 || _field.BirdY + _field.BirdSize > _field.FieldHeight)
+            {
+                EndGame();
+                return;
+            }
+
+            var birdRect = _field.BirdRectangle;
+            foreach (var obs in _field.Obstacles)
+            {
+                if (birdRect.IntersectsWith(obs.Rectangle))
+                {
+                    EndGame();
+                    return;
+                }
+            }
+        }
+
+        private void EndGame()
+        {
+            MovesPossible = false;
+            GameOver = true;
+
+            soundManager.PlayHit();
+            soundManager.StopMusic();
+
+            Highscores.Add(_field.Score);
+            Highscores.Sort((a, b) => b.CompareTo(a));
+            if (Highscores.Count > 10)
+                Highscores.RemoveAt(Highscores.Count - 1);
+
+            SaveHighscores();
+        }
+
+        public void LoadHighscores()
         {
             string file = System.IO.Path.Combine(GetProjectFolderPath(), "Classes", "B4_Gruppe", "FlappyBirdHighscore.json");
             if (File.Exists(file))
@@ -315,7 +437,7 @@ namespace OOPGames
             }
         }
 
-        private void SaveHighscores()
+        public void SaveHighscores()
         {
             string file = System.IO.Path.Combine(GetProjectFolderPath(), "Classes", "B4_Gruppe", "FlappyBirdHighscore.json");
             try
@@ -343,78 +465,15 @@ namespace OOPGames
             GameOver = false;
         }
 
-        public void DoMove(IPlayMove move)
-        {
-            if (!MovesPossible) return;
-
-            if (move is FlappyBirdJumpMove jumpMove)
-            {
-                if (jumpMove.PlayerNumber == 1 || jumpMove.PlayerNumber == 2)
-                {
-                    _birdVelocity = JumpForce;
-                }
-            }
-        }
-
         public int CheckIfPLayerWon()
         {
             return MovesPossible ? -1 : 1;
         }
 
-        public void StartedGameCall() { }
-
-        public void TickGameCall()
+        public void StartedGameCall()
         {
-            if (!MovesPossible) return;
-
-            _birdVelocity += Gravity;
-            _field.BirdY += _birdVelocity;
-
-            for (int i = _field.Obstacles.Count - 1; i >= 0; i--)
-            {
-                var obs = _field.Obstacles[i];
-                obs.X -= 5;
-                if (obs.X + obs.Width < 0)
-                {
-                    _field.Obstacles.RemoveAt(i);
-                }
-            }
-
-            if (_field.NeedsObstacle)
-            {
-                _field.CreateObstacle();
-            }
-
-            _field.UpdateScoreIfPassed();
-
-            if (_field.BirdY < 0 || _field.BirdY + _field.BirdSize > _field.FieldHeight)
-            {
-                EndGame();
-                return;
-            }
-
-            var birdRect = _field.BirdRectangle;
-            foreach (var obs in _field.Obstacles)
-            {
-                if (birdRect.IntersectsWith(obs.Rectangle))
-                {
-                    EndGame();
-                    return;
-                }
-            }
-        }
-
-        private void EndGame()
-        {
-            MovesPossible = false;
-            GameOver = true;
-
-            Highscores.Add(_field.Score);
-            Highscores.Sort((a, b) => b.CompareTo(a));
-            if (Highscores.Count > 10)
-                Highscores.RemoveAt(Highscores.Count - 1);
-
-            SaveHighscores();
+            // Hintergrundmusik nur beim Start abspielen
+            soundManager.StartBackgroundMusic();
         }
     }
 
