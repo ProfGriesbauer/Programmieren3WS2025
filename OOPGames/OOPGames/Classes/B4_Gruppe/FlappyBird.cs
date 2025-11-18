@@ -37,7 +37,7 @@ namespace OOPGames
             {
                 if (Obstacles.Count == 0) return true;
                 var last = Obstacles[Obstacles.Count - 1];
-                return last.X < 200;  //Abstand zwischen den Röhren (Je größer Zahl, desto näher Röhren)
+                return last.X < 200;
             }
         }
 
@@ -45,11 +45,12 @@ namespace OOPGames
 
         public void CreateObstacle()
         {
-            double gap = 140;  //Abstand von Röhre oben zu Röhre unten
+            double gap = 140;
             double gapY = _rand.Next(50, (int)(FieldHeight - gap - 50));
-
-            Obstacles.Add(new Obstacle(480, 0, 75, gapY, true));  //Röhre oben (75=Breite)
-            Obstacles.Add(new Obstacle(480, gapY + gap, 75, FieldHeight - gapY - gap, false));  //Röhre unten (7=Breite)
+            Obstacles.Add(new Obstacle(480, 0, 75, gapY, true));
+            double yBottom = gapY + gap;
+            double heightBottom = FieldHeight - yBottom;
+            Obstacles.Add(new Obstacle(480, yBottom, 75, heightBottom, false));
         }
 
         public void UpdateScoreIfPassed()
@@ -93,6 +94,9 @@ namespace OOPGames
             canvas.Children.Clear();
             if (field is FlappyBirdField f)
             {
+                // Synchronisiere FieldHeight auf die tatsächliche Canvas-Höhe
+                f.FieldHeight = canvas.ActualHeight;
+
                 var bg = new Rectangle()
                 {
                     Width = canvas.ActualWidth,
@@ -124,7 +128,6 @@ namespace OOPGames
                     canvas.Children.Add(rect);
                 }
 
-                // Score-Anzeige oben links
                 var scoreText = new TextBlock()
                 {
                     Text = $"Score: {f.Score}",
@@ -159,7 +162,6 @@ namespace OOPGames
                 Foreground = Brushes.Red,
                 TextAlignment = TextAlignment.Center
             };
-            // Zentrales Positionieren
             Canvas.SetLeft(gameOverText, (canvas.ActualWidth / 2) - 150);
             Canvas.SetTop(gameOverText, (canvas.ActualHeight / 2) - 100);
             canvas.Children.Add(gameOverText);
@@ -206,8 +208,8 @@ namespace OOPGames
 
         private FlappyBirdField _field;
 
-        private const double Gravity = 2.9;  //Gravitationskraft
-        private const double JumpForce = -18;  //Sprungkraft
+        private const double Gravity = 2.9;
+        private const double JumpForce = -18;
         private double _birdVelocity = 0;
 
         public IGameField CurrentField => _field;
