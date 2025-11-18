@@ -126,6 +126,13 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterPlayer(new B5_TicTacToe_HumanPlayer());
             OOPGamesManager.Singleton.RegisterPlayer(new B5_TicTacToe_ComputerPlayer());
 
+            //b5 Shellshock (Felix_Anton)
+            OOPGamesManager.Singleton.RegisterPainter(new B5_Shellshock_Painter());
+            OOPGamesManager.Singleton.RegisterRules(new B5_Shellshock_Rules());
+            OOPGamesManager.Singleton.RegisterPlayer(new B5_Shellshock_HumanPlayer());
+
+
+
             InitializeComponent();
             PaintList.ItemsSource = OOPGamesManager.Singleton.Painters;
             Player1List.ItemsSource = OOPGamesManager.Singleton.Players;
