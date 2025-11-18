@@ -22,31 +22,43 @@ namespace OOPGames
             if (w <= 0) w = 800; // fallback
             if (h <= 0) h = 400; // fallback
 
-            // Floor (bottom half)
+            // Shared terrain color (Peru) for both floor and hill
+            var terrainBrush = new SolidColorBrush(Color.FromRgb(205, 133, 63));
+
+            // Floor (slimmer than before: 1/5 of total height)
+            double floorH = h / 5.0;
             var floor = new Rectangle
             {
                 Width = w,
-                Height = h / 2,
-                Fill = new SolidColorBrush(Color.FromRgb(244, 164, 96)) // SandyBrown
+                Height = floorH,
+                Fill = terrainBrush
             };
             Canvas.SetLeft(floor, 0);
-            Canvas.SetTop(floor, h / 2);
-            canvas.Children.Add(floor);
+            Canvas.SetTop(floor, h - floorH);
 
-            // Hill (flat ellipse in center)
-            double hillWidth = w / 3.0;
-            double hillHeight = h / 8.0;
-            double hillX = (w - hillWidth) / 2.0;
-            double hillY = (h / 2.0) - (hillHeight / 2.0);
-            var hill = new Ellipse
+            // Hill as a diamond (rhombus) centered horizontally
+            double hillWidth = w / 3.0;      // wide, flat look
+            double hillHeight = h / 10.0;    // lower height for flatter shape
+            double hw = hillWidth / 2.0;
+            double hh = hillHeight / 2.0;
+            double cx = w / 2.0;             // center x
+            double floorTop = h - floorH;    // y where the floor starts
+            double cy = floorTop;            // place the diamond's horizontal line on the floor
+
+            var diamond = new Polygon
             {
-                Width = hillWidth,
-                Height = hillHeight,
-                Fill = new SolidColorBrush(Color.FromRgb(205, 133, 63)) // Peru
+                Fill = terrainBrush,
+                Points = new PointCollection
+                {
+                    new Point(cx - hw, cy),     // left on floor line
+                    new Point(cx, cy - hh),     // top above floor
+                    new Point(cx + hw, cy),     // right on floor line
+                    new Point(cx, cy + hh)      // bottom below floor (will be covered by floor)
+                }
             };
-            Canvas.SetLeft(hill, hillX);
-            Canvas.SetTop(hill, hillY);
-            canvas.Children.Add(hill);
+            // Draw hill first so the floor covers its bottom half -> looks like a hill protruding
+            canvas.Children.Add(diamond);
+            canvas.Children.Add(floor);
         }
     }
 }
