@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.IO;
+using System.Reflection;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -89,7 +91,6 @@ namespace OOPGames
     {
         public string Name => "Flappy Bird";
 
-        // Bronze-Brush definieren (da nicht in Brushes enthalten)
         private static readonly Brush Bronze = new SolidColorBrush(Color.FromRgb(205, 127, 50));
 
         public void PaintGameField(Canvas canvas, IGameField field)
@@ -97,7 +98,6 @@ namespace OOPGames
             canvas.Children.Clear();
             if (field is FlappyBirdField f)
             {
-                // Synchronisiere FieldHeight auf tatsächliche Canvas-Höhe
                 f.FieldHeight = canvas.ActualHeight;
 
                 var bg = new Rectangle()
@@ -192,25 +192,23 @@ namespace OOPGames
             for (int i = 0; i < hs.Count; i++)
             {
                 int score = hs[i];
-                Brush medalColor = Brushes.Black;
+                Brush medalColor;
                 if (score >= 50) medalColor = Brushes.Gold;
                 else if (score >= 20) medalColor = Brushes.Silver;
                 else if (score >= 10) medalColor = Bronze;
+                else medalColor = Brushes.Black;
 
-                if (medalColor != Brushes.Transparent)
+                var medal = new Ellipse()
                 {
-                    var medal = new Ellipse()
-                    {
-                        Width = 20,
-                        Height = 20,
-                        Fill = medalColor,
-                        Stroke = Brushes.Black,
-                        StrokeThickness = 1
-                    };
-                    Canvas.SetLeft(medal, (canvas.ActualWidth / 2) - 70);
-                    Canvas.SetTop(medal, yStart + i * 30);
-                    canvas.Children.Add(medal);
-                }
+                    Width = 20,
+                    Height = 20,
+                    Fill = medalColor,
+                    Stroke = Brushes.Black,
+                    StrokeThickness = 1
+                };
+                Canvas.SetLeft(medal, (canvas.ActualWidth / 2) - 70);
+                Canvas.SetTop(medal, yStart + i * 30 + 3);
+                canvas.Children.Add(medal);
 
                 var tb = new TextBlock()
                 {
@@ -220,7 +218,7 @@ namespace OOPGames
                     TextAlignment = TextAlignment.Center
                 };
                 Canvas.SetLeft(tb, (canvas.ActualWidth / 2) - 40);
-                Canvas.SetTop(tb, yStart + i * 30 - 3);
+                Canvas.SetTop(tb, yStart + i * 30 - 2);
                 canvas.Children.Add(tb);
             }
         }
@@ -240,11 +238,45 @@ namespace OOPGames
         public bool MovesPossible { get; private set; } = true;
 
         public static readonly List<int> Highscores = new List<int>();
+
         public static bool GameOver = false;
+
+        private static readonly string HighscoreFile = System.IO.Path.Combine(
+            System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "",
+            "highscores.json");
 
         public FlappyBirdRules()
         {
+            LoadHighscores();
             ClearField();
+        }
+
+        private void LoadHighscores()
+        {
+            if (File.Exists(HighscoreFile))
+            {
+                try
+                {
+                    string json = File.ReadAllText(HighscoreFile);
+                    var loaded = JsonSerializer.Deserialize<List<int>>(json);
+                    if (loaded != null)
+                    {
+                        Highscores.Clear();
+                        Highscores.AddRange(loaded);
+                    }
+                }
+                catch { }
+            }
+        }
+
+        private void SaveHighscores()
+        {
+            try
+            {
+                string json = JsonSerializer.Serialize(Highscores);
+                File.WriteAllText(HighscoreFile, json);
+            }
+            catch { }
         }
 
         public void ClearField()
@@ -325,6 +357,8 @@ namespace OOPGames
             Highscores.Sort((a, b) => b.CompareTo(a));
             if (Highscores.Count > 10)
                 Highscores.RemoveAt(Highscores.Count - 1);
+
+            SaveHighscores();
         }
     }
 
