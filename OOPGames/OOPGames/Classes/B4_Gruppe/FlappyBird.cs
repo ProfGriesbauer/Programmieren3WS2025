@@ -89,12 +89,15 @@ namespace OOPGames
     {
         public string Name => "Flappy Bird";
 
+        // Bronze-Brush definieren (da nicht in Brushes enthalten)
+        private static readonly Brush Bronze = new SolidColorBrush(Color.FromRgb(205, 127, 50));
+
         public void PaintGameField(Canvas canvas, IGameField field)
         {
             canvas.Children.Clear();
             if (field is FlappyBirdField f)
             {
-                // Synchronisiere FieldHeight auf die tatsächliche Canvas-Höhe
+                // Synchronisiere FieldHeight auf tatsächliche Canvas-Höhe
                 f.FieldHeight = canvas.ActualHeight;
 
                 var bg = new Rectangle()
@@ -188,15 +191,36 @@ namespace OOPGames
 
             for (int i = 0; i < hs.Count; i++)
             {
+                int score = hs[i];
+                Brush medalColor = Brushes.Black;
+                if (score >= 50) medalColor = Brushes.Gold;
+                else if (score >= 20) medalColor = Brushes.Silver;
+                else if (score >= 10) medalColor = Bronze;
+
+                if (medalColor != Brushes.Transparent)
+                {
+                    var medal = new Ellipse()
+                    {
+                        Width = 20,
+                        Height = 20,
+                        Fill = medalColor,
+                        Stroke = Brushes.Black,
+                        StrokeThickness = 1
+                    };
+                    Canvas.SetLeft(medal, (canvas.ActualWidth / 2) - 70);
+                    Canvas.SetTop(medal, yStart + i * 30);
+                    canvas.Children.Add(medal);
+                }
+
                 var tb = new TextBlock()
                 {
-                    Text = $"{i + 1}. {hs[i]}",
+                    Text = $"{i + 1}. {score}",
                     FontSize = 20,
                     Foreground = Brushes.White,
                     TextAlignment = TextAlignment.Center
                 };
                 Canvas.SetLeft(tb, (canvas.ActualWidth / 2) - 40);
-                Canvas.SetTop(tb, yStart + i * 30);
+                Canvas.SetTop(tb, yStart + i * 30 - 3);
                 canvas.Children.Add(tb);
             }
         }
