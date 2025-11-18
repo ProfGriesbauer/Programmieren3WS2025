@@ -124,7 +124,7 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterRules(new B2_MazeRules());
             OOPGamesManager.Singleton.RegisterPlayer(new B2_MazeHumanPlayer());
 
-            //b5 TicTacToe (Felix_Anton)
+            //b5 TicTacToe (Felix_Anton)test
             OOPGamesManager.Singleton.RegisterPainter(new B5_TicTacToe_Painter());
             OOPGamesManager.Singleton.RegisterRules(new B5_TicTacToe_Rules());
             OOPGamesManager.Singleton.RegisterPlayer(new B5_TicTacToe_HumanPlayer());
