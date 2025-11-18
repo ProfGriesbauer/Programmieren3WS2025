@@ -17,10 +17,7 @@ namespace OOPGames
      ******************************************************************************/
 
     #region Abstract Base Classes
-
-    /// <summary>
     /// Abstrakte Basis für Labyrinth-Painter
-    /// </summary>
     public abstract class B2_AbstractMazePainter : IPaintGame2
     {
         public abstract string Name { get; }
@@ -46,13 +43,10 @@ namespace OOPGames
     #endregion
 
     #region Concrete Implementations
-
-    /// <summary>
     /// Konkreter Labyrinth-Painter für 2-Spieler-Modus
-    /// </summary>
     public class B2_MazePainter2Player : B2_AbstractMazePainter
     {
-        private const int ViewRadius = 3; // Sichtradius um Spieler (3 = 7x7 Sichtfeld)
+        private const int ViewRadius = 2; // Sichtradius um Spieler (2 = 5x5 Sichtfeld)
         
         public override string Name => "B2 - Maze Painter (2 Players)";
 
@@ -160,9 +154,8 @@ namespace OOPGames
             DrawHUD(canvas, canvasW, canvasH, field);
         }
 
-        /// <summary>
         /// Zeichnet ein Männchen (Spieler)
-        /// </summary>
+        
         private void DrawPlayer(Canvas canvas, double x, double y, double cellSize, Color color, string number)
         {
             double centerX = x + cellSize / 2;
@@ -211,9 +204,9 @@ namespace OOPGames
             canvas.Children.Add(text);
         }
 
-        /// <summary>
+        
         /// Zeichnet Sichtfeld-Radius
-        /// </summary>
+        
         private void DrawViewRadius(Canvas canvas, double offsetX, double offsetY, double cellSize, int row, int col, Color color)
         {
             double centerX = offsetX + col * cellSize + cellSize / 2;
@@ -232,9 +225,8 @@ namespace OOPGames
             canvas.Children.Add(circle);
         }
 
-        /// <summary>
         /// Bestimmt die Farbe einer Zelle basierend auf ihrem Typ
-        /// </summary>
+        
         private Color GetCellColor(B2_MazeCellType cellType)
         {
             switch (cellType)
@@ -255,9 +247,9 @@ namespace OOPGames
             }
         }
 
-        /// <summary>
+        
         /// Erstellt Punkte für eine Stern-Form
-        /// </summary>
+        
         private PointCollection CreateStarPoints(double centerX, double centerY, double radius, int points)
         {
             var collection = new PointCollection();
@@ -276,9 +268,9 @@ namespace OOPGames
             return collection;
         }
 
-        /// <summary>
+        
         /// Zeichnet HUD mit Spielerinformationen
-        /// </summary>
+        
         private void DrawHUD(Canvas canvas, double canvasW, double canvasH, B2_AbstractMazeField field)
         {
             // Titel
@@ -286,19 +278,19 @@ namespace OOPGames
             {
                 Text = "Race to the Center!",
                 Foreground = new SolidColorBrush(Color.FromRgb(40, 40, 50)),
-                FontSize = 18,
+                FontSize = 15,
                 FontWeight = FontWeights.Bold,
-                Background = new SolidColorBrush(Color.FromArgb(220, 255, 255, 255)),
+                Background = new SolidColorBrush(Color.FromArgb(225, 255, 255, 255)),
                 Padding = new Thickness(15, 8, 15, 8)
             };
             Canvas.SetLeft(title, canvasW / 2 - 100);
-            Canvas.SetTop(title, 10);
+            Canvas.SetTop(title, 5);
             canvas.Children.Add(title);
 
             // Spieler 1 Info
             var player1Info = new TextBlock
             {
-                Text = $"Player 1 (Blue)\nPos: ({field.Player1Row}, {field.Player1Col})",
+                Text = $"Player 1 Blau",
                 Foreground = new SolidColorBrush(Color.FromRgb(50, 120, 255)),
                 FontSize = 12,
                 FontWeight = FontWeights.Bold,
@@ -306,13 +298,13 @@ namespace OOPGames
                 Padding = new Thickness(10, 6, 10, 6)
             };
             Canvas.SetLeft(player1Info, 10);
-            Canvas.SetTop(player1Info, 50);
+            Canvas.SetTop(player1Info, 5);
             canvas.Children.Add(player1Info);
 
             // Spieler 2 Info
             var player2Info = new TextBlock
             {
-                Text = $"Player 2 (Red)\nPos: ({field.Player2Row}, {field.Player2Col})",
+                Text = $"Player 2 Rot",
                 Foreground = new SolidColorBrush(Color.FromRgb(255, 80, 80)),
                 FontSize = 12,
                 FontWeight = FontWeights.Bold,
@@ -320,21 +312,21 @@ namespace OOPGames
                 Padding = new Thickness(10, 6, 10, 6)
             };
             Canvas.SetRight(player2Info, 10);
-            Canvas.SetTop(player2Info, 50);
+            Canvas.SetTop(player2Info, 5);
             canvas.Children.Add(player2Info);
 
             // Steuerungshinweise
             var instructions = new TextBlock
             {
-                Text = "Use Arrow Keys / WASD\nMove to next intersection automatically",
+                Text = "Use Arrow Keys / WASD\n to Move",
                 Foreground = new SolidColorBrush(Color.FromRgb(80, 80, 90)),
                 FontSize = 11,
                 TextAlignment = TextAlignment.Center,
                 Background = new SolidColorBrush(Color.FromArgb(200, 255, 255, 255)),
                 Padding = new Thickness(10, 5, 10, 5)
             };
-            Canvas.SetLeft(instructions, canvasW / 2 - 120);
-            Canvas.SetBottom(instructions, 10);
+            Canvas.SetLeft(instructions, canvasW / 2 - 100);
+            Canvas.SetBottom(instructions, 5);
             canvas.Children.Add(instructions);
         }
     }

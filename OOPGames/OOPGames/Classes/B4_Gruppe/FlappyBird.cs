@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.IO;
+using System.Reflection;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -12,10 +14,7 @@ namespace OOPGames
     public class FlappyBirdJumpMove : IPlayMove
     {
         public int PlayerNumber { get; private set; }
-        public FlappyBirdJumpMove(int playerNumber)
-        {
-            PlayerNumber = playerNumber;
-        }
+        public FlappyBirdJumpMove(int playerNumber) => PlayerNumber = playerNumber;
     }
 
     public class FlappyBirdField : IGameField
@@ -37,7 +36,7 @@ namespace OOPGames
             {
                 if (Obstacles.Count == 0) return true;
                 var last = Obstacles[Obstacles.Count - 1];
-                return last.X < 400;
+                return last.X < 200;
             }
         }
 
@@ -45,11 +44,12 @@ namespace OOPGames
 
         public void CreateObstacle()
         {
-            double gap = 250;
+            double gap = 140;
             double gapY = _rand.Next(50, (int)(FieldHeight - gap - 50));
-
-            Obstacles.Add(new Obstacle(480, 0, 50, gapY, true));
-            Obstacles.Add(new Obstacle(480, gapY + gap, 50, FieldHeight - gapY - gap, false));
+            Obstacles.Add(new Obstacle(480, 0, 75, gapY, true));
+            double yBottom = gapY + gap;
+            double heightBottom = FieldHeight - yBottom;
+            Obstacles.Add(new Obstacle(480, yBottom, 75, heightBottom, false));
         }
 
         public void UpdateScoreIfPassed()
@@ -88,11 +88,15 @@ namespace OOPGames
     {
         public string Name => "Flappy Bird";
 
+        private static readonly Brush Bronze = new SolidColorBrush(Color.FromRgb(205, 127, 50));
+
         public void PaintGameField(Canvas canvas, IGameField field)
         {
             canvas.Children.Clear();
             if (field is FlappyBirdField f)
             {
+                f.FieldHeight = canvas.ActualHeight;
+
                 var bg = new Rectangle()
                 {
                     Width = canvas.ActualWidth,
@@ -124,7 +128,6 @@ namespace OOPGames
                     canvas.Children.Add(rect);
                 }
 
-                // Score-Anzeige oben links
                 var scoreText = new TextBlock()
                 {
                     Text = $"Score: {f.Score}",
@@ -159,7 +162,6 @@ namespace OOPGames
                 Foreground = Brushes.Red,
                 TextAlignment = TextAlignment.Center
             };
-            // Zentrales Positionieren
             Canvas.SetLeft(gameOverText, (canvas.ActualWidth / 2) - 150);
             Canvas.SetTop(gameOverText, (canvas.ActualHeight / 2) - 100);
             canvas.Children.Add(gameOverText);
@@ -186,15 +188,34 @@ namespace OOPGames
 
             for (int i = 0; i < hs.Count; i++)
             {
+                int score = hs[i];
+                Brush medalColor;
+                if (score >= 50) medalColor = Brushes.Gold;
+                else if (score >= 20) medalColor = Brushes.Silver;
+                else if (score >= 10) medalColor = Bronze;
+                else medalColor = Brushes.Black;
+
+                var medal = new Ellipse()
+                {
+                    Width = 20,
+                    Height = 20,
+                    Fill = medalColor,
+                    Stroke = Brushes.Black,
+                    StrokeThickness = 1
+                };
+                Canvas.SetLeft(medal, (canvas.ActualWidth / 2) - 70);
+                Canvas.SetTop(medal, yStart + i * 30 + 3);
+                canvas.Children.Add(medal);
+
                 var tb = new TextBlock()
                 {
-                    Text = $"{i + 1}. {hs[i]}",
+                    Text = $"{i + 1}. {score}",
                     FontSize = 20,
                     Foreground = Brushes.White,
                     TextAlignment = TextAlignment.Center
                 };
                 Canvas.SetLeft(tb, (canvas.ActualWidth / 2) - 40);
-                Canvas.SetTop(tb, yStart + i * 30);
+                Canvas.SetTop(tb, yStart + i * 30 - 2);
                 canvas.Children.Add(tb);
             }
         }
@@ -206,19 +227,81 @@ namespace OOPGames
 
         private FlappyBirdField _field;
 
-        private const double Gravity = 0.5;
-        private const double JumpForce = -8;
+        private const double Gravity = 2.9;
+        private const double JumpForce = -18;
         private double _birdVelocity = 0;
 
         public IGameField CurrentField => _field;
         public bool MovesPossible { get; private set; } = true;
 
         public static readonly List<int> Highscores = new List<int>();
+
         public static bool GameOver = false;
+
+        // Pfad zur Highscore-Datei im Unterordner Classes\B4_Gruppe des Projekt-Hauptordners
+        private static readonly string HighscoreFile = GetProjectFolderPath();
+
+        private static string GetProjectFolderPath()
+        {
+            string exePath = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "";
+            string projectFolder = System.IO.Path.GetFullPath(System.IO.Path.Combine(exePath, @"..\..\.."));
+            string targetFolder = System.IO.Path.Combine(projectFolder, "Classes", "B4_Gruppe");
+
+            if (!Directory.Exists(targetFolder))
+                Directory.CreateDirectory(targetFolder);
+
+            return System.IO.Path.Combine(targetFolder, "FlappyBirdHighscore.json");
+        }
 
         public FlappyBirdRules()
         {
+            LoadHighscores();
             ClearField();
+        }
+
+        private void LoadHighscores()
+        {
+            if (File.Exists(HighscoreFile))
+            {
+                try
+                {
+                    string json = File.ReadAllText(HighscoreFile);
+                    var loaded = JsonSerializer.Deserialize<List<int>>(json);
+                    if (loaded != null)
+                    {
+                        Highscores.Clear();
+                        Highscores.AddRange(loaded);
+                    }
+                    System.Diagnostics.Debug.WriteLine($"Highscores geladen von: {HighscoreFile}");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Fehler beim Laden der Highscores: {ex.Message}");
+                }
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"Highscore-Datei nicht gefunden: {HighscoreFile}");
+            }
+        }
+
+        private void SaveHighscores()
+        {
+            try
+            {
+                string directory = System.IO.Path.GetDirectoryName(HighscoreFile);
+                if (!Directory.Exists(directory))
+                    Directory.CreateDirectory(directory);
+
+                string json = JsonSerializer.Serialize(Highscores);
+                File.WriteAllText(HighscoreFile, json);
+
+                System.Diagnostics.Debug.WriteLine($"Highscores gespeichert in: {HighscoreFile}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Fehler beim Speichern der Highscores: {ex.Message}");
+            }
         }
 
         public void ClearField()
@@ -299,6 +382,8 @@ namespace OOPGames
             Highscores.Sort((a, b) => b.CompareTo(a));
             if (Highscores.Count > 10)
                 Highscores.RemoveAt(Highscores.Count - 1);
+
+            SaveHighscores();
         }
     }
 
@@ -309,20 +394,11 @@ namespace OOPGames
         private int _playerNumber;
         public int PlayerNumber => _playerNumber;
 
-        public void SetPlayerNumber(int number)
-        {
-            _playerNumber = number;
-        }
+        public void SetPlayerNumber(int number) => _playerNumber = number;
 
-        public IGamePlayer Clone()
-        {
-            return new FlappyBirdHumanPlayer();
-        }
+        public IGamePlayer Clone() => new FlappyBirdHumanPlayer();
 
-        public bool CanBeRuledBy(IGameRules rules)
-        {
-            return rules is FlappyBirdRules;
-        }
+        public bool CanBeRuledBy(IGameRules rules) => rules is FlappyBirdRules;
 
         public IPlayMove GetMove(IMoveSelection selection, IGameField field)
         {

@@ -11,6 +11,7 @@ namespace OOPGames
         private B5_Shellshock_Projectile _projectile;
         private double _wind;
         private int _movementsRemaining;
+        private int _activeTankNumber; // 1 or 2 indicating whose turn it is
 
         public B5_Shellshock_Tank Tank1 => _tank1;
         public B5_Shellshock_Tank Tank2 => _tank2;
@@ -32,6 +33,12 @@ namespace OOPGames
         {
             get => _movementsRemaining;
             set => _movementsRemaining = value;
+        }
+
+        public int ActiveTankNumber
+        {
+            get => _activeTankNumber;
+            set => _activeTankNumber = value;
         }
 
         public bool ProjectileInFlight
@@ -71,6 +78,7 @@ namespace OOPGames
 
             _projectile = null;
             _movementsRemaining = 5; // Start with 5 movements
+            _activeTankNumber = 1; // Tank 1 starts
         }
 
         public B5_Shellshock_Tank GetTankByPlayer(int playerNumber)

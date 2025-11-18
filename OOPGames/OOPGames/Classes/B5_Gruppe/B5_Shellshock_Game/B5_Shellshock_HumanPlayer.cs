@@ -53,39 +53,62 @@ namespace OOPGames
 
         private IPlayMove GetMoveFromKey(Key key, B5_Shellshock_Field field)
         {
-            // Don't allow any actions while projectile is in flight
-            if (field.ProjectileInFlight)
-                return null;
+            if (field.ProjectileInFlight) return null; // Block input during projectile flight
 
-            // For shooting, return a Move object (this will trigger framework player switch)
-            // For other actions, return a Move object but Rules will handle player switching
+            // Determine active tank (Rules keeps field.ActiveTankNumber up-to-date)
+            B5_Shellshock_Tank activeTank = field.ActiveTankNumber == 1 ? field.Tank1 : field.Tank2;
+
             switch (key)
             {
                 case Key.A:
                 case Key.Left:
-                    return new B5_Shellshock_Move(_playerNumber, B5_Shellshock_ActionType.MoveLeft);
+                    if (field.MovementsRemaining > 0)
+                    {
+                        double newX = activeTank.X - 10;
+                        if (newX > 20 && newX < field.Terrain.Width - 20)
+                        {
+                            activeTank.X = newX;
+                            activeTank.Y = field.Terrain.GetHeightAt(activeTank.X);
+                            field.MovementsRemaining--;
+                        }
+                    }
+                    return null; // Do not end turn
 
                 case Key.D:
                 case Key.Right:
-                    return new B5_Shellshock_Move(_playerNumber, B5_Shellshock_ActionType.MoveRight);
+                    if (field.MovementsRemaining > 0)
+                    {
+                        double newX = activeTank.X + 10;
+                        if (newX > 20 && newX < field.Terrain.Width - 20)
+                        {
+                            activeTank.X = newX;
+                            activeTank.Y = field.Terrain.GetHeightAt(activeTank.X);
+                            field.MovementsRemaining--;
+                        }
+                    }
+                    return null; // Do not end turn
 
                 case Key.W:
                 case Key.Up:
-                    return new B5_Shellshock_Move(_playerNumber, B5_Shellshock_ActionType.IncreaseAngle);
+                    activeTank.AdjustAngle(5);
+                    return null;
 
                 case Key.S:
                 case Key.Down:
-                    return new B5_Shellshock_Move(_playerNumber, B5_Shellshock_ActionType.DecreaseAngle);
+                    activeTank.AdjustAngle(-5);
+                    return null;
 
                 case Key.Q:
-                    return new B5_Shellshock_Move(_playerNumber, B5_Shellshock_ActionType.DecreasePower);
+                    activeTank.AdjustPower(-5);
+                    return null;
 
                 case Key.E:
-                    return new B5_Shellshock_Move(_playerNumber, B5_Shellshock_ActionType.IncreasePower);
+                    activeTank.AdjustPower(5);
+                    return null;
 
-                case Key.Space:
-                case Key.Enter:
-                    return new B5_Shellshock_Move(_playerNumber, B5_Shellshock_ActionType.Shoot);
+                case Key.F:
+                    // Shooting ends turn; return move so Rules handles projectile creation
+                    return new B5_Shellshock_Move(field.ActiveTankNumber, B5_Shellshock_ActionType.Shoot);
 
                 default:
                     return null;
@@ -94,8 +117,8 @@ namespace OOPGames
 
         private IPlayMove GetMoveFromClick(IClickSelection selection, B5_Shellshock_Field field)
         {
-            // Mouse click can be used to shoot
-            return new B5_Shellshock_Move(_playerNumber, B5_Shellshock_ActionType.Shoot);
+            if (field.ProjectileInFlight) return null;
+            return new B5_Shellshock_Move(field.ActiveTankNumber, B5_Shellshock_ActionType.Shoot);
         }
     }
 }
