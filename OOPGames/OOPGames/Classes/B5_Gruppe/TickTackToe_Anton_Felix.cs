@@ -15,21 +15,6 @@ namespace OOPGames
         O = 2
     }
 
-            // Move - represents a single move in Tic Tac Toe
-    public class B5_TicTacToeMove : IRowMove, IColumnMove
-    {
-        public int PlayerNumber { get; }
-        public int Row { get; }
-        public int Column { get; }
-
-        public B5_TicTacToeMove(int playerNumber, int row, int column)
-        {
-            PlayerNumber = playerNumber;
-            Row = row;
-            Column = column;
-        }
-    }
-
     // Game Field - 3x3 Tic Tac Toe Board
     public class B5_TicTacToe_Field : IGameField
     {
@@ -57,7 +42,20 @@ namespace OOPGames
         }
     }
 
+    // Move - represents a single move in Tic Tac Toe
+    public class B5_TicTacToe_Move : IRowMove, IColumnMove
+    {
+        public int PlayerNumber { get; }
+        public int Row { get; }
+        public int Column { get; }
 
+        public B5_TicTacToe_Move(int playerNumber, int row, int column)
+        {
+            PlayerNumber = playerNumber;
+            Row = row;
+            Column = column;
+        }
+    }
 
     // Painter - handles rendering the game to the canvas
     public class B5_TicTacToe_Painter : IPaintGame2
@@ -379,7 +377,7 @@ namespace OOPGames
             if (field.Cells[row, col] != B5_TicTacToe_CellState.Empty)
                 return null;
 
-            return new B5_TicTacToeMove(PlayerNumber, row, col);
+            return new B5_TicTacToe_Move(PlayerNumber, row, col);
         }
 
         // Handle mouse click input
@@ -411,7 +409,7 @@ namespace OOPGames
             if (field.Cells[row, col] != B5_TicTacToe_CellState.Empty)
                 return null;
 
-            return new B5_TicTacToeMove(PlayerNumber, row, col);
+            return new B5_TicTacToe_Move(PlayerNumber, row, col);
         }
     }
 
@@ -484,7 +482,7 @@ namespace OOPGames
                 return null;
             }
 
-            return new B5_TicTacToeMove(PlayerNumber, bestRow, bestCol);
+            return new B5_TicTacToe_Move(PlayerNumber, bestRow, bestCol);
         }
 
         // Minimax algorithm: AI maximizes, opponent minimizes

@@ -33,51 +33,71 @@ namespace OOPGames
     #region Concrete Implementations
 
     /// <summary>
-    /// Menschlicher Spieler - Steuerung mit Pfeiltasten
+    /// Dual-Controller Player - Steuert BEIDE Spieler gleichzeitig
+    /// WASD = Spieler 1 (Blau), Pfeiltasten = Spieler 2 (Rot)
     /// </summary>
-    public class B2_MazeHumanPlayer : B2_AbstractMazeHumanPlayer
+    public class B2_MazeDualPlayer : B2_AbstractMazeHumanPlayer
     {
-        public B2_MazeHumanPlayer(string name = "B2 - Maze Player")
+        public B2_MazeDualPlayer(string name = "B2 - Maze Dual Controller")
         {
             Name = name;
         }
 
         public override IGamePlayer Clone()
         {
-            return new B2_MazeHumanPlayer(Name);
+            return new B2_MazeDualPlayer(Name);
         }
 
         public override IPlayMove GetMove(IMoveSelection selection, IGameField field)
         {
-            // Prüfe ob es eine Tastatur-Eingabe ist
             if (selection is IKeySelection keySelection)
             {
                 B2_MazeDirection? direction = null;
+                int targetPlayer = 0;
 
-                // Map Tasten zu Richtungen
+                // WASD steuert Spieler 1
                 switch (keySelection.Key)
                 {
-                    case Key.Up:
                     case Key.W:
                         direction = B2_MazeDirection.Up;
+                        targetPlayer = 1;
                         break;
-                    case Key.Down:
                     case Key.S:
                         direction = B2_MazeDirection.Down;
+                        targetPlayer = 1;
                         break;
-                    case Key.Left:
                     case Key.A:
                         direction = B2_MazeDirection.Left;
+                        targetPlayer = 1;
                         break;
-                    case Key.Right:
                     case Key.D:
                         direction = B2_MazeDirection.Right;
+                        targetPlayer = 1;
+                        break;
+
+                    // Pfeiltasten steuern Spieler 2
+                    case Key.Up:
+                        direction = B2_MazeDirection.Up;
+                        targetPlayer = 2;
+                        break;
+                    case Key.Down:
+                        direction = B2_MazeDirection.Down;
+                        targetPlayer = 2;
+                        break;
+                    case Key.Left:
+                        direction = B2_MazeDirection.Left;
+                        targetPlayer = 2;
+                        break;
+                    case Key.Right:
+                        direction = B2_MazeDirection.Right;
+                        targetPlayer = 2;
                         break;
                 }
 
-                if (direction.HasValue)
+                if (direction.HasValue && targetPlayer > 0)
                 {
-                    return new B2_MazeMove(PlayerNumber, direction.Value);
+                    // Gebe Move für den korrekten Spieler zurück
+                    return new B2_MazeMove(targetPlayer, direction.Value);
                 }
             }
 
