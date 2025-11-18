@@ -126,6 +126,11 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterRules(new B2_MazeRules());
             OOPGamesManager.Singleton.RegisterPlayer(new B2_MazeHumanPlayer());
 
+            //b5 TicTacToe (Felix_Anton)
+            OOPGamesManager.Singleton.RegisterPainter(new B5_TicTacToe_Painter());
+            OOPGamesManager.Singleton.RegisterRules(new B5_TicTacToe_Rules());
+            OOPGamesManager.Singleton.RegisterPlayer(new B5_TicTacToe_HumanPlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new B5_TicTacToe_ComputerPlayer());
 
             InitializeComponent();
             PaintList.ItemsSource = OOPGamesManager.Singleton.Painters;
