@@ -65,6 +65,15 @@ namespace OOPGames
             // Register A4 computer players so they appear in the Player dropdowns
             OOPGamesManager.Singleton.RegisterPlayer(new A4_ComputerNormal());
             OOPGamesManager.Singleton.RegisterPlayer(new A4_ComputerUnbeatable());
+            // Register A1
+            OOPGamesManager.Singleton.RegisterPainter(new A1_TicTacToePaint());
+            OOPGamesManager.Singleton.RegisterPlayer(new A1_ComputerTicTacToePlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new A1_HumanTicTacToePlayer());
+            OOPGamesManager.Singleton.RegisterRules(new A1_TicTacToeRules());
+
+
+
+
 
             //A2 Painters
             OOPGamesManager.Singleton.RegisterPainter(new A2_Painter());
