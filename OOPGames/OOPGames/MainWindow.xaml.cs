@@ -124,7 +124,7 @@ namespace OOPGames
             // B2 group (Moritz & Tobias) - Maze Game (2 Players)
             OOPGamesManager.Singleton.RegisterPainter(new B2_MazePainter2Player());
             OOPGamesManager.Singleton.RegisterRules(new B2_MazeRules());
-            OOPGamesManager.Singleton.RegisterPlayer(new B2_MazeHumanPlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new B2_MazeDualPlayer());
 
             //b5 TicTacToe (Felix_Anton)
             OOPGamesManager.Singleton.RegisterPainter(new B5_TicTacToe_Painter());
@@ -364,8 +364,20 @@ namespace OOPGames
                     if (pm != null)
                     {
                         _CurrentRules.DoMove(pm);
-                        _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
+                        
+                        
+                        if (!(_CurrentPlayer is B2_MazeDualPlayer))
+                        {
+                            _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
+                        }
+                        
                         Status.Text = "Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
+                        
+                        // Verhindere Pfeiltasten-Navigation in UI
+                        if (e.Key == Key.Left || e.Key == Key.Right || e.Key == Key.Up || e.Key == Key.Down)
+                        {
+                            e.Handled = true;
+                        }
                     }
                     //Restart Logic for Gruppe A4 :)
                     DoComputerMoves();
