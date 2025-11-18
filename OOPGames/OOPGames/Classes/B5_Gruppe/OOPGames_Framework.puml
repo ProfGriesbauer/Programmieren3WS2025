@@ -1,0 +1,458 @@
+@startuml OOPGames Framework
+
+' Styling
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam backgroundColor #FEFEFE
+skinparam class {
+    BackgroundColor<<interface>> LightYellow
+    BorderColor<<interface>> Orange
+    BackgroundColor<<abstract>> LightBlue
+    BorderColor<<abstract>> Blue
+    BackgroundColor<<manager>> LightGreen
+    BorderColor<<manager>> DarkGreen
+}
+
+' ===== CORE INTERFACES =====
+
+package "Core Game Interfaces" {
+    
+    interface IGameField <<interface>> {
+        + CanBePaintedBy(painter: IPaintGame): bool
+        --
+        Represents the game board/field state.
+        Each game must implement this to define
+        their specific field structure (grid, cards, etc.)
+    }
+    
+    interface IGameRules <<interface>> {
+        + Name: string {get}
+        + CurrentField: IGameField {get}
+        + MovesPossible: bool {get}
+        + DoMove(move: IPlayMove): void
+        + ClearField(): void
+        + CheckIfPLayerWon(): int
+        --
+        Defines game logic and rules.
+        Manages the game state, validates moves,
+        checks win conditions, and enforces game rules.
+    }
+    
+    interface IGameRules2 <<interface>> {
+        + StartedGameCall(): void
+        + TickGameCall(): void
+        --
+        Extended rules for real-time games.
+        Provides hooks for game initialization
+        and periodic updates (every 40ms).
+    }
+    
+    interface IPaintGame <<interface>> {
+        + Name: string {get}
+        + PaintGameField(canvas: Canvas, field: IGameField): void
+        --
+        Handles visual rendering of the game.
+        Draws the game field to a WPF Canvas
+        whenever a move is made.
+    }
+    
+    interface IPaintGame2 <<interface>> {
+        + TickPaintGameField(canvas: Canvas, field: IGameField): void
+        --
+        Extended painter for animations.
+        Called every 40ms for smooth animations
+        and real-time visual updates.
+    }
+    
+    interface IGamePlayer <<interface>> {
+        + Name: string {get}
+        + PlayerNumber: int {get}
+        + SetPlayerNumber(playerNumber: int): void
+        + CanBeRuledBy(rules: IGameRules): bool
+        + Clone(): IGamePlayer
+        --
+        Base interface for all players.
+        Defines player identity, number assignment,
+        and compatibility with game rules.
+    }
+    
+    interface IHumanGamePlayer <<interface>> {
+        + GetMove(selection: IMoveSelection, field: IGameField): IPlayMove
+        --
+        Human player controlled by user input.
+        Converts keyboard/mouse input into
+        valid game moves.
+    }
+    
+    interface IHumanGamePlayerWithMouse <<interface>> {
+        + OnMouseMoved(e: MouseEventArgs): void
+        --
+        Human player with mouse tracking.
+        Receives continuous mouse position updates
+        for games requiring hover effects.
+    }
+    
+    interface IComputerGamePlayer <<interface>> {
+        + GetMove(field: IGameField): IPlayMove
+        --
+        AI/Computer controlled player.
+        Generates valid moves automatically
+        based on current game state.
+    }
+}
+
+' ===== MOVE INTERFACES =====
+
+package "Move System" {
+    
+    interface IPlayMove <<interface>> {
+        + PlayerNumber: int {get}
+        --
+        Represents a game move.
+        Base interface for all move types,
+        identifies which player made the move.
+    }
+    
+    interface IRowMove <<interface>> {
+        + Row: int {get}
+        --
+        Move with row selection.
+        Used for grid-based games
+        (TicTacToe, Chess, Checkers, etc.)
+    }
+    
+    interface IColumnMove <<interface>> {
+        + Column: int {get}
+        --
+        Move with column selection.
+        Used for grid-based games
+        (TicTacToe, Chess, Checkers, etc.)
+    }
+    
+    interface IMoveSelection <<interface>> {
+        + MoveType: MoveType {get}
+        --
+        Input selection from user.
+        Represents either click or key input
+        before validation into a move.
+    }
+    
+    interface IClickSelection <<interface>> {
+        + XClickPos: int {get}
+        + YClickPos: int {get}
+        + ChangedButton: int {get}
+        --
+        Mouse click input.
+        Contains pixel coordinates and
+        which mouse button was clicked.
+    }
+    
+    interface IKeySelection <<interface>> {
+        + Key: Key {get}
+        --
+        Keyboard input.
+        Contains the key that was pressed
+        for keyboard-based controls.
+    }
+    
+    enum MoveType {
+        click
+        key
+        --
+        Type of input selection:
+        click = mouse input
+        key = keyboard input
+    }
+}
+
+' ===== MANAGER CLASS =====
+
+package "Framework Manager" {
+    
+    class OOPGamesManager <<manager>> {
+        - {static} _OOPGames: OOPGamesManager
+        - _Painters: IList<IPaintGame>
+        - _Players: IList<IGamePlayer>
+        - _Rules: IList<IGameRules>
+        - _activePlayers: IList<IGamePlayer>
+        - _activePainter: IPaintGame
+        - _activeRules: IGameRules
+        --
+        + {static} Singleton: OOPGamesManager {get}
+        + Painters: IEnumerable<IPaintGame> {get}
+        + Players: IEnumerable<IGamePlayer> {get}
+        + Rules: IEnumerable<IGameRules> {get}
+        + ActiveRules: IGameRules {get}
+        + ActivePlayers: IEnumerable<IGamePlayer> {get}
+        + ActivePainter: IPaintGame {get}
+        --
+        + RegisterPainter(painter: IPaintGame): void
+        + UnregisterPainter(painter: IPaintGame): void
+        + RegisterPlayer(player: IGamePlayer): void
+        + UnregisterPlayer(player: IGamePlayer): void
+        + RegisterRules(rules: IGameRules): void
+        + UnregisterRules(rules: IGameRules): void
+        + RegisterActivePlayers(players: IList<IGamePlayer>): void
+        + RegisterActivePainter(painter: IPaintGame): void
+        + RegisterActiveRules(rules: IGameRules): void
+        --
+        CENTRAL GAME REGISTRY (Singleton)
+        Manages all available games and their components.
+        Maintains registry of all painters, players, and rules.
+        Tracks currently active game configuration.
+        Used by MainWindow to populate dropdown lists.
+    }
+    
+    class ClickSelection {
+        - _ClickX: int
+        - _ClickY: int
+        - _ChangedButton: int
+        --
+        + ClickSelection(clickX: int, clickY: int, changedButton: int)
+        + XClickPos: int {get}
+        + YClickPos: int {get}
+        + MoveType: MoveType {get}
+        + ChangedButton: int {get}
+        --
+        Concrete implementation of IClickSelection.
+        Captures mouse click coordinates and button.
+        Created when user clicks on canvas.
+    }
+    
+    class KeySelection {
+        - _key: Key
+        --
+        + KeySelection(key: Key)
+        + MoveType: MoveType {get}
+        + Key: Key {get}
+        --
+        Concrete implementation of IKeySelection.
+        Captures keyboard key press.
+        Created when user presses a key.
+    }
+}
+
+' ===== EXAMPLE IMPLEMENTATIONS (TicTacToe) =====
+
+package "Example: TicTacToe Game" {
+    
+    interface IX_TicTacToeField {
+        + this[r: int, c: int]: int {get; set}
+        --
+        TicTacToe specific field interface.
+        Provides 3x3 grid access with indexer.
+        Values: 0=Empty, 1=X, 2=O
+    }
+    
+    interface IX_PaintTicTacToe {
+        + PaintTicTacToeField(canvas: Canvas, field: IX_TicTacToeField): void
+        --
+        TicTacToe specific painter interface.
+        Draws X's and O's on a 3x3 grid.
+    }
+    
+    interface IX_TicTacToeRules {
+        + TicTacToeField: IX_TicTacToeField {get}
+        + DoTicTacToeMove(move: IX_TicTacToeMove): void
+        --
+        TicTacToe specific rules interface.
+        Manages TicTacToe game logic,
+        checks for 3-in-a-row wins.
+    }
+    
+    interface IX_TicTacToeMove {
+        + Row: int {get}
+        + Column: int {get}
+        --
+        TicTacToe specific move.
+        Represents placing X or O
+        at row and column position.
+    }
+    
+    interface IX_HumanTicTacToePlayer {
+        + GetMove(selection: IMoveSelection, field: IX_TicTacToeField): IX_TicTacToeMove
+        --
+        TicTacToe specific human player interface.
+        Converts clicks/keys to row/column moves.
+    }
+    
+    interface IX_ComputerTicTacToePlayer {
+        + GetMove(field: IX_TicTacToeField): IX_TicTacToeMove
+        --
+        TicTacToe specific AI player interface.
+        Generates optimal TicTacToe moves.
+    }
+    
+    abstract class X_BaseTicTacToePaint <<abstract>> {
+        + {abstract} Name: string {get}
+        + {abstract} PaintTicTacToeField(canvas: Canvas, field: IX_TicTacToeField): void
+        + PaintGameField(canvas: Canvas, field: IGameField): void
+        --
+        Base painter adapter.
+        Bridges IPaintGame to IX_PaintTicTacToe.
+        Handles type casting from IGameField.
+    }
+    
+    abstract class X_BaseTicTacToeField <<abstract>> {
+        + {abstract} this[r: int, c: int]: int {get; set}
+        + CanBePaintedBy(painter: IPaintGame): bool
+        --
+        Base field adapter.
+        Bridges IGameField to IX_TicTacToeField.
+        Implements painter compatibility check.
+    }
+    
+    abstract class X_BaseTicTacToeRules <<abstract>> {
+        + {abstract} TicTacToeField: IX_TicTacToeField {get}
+        + {abstract} MovesPossible: bool {get}
+        + {abstract} Name: string {get}
+        + {abstract} CheckIfPLayerWon(): int
+        + {abstract} ClearField(): void
+        + {abstract} DoTicTacToeMove(move: IX_TicTacToeMove): void
+        + CurrentField: IGameField {get}
+        + DoMove(move: IPlayMove): void
+        --
+        Base rules adapter.
+        Bridges IGameRules to IX_TicTacToeRules.
+        Handles type casting and delegation.
+    }
+    
+    abstract class X_BaseHumanTicTacToePlayer <<abstract>> {
+        + {abstract} Name: string {get}
+        + {abstract} PlayerNumber: int {get}
+        + {abstract} GetMove(selection: IMoveSelection, field: IX_TicTacToeField): IX_TicTacToeMove
+        + {abstract} SetPlayerNumber(playerNumber: int): void
+        + {abstract} Clone(): IGamePlayer
+        + CanBeRuledBy(rules: IGameRules): bool
+        + GetMove(selection: IMoveSelection, field: IGameField): IPlayMove
+        --
+        Base human player adapter.
+        Bridges IHumanGamePlayer to IX_HumanTicTacToePlayer.
+        Validates rules compatibility.
+    }
+    
+    abstract class X_BaseComputerTicTacToePlayer <<abstract>> {
+        + {abstract} Name: string {get}
+        + {abstract} PlayerNumber: int {get}
+        + {abstract} SetPlayerNumber(playerNumber: int): void
+        + {abstract} GetMove(field: IX_TicTacToeField): IX_TicTacToeMove
+        + {abstract} Clone(): IGamePlayer
+        + CanBeRuledBy(rules: IGameRules): bool
+        + GetMove(field: IGameField): IPlayMove
+        --
+        Base computer player adapter.
+        Bridges IComputerGamePlayer to IX_ComputerTicTacToePlayer.
+        Validates rules compatibility.
+    }
+    
+    class X_TicTacToePaint {
+        + Name: string {get}
+        + PaintTicTacToeField(canvas: Canvas, field: IX_TicTacToeField): void
+        --
+        Concrete TicTacToe painter.
+        Draws grid lines, X's and O's.
+        Example implementation by Prof. Griesbauer.
+    }
+    
+    class X_TicTacToeRules {
+        - _Field: X_TicTacToeField
+        + TicTacToeField: IX_TicTacToeField {get}
+        + MovesPossible: bool {get}
+        + Name: string {get}
+        + CheckIfPLayerWon(): int
+        --
+        Concrete TicTacToe rules.
+        Checks rows, columns, diagonals for wins.
+        Example implementation by Prof. Griesbauer.
+    }
+}
+
+' ===== INHERITANCE RELATIONSHIPS =====
+
+' Interface inheritance
+IGameRules2 --|> IGameRules
+IPaintGame2 --|> IPaintGame
+IHumanGamePlayer --|> IGamePlayer
+IHumanGamePlayerWithMouse --|> IHumanGamePlayer
+IComputerGamePlayer --|> IGamePlayer
+IRowMove --|> IPlayMove
+IColumnMove --|> IPlayMove
+IClickSelection --|> IMoveSelection
+IKeySelection --|> IMoveSelection
+
+' TicTacToe interfaces
+IX_TicTacToeField --|> IGameField
+IX_PaintTicTacToe --|> IPaintGame
+IX_TicTacToeRules --|> IGameRules
+IX_TicTacToeMove --|> IRowMove
+IX_TicTacToeMove --|> IColumnMove
+IX_HumanTicTacToePlayer --|> IHumanGamePlayer
+IX_ComputerTicTacToePlayer --|> IComputerGamePlayer
+
+' Abstract base classes
+X_BaseTicTacToePaint ..|> IX_PaintTicTacToe
+X_BaseTicTacToeField ..|> IX_TicTacToeField
+X_BaseTicTacToeRules ..|> IX_TicTacToeRules
+X_BaseHumanTicTacToePlayer ..|> IX_HumanTicTacToePlayer
+X_BaseComputerTicTacToePlayer ..|> IX_ComputerTicTacToePlayer
+
+' Concrete implementations
+X_TicTacToePaint --|> X_BaseTicTacToePaint
+X_TicTacToeRules --|> X_BaseTicTacToeRules
+
+' Implementation relationships
+ClickSelection ..|> IClickSelection
+KeySelection ..|> IKeySelection
+
+' ===== ASSOCIATIONS =====
+
+' Manager relationships
+OOPGamesManager "1" o-- "*" IPaintGame : manages
+OOPGamesManager "1" o-- "*" IGamePlayer : manages
+OOPGamesManager "1" o-- "*" IGameRules : manages
+OOPGamesManager "1" --> "0..1" IPaintGame : activePainter
+OOPGamesManager "1" --> "0..1" IGameRules : activeRules
+OOPGamesManager "1" --> "*" IGamePlayer : activePlayers
+
+' Core relationships
+IGameRules "1" --> "1" IGameField : currentField
+IGameRules "1" ..> IPlayMove : uses
+IPaintGame "1" ..> IGameField : paints
+IHumanGamePlayer "1" ..> IMoveSelection : receives
+IHumanGamePlayer "1" ..> IPlayMove : creates
+IComputerGamePlayer "1" ..> IPlayMove : creates
+IGamePlayer "1" ..> IGameRules : validates with
+
+' Move system
+IMoveSelection --> MoveType : has
+
+' TicTacToe specific
+X_BaseTicTacToeRules "1" --> "1" IX_TicTacToeField : field
+X_TicTacToeRules "1" --> "1" X_TicTacToeField : _Field
+
+note right of OOPGamesManager
+    Singleton Pattern
+    Central registry for all
+    game components
+end note
+
+note bottom of IGameField
+    Core Design Pattern:
+    Games implement specific field types
+    that inherit from IGameField
+end note
+
+note right of IGamePlayer
+    Player Types:
+    - Human: requires input selection
+    - Computer: generates moves automatically
+    Both can be cloned for new games
+end note
+
+note bottom of X_BaseTicTacToeRules
+    Adapter Pattern:
+    Base classes adapt game-specific
+    interfaces to framework interfaces
+end note
+
+@enduml
