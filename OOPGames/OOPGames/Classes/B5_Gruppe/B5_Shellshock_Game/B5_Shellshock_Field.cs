@@ -9,6 +9,7 @@ namespace OOPGames
         private B5_Shellshock_Tank _tank2;
         private B5_Shellshock_Terrain _terrain;
         private B5_Shellshock_Projectile _projectile;
+        private B5_Shellshock_HealthPack _healthPack;
         private double _wind;
         private int _movementsRemaining;
         private int _maxMovesPerTurn; // Set based on terrain type
@@ -25,6 +26,12 @@ namespace OOPGames
         {
             get => _projectile;
             set => _projectile = value;
+        }
+
+        public B5_Shellshock_HealthPack HealthPack
+        {
+            get => _healthPack;
+            set => _healthPack = value;
         }
 
         public double Wind
@@ -108,6 +115,7 @@ namespace OOPGames
             _wind = rand.NextDouble() * 10 - 5;
 
             _projectile = null;
+            _healthPack = null;
             _movementsRemaining = _maxMovesPerTurn; // Start with max movements for terrain type
             _activeTankNumber = 1; // Tank 1 starts
             _lastTrajectoryP1 = new System.Collections.Generic.List<B5_Shellshock_Point>();

@@ -193,12 +193,22 @@ namespace OOPGames
                     if (CheckTankCollision(_field.Tank1, proj)) 
                     { 
                         collision = true; 
-                        _field.Tank1.TakeDamage(50); 
+                        _field.Tank1.TakeDamage(20); 
                     }
                     if (CheckTankCollision(_field.Tank2, proj)) 
                     { 
                         collision = true; 
-                        _field.Tank2.TakeDamage(50); 
+                        _field.Tank2.TakeDamage(20); 
+                    }
+                    
+                    // Check health pack collision (applies healing)
+                    if (_field.HealthPack != null && _field.HealthPack.IsActive && _field.HealthPack.CollidesWith(proj))
+                    {
+                        // Heal the shooting player's tank
+                        B5_Shellshock_Tank shootingTank = proj.PlayerNumber == 1 ? _field.Tank1 : _field.Tank2;
+                        shootingTank.Health = Math.Min(100, shootingTank.Health + B5_Shellshock_HealthPack.HealAmount);
+                        _field.HealthPack.IsActive = false;
+                        _field.HealthPack = null; // Remove health pack
                     }
                     
                     // Check out of bounds
@@ -232,6 +242,15 @@ namespace OOPGames
                         // Randomize wind for next shot
                         Random rnd = new Random();
                         _field.Wind = rnd.NextDouble() * 10 - 5; // Range: -5 to +5
+                        
+                        // Spawn health pack randomly (50% chance) after shot lands
+                        // Spawn anywhere horizontally, but below GUI panels (Y > 110px, normalized ~0.18)
+                        if (rnd.NextDouble() > 0.5)
+                        {
+                            double packX = rnd.NextDouble() * _field.Terrain.Width; // Any X position
+                            double packY = 0.18 + rnd.NextDouble() * 0.52; // Between GUI bottom (0.18) and terrain (0.7)
+                            _field.HealthPack = new B5_Shellshock_HealthPack(packX, packY);
+                        }
                         
                         // Check for game over or continue
                         _gamePhase = CheckIfPLayerWon() != -1 ? B5_Shellshock_GamePhase.GameOver : B5_Shellshock_GamePhase.PlayerTurn;

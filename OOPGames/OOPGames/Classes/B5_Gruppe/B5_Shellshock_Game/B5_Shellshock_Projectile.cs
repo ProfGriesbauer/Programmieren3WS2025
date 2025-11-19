@@ -28,7 +28,7 @@ namespace OOPGames
         /// Base gravity multiplier. Lower value = longer range projectiles.
         /// Tuned for balanced gameplay across different power levels.
         /// </summary>
-        private const double BaseGravityFactor = 0.03;
+        private const double BaseGravityFactor = 0.025;
         
         /// <summary>
         /// Exponent for nonlinear power-to-gravity mapping.

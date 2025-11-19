@@ -44,6 +44,12 @@ namespace OOPGames
                 DrawProjectile(canvas, field.Projectile, scaleX, scaleY);
             }
 
+            // Draw health pack if active
+            if (field.HealthPack != null && field.HealthPack.IsActive)
+            {
+                DrawHealthPack(canvas, field.HealthPack, scaleX, scaleY);
+            }
+
             // Draw UI (tank info + wind)
             DrawUI(canvas, field, canvasWidth, canvasHeight);
 
@@ -189,6 +195,53 @@ namespace OOPGames
             canvas.Children.Add(shell);
         }
 
+        /// <summary>
+        /// Draws a health pack as a red box with rounded corners and white cross.
+        /// </summary>
+        private void DrawHealthPack(Canvas canvas, B5_Shellshock_HealthPack healthPack, double scaleX, double scaleY)
+        {
+            double x = healthPack.X * scaleX;
+            double y = healthPack.Y * scaleY;
+            double size = B5_Shellshock_HealthPack.PackSize;
+
+            // Red box with rounded corners
+            Rectangle box = new Rectangle
+            {
+                Width = size,
+                Height = size,
+                Fill = Brushes.Red,
+                Stroke = Brushes.White,
+                StrokeThickness = 2,
+                RadiusX = 4,
+                RadiusY = 4
+            };
+            Canvas.SetLeft(box, x - size / 2);
+            Canvas.SetTop(box, y - size / 2);
+            canvas.Children.Add(box);
+
+            // White cross (vertical line)
+            Rectangle verticalLine = new Rectangle
+            {
+                Width = 3,
+                Height = size * 0.6,
+                Fill = Brushes.White
+            };
+            Canvas.SetLeft(verticalLine, x - 1.5);
+            Canvas.SetTop(verticalLine, y - size * 0.3);
+            canvas.Children.Add(verticalLine);
+
+            // White cross (horizontal line)
+            Rectangle horizontalLine = new Rectangle
+            {
+                Width = size * 0.6,
+                Height = 3,
+                Fill = Brushes.White
+            };
+            Canvas.SetLeft(horizontalLine, x - size * 0.3);
+            Canvas.SetTop(horizontalLine, y - 1.5);
+            canvas.Children.Add(horizontalLine);
+        }
+
         private void DrawTrajectory(Canvas canvas, System.Collections.Generic.List<B5_Shellshock_Point> points, double scaleX, double scaleY, Brush color)
         {
             if (points == null || points.Count < 2) return;
@@ -238,7 +291,7 @@ namespace OOPGames
             if (field.GamePhase == B5_Shellshock_GamePhase.Setup)
             {
                 title = "Shellshock Tanks";
-                body = "Controls:\nA/D: Move\nW/S: Angle\nQ/E: Power\nSpace: Fire / Start\nThe Terrain is Randomly Generated Each Game!";
+                body = "Controls:\nA/D: Move\nW/S: Angle\nQ/E: Power\nSpace: Fire / Start\nThe Terrain is Randomly Generated";
             }
             else // GameOver
             {
