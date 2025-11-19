@@ -90,25 +90,38 @@ namespace OOPGames
 
                 case Key.W:
                 case Key.Up:
-                    activeTank.AdjustAngle(5);
+                    // For right-side tank (2), invert angle direction for intuitive control
+                    activeTank.AdjustAngle(field.ActiveTankNumber == 2 ? -1 : 1);
                     return null;
 
                 case Key.S:
                 case Key.Down:
-                    activeTank.AdjustAngle(-5);
+                    activeTank.AdjustAngle(field.ActiveTankNumber == 2 ? 1 : -1);
                     return null;
 
                 case Key.Q:
-                    activeTank.AdjustPower(-5);
+                    activeTank.AdjustPower(-1);
                     return null;
 
                 case Key.E:
-                    activeTank.AdjustPower(5);
+                    activeTank.AdjustPower(1);
                     return null;
 
-                case Key.F:
-                    // Shooting ends turn; return move so Rules handles projectile creation
-                    return new B5_Shellshock_Move(field.ActiveTankNumber, B5_Shellshock_ActionType.Shoot);
+                case Key.Space:
+                    // Space can start game, restart after win, or shoot during active play
+                    if (field.GamePhase == B5_Shellshock_GamePhase.Setup)
+                    {
+                        return new B5_Shellshock_Move(field.ActiveTankNumber, B5_Shellshock_ActionType.StartGame);
+                    }
+                    if (field.GamePhase == B5_Shellshock_GamePhase.GameOver)
+                    {
+                        return new B5_Shellshock_Move(field.ActiveTankNumber, B5_Shellshock_ActionType.StartGame);
+                    }
+                    if (field.GamePhase == B5_Shellshock_GamePhase.PlayerTurn)
+                    {
+                        return new B5_Shellshock_Move(field.ActiveTankNumber, B5_Shellshock_ActionType.Shoot);
+                    }
+                    return null;
 
                 default:
                     return null;

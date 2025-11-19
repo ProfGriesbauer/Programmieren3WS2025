@@ -12,7 +12,6 @@ namespace OOPGames
         private double _gravity;
         private int _activeTankNumber; // Which tank (1 or 2) is currently taking its turn
         private int _movementsRemaining; // Remaining position moves for current tank
-        private const int MAX_MOVES = 5;
         private bool _pendingTurnSwitch; // Set after a shot, processed after projectile collision
 
         public string Name => "B5_Shellshock_Rules";
@@ -33,13 +32,14 @@ namespace OOPGames
         public B5_Shellshock_Rules()
         {
             _field = new B5_Shellshock_Field();
-            _gamePhase = B5_Shellshock_GamePhase.PlayerTurn;
+            _gamePhase = B5_Shellshock_GamePhase.Setup;
             _gravity = 9.8;
             _activeTankNumber = 1; // Tank 1 starts
-            _movementsRemaining = MAX_MOVES;
+            _movementsRemaining = _field.MaxMovesPerTurn;
             _pendingTurnSwitch = false;
             _field.MovementsRemaining = _movementsRemaining;
             _field.ActiveTankNumber = _activeTankNumber;
+            _field.GamePhase = _gamePhase;
         }
 
         public void DoMove(IPlayMove move)
@@ -49,7 +49,20 @@ namespace OOPGames
             if (_field.ProjectileInFlight) return; // Block input during flight
 
             // Only handle Shoot via rules; movement/angle/power handled directly in HumanPlayer
-            if (shellMove.ActionType == B5_Shellshock_ActionType.Shoot && (_field.Projectile == null || !_field.Projectile.IsActive))
+            if (shellMove.ActionType == B5_Shellshock_ActionType.StartGame && _gamePhase == B5_Shellshock_GamePhase.Setup)
+            {
+                _gamePhase = B5_Shellshock_GamePhase.PlayerTurn;
+                _field.GamePhase = _gamePhase;
+                return;
+            }
+            if (shellMove.ActionType == B5_Shellshock_ActionType.StartGame && _gamePhase == B5_Shellshock_GamePhase.GameOver)
+            {
+                ClearField();
+                _gamePhase = B5_Shellshock_GamePhase.PlayerTurn;
+                _field.GamePhase = _gamePhase;
+                return;
+            }
+            if (shellMove.ActionType == B5_Shellshock_ActionType.Shoot && (_field.Projectile == null || !_field.Projectile.IsActive) && _gamePhase == B5_Shellshock_GamePhase.PlayerTurn)
             {
                 B5_Shellshock_Tank currentTank = _activeTankNumber == 1 ? _field.Tank1 : _field.Tank2;
                 // Barrel length in normalized coordinates (terrain is 0-1 scale, width is 800)
@@ -65,20 +78,25 @@ namespace OOPGames
                     currentTank.Power,
                     shellMove.PlayerNumber
                 );
+                // Clear the shooter's last trajectory to start recording a new one
+                if (shellMove.PlayerNumber == 1) _field.LastTrajectoryP1.Clear();
+                else _field.LastTrajectoryP2.Clear();
                 _gamePhase = B5_Shellshock_GamePhase.ProjectileInFlight;
                 _pendingTurnSwitch = true; // Delay tank switch until collision
+                _field.GamePhase = _gamePhase;
             }
         }
 
         public void ClearField()
         {
             _field.Reset();
-            _gamePhase = B5_Shellshock_GamePhase.PlayerTurn;
+            _gamePhase = B5_Shellshock_GamePhase.Setup;
             _activeTankNumber = 1;
-            _movementsRemaining = MAX_MOVES;
+            _movementsRemaining = _field.MaxMovesPerTurn;
             _pendingTurnSwitch = false;
             _field.MovementsRemaining = _movementsRemaining;
             _field.ActiveTankNumber = _activeTankNumber;
+            _field.GamePhase = _gamePhase;
         }
 
         public int CheckIfPLayerWon()
@@ -108,24 +126,37 @@ namespace OOPGames
                 if (proj.IsActive)
                 {
                     proj.UpdatePosition(_gravity, _field.Wind, 0.04);
+                    // Record trajectory point for the shooting player
+                    var pt = new B5_Shellshock_Point(proj.X, proj.Y);
+                    if (proj.PlayerNumber == 1) _field.LastTrajectoryP1.Add(pt); else _field.LastTrajectoryP2.Add(pt);
                     bool collision = false;
-                    if (_field.Terrain.IsCollision(proj.X, proj.Y)) collision = true;
+                    bool terrainHit = false;
+                    if (_field.Terrain.IsCollision(proj.X, proj.Y)) { collision = true; terrainHit = true; }
                     if (CheckTankCollision(_field.Tank1, proj)) { collision = true; _field.Tank1.TakeDamage(50); }
                     if (CheckTankCollision(_field.Tank2, proj)) { collision = true; _field.Tank2.TakeDamage(50); }
                     if (proj.X < 0 || proj.X > _field.Terrain.Width || proj.Y > 1.0) collision = true;
                     if (collision)
                     {
+                        // Destroy terrain at impact point if hit ground
+                        if (terrainHit)
+                        {
+                            _field.Terrain.DestroyTerrain(proj.X, 30); // 30 pixel radius crater
+                        }
                         proj.IsActive = false;
                         _field.Projectile = null;
                         if (_pendingTurnSwitch)
                         {
                             _activeTankNumber = _activeTankNumber == 1 ? 2 : 1;
-                            _movementsRemaining = MAX_MOVES;
+                            _movementsRemaining = _field.MaxMovesPerTurn;
                             _field.MovementsRemaining = _movementsRemaining;
                             _field.ActiveTankNumber = _activeTankNumber;
                             _pendingTurnSwitch = false;
                         }
+                        // Change wind after each resolved shot
+                        Random rnd = new Random();
+                        _field.Wind = rnd.NextDouble() * 10 - 5;
                         _gamePhase = CheckIfPLayerWon() != -1 ? B5_Shellshock_GamePhase.GameOver : B5_Shellshock_GamePhase.PlayerTurn;
+                        _field.GamePhase = _gamePhase;
                     }
                 }
             }
@@ -134,8 +165,8 @@ namespace OOPGames
         private bool CheckTankCollision(B5_Shellshock_Tank tank, B5_Shellshock_Projectile proj)
         {
             // Simple bounding box collision (normalized coordinates)
-            double tankWidthNormalized = 20; // Pixel width in terrain space
-            double tankHeightNormalized = 0.02; // Height in 0-1 space
+            double tankWidthNormalized = 28; // Pixel width in terrain space (increased hitbox)
+            double tankHeightNormalized = 0.03; // Height in 0-1 space (increased hitbox)
 
             return proj.X >= tank.X - tankWidthNormalized / 2 &&
                    proj.X <= tank.X + tankWidthNormalized / 2 &&
