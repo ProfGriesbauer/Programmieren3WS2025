@@ -124,6 +124,16 @@ namespace OOPGames
         {
             return playerNumber == 1 ? _tank2 : _tank1;
         }
+
+        /// <summary>
+        /// Updates both tank Y positions to match terrain height at their current X positions.
+        /// Called after terrain destruction to prevent tanks from floating in air.
+        /// </summary>
+        public void UpdateTankPositions()
+        {
+            _tank1.Y = _terrain.GetHeightAt(_tank1.X);
+            _tank2.Y = _terrain.GetHeightAt(_tank2.X);
+        }
     }
 
     // Simple point holder for trajectory (avoid WPF types in the field)

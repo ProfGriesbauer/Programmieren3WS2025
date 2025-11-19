@@ -2,12 +2,17 @@ using System;
 
 namespace OOPGames
 {
-    // Represents the ground/battlefield. Stores height map for terrain. Can be damaged by explosions.
+    /// <summary>
+    /// Represents the game terrain (battlefield ground).
+    /// Generates procedural terrain based on type (Flat, Hill, Curvy).
+    /// Supports destructible terrain via crater creation from projectile impacts.
+    /// Uses height map for efficient collision detection and rendering.
+    /// </summary>
     public class B5_Shellshock_Terrain
     {
-        private double[] _heightMap;
-        private int _width;
-        private B5_Shellshock_TerrainType _terrainType;
+        private double[] _heightMap;          // Y-coordinates (normalized 0-1) for each X position
+        private readonly int _width;          // Terrain width in pixels
+        private readonly B5_Shellshock_TerrainType _terrainType;
 
         public double[] HeightMap => _heightMap;
         public int Width => _width;
@@ -21,6 +26,15 @@ namespace OOPGames
             GenerateTerrain();
         }
 
+        #region Terrain Generation
+
+        /// <summary>
+        /// Generates terrain based on type.
+        /// Flat: Nearly horizontal with minimal noise.
+        /// Hill: Single hill with randomized position, size, and slope angles.
+        /// Curvy: Multiple rolling hills using layered sine waves.
+        /// All types are smoothed to prevent sharp edges.
+        /// </summary>
         private void GenerateTerrain()
         {
             Random rand = new Random();
@@ -118,6 +132,12 @@ namespace OOPGames
             }
         }
 
+        /// <summary>
+        /// Applies multiple smoothing passes to eliminate sharp terrain transitions.
+        /// Each pass averages neighboring height values using weighted averaging.
+        /// More passes = smoother terrain but less detail.
+        /// </summary>
+        /// <param name="passes">Number of smoothing iterations to apply</param>
         private void SmoothTerrain(int passes)
         {
             // Apply multiple smoothing passes to eliminate sharp terrain changes
@@ -143,6 +163,16 @@ namespace OOPGames
             }
         }
 
+        #endregion
+
+        #region Collision and Queries
+
+        /// <summary>
+        /// Returns terrain height at specified X coordinate.
+        /// Uses nearest-neighbor sampling (rounded to integer X).
+        /// </summary>
+        /// <param name="x">X position in pixels</param>
+        /// <returns>Y position in normalized coordinates [0-1]</returns>
         public double GetHeightAt(double x)
         {
             int index = (int)Math.Round(x);
@@ -152,6 +182,13 @@ namespace OOPGames
             return _heightMap[index];
         }
 
+        /// <summary>
+        /// Checks if a point collides with the terrain.
+        /// Collision occurs when point Y is at or below terrain surface.
+        /// </summary>
+        /// <param name="x">X position in pixels</param>
+        /// <param name="y">Y position in normalized coordinates [0-1]</param>
+        /// <returns>True if collision detected</returns>
         public bool IsCollision(double x, double y)
         {
             if (x < 0 || x >= _width)
@@ -161,6 +198,17 @@ namespace OOPGames
             return y >= terrainHeight;
         }
 
+        #endregion
+
+        #region Terrain Destruction
+
+        /// <summary>
+        /// Creates a circular crater at the specified impact point.
+        /// Uses circular falloff for smooth crater edges.
+        /// Applies smoothing to blend crater with surrounding terrain.
+        /// </summary>
+        /// <param name="x">Center X position of crater in pixels</param>
+        /// <param name="radius">Crater radius in pixels</param>
         public void DestroyTerrain(double x, double radius)
         {
             // Create circular crater at impact point
@@ -186,5 +234,7 @@ namespace OOPGames
             // Smooth crater edges for natural appearance
             SmoothTerrain(2);
         }
+
+        #endregion
     }
 }
