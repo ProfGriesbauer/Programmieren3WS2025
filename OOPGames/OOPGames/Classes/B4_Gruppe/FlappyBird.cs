@@ -219,12 +219,39 @@ namespace OOPGames
         {
             PaintGameField(canvas, currentField);
 
-            if (currentField is FlappyBirdField flappyField && FlappyBirdRules.GameOver)
+            // Draw text only BEFORE first click
+            if (currentField is FlappyBirdField f && !FlappyBirdRules.GameStarted && !FlappyBirdRules.GameOver)
+            {
+                DrawStartMessage(canvas, f);
+            }
+
+            if (currentField is FlappyBirdField && FlappyBirdRules.GameOver)
             {
                 DrawGameOver(canvas);
                 DrawHighscore(canvas);
             }
         }
+
+        private void DrawStartMessage(Canvas canvas, FlappyBirdField field)
+        {
+            var msg = new TextBlock()
+            {
+                Text = "Tap to Start",
+                FontSize = 32,
+                FontWeight = FontWeights.Bold,
+                Foreground = Brushes.White
+            };
+
+            // Position centered relative to the bird
+            double textX = field.BirdX + field.BirdSize + 20;
+            double textY = field.BirdY;
+
+            Canvas.SetLeft(msg, textX);
+            Canvas.SetTop(msg, textY);
+
+            canvas.Children.Add(msg);
+        }
+
 
         private void DrawGameOver(Canvas canvas)
         {
@@ -299,6 +326,14 @@ namespace OOPGames
     {
         public string Name => "Flappy Bird Rules";
 
+        public static bool GameStarted = false; //start only when user clicks first
+
+        public static int ActivePlayer = 1;   // Player 1 starts
+
+        private bool _jumpPressed = false;
+        private DateTime _jumpPressStart;
+
+        
         private FlappyBirdField _field;
 
         private const double Gravity = 2.9;
@@ -332,20 +367,35 @@ namespace OOPGames
         public void DoMove(IPlayMove move)
         {
             if (!MovesPossible) return;
-            if (move is FlappyBirdJumpMove jumpMove)
+
+            if (move is FlappyBirdJumpMove jm)
             {
-                if (jumpMove.PlayerNumber == 1 || jumpMove.PlayerNumber == 2)
+                // Only current player's moves count
+                if (jm.PlayerNumber != ActivePlayer)
+                    return;
+
+                // First click starts game
+                if (!GameStarted)
                 {
-                    _birdVelocity = JumpForce;
-                    soundManager.PlayJump();
+                    GameStarted = true;
+                    soundManager.StartBackgroundMusic();
                 }
+
+                _birdVelocity = JumpForce;
+                soundManager.PlayJump();
             }
         }
+
 
         public void TickGameCall()
         {
             if (!MovesPossible) return;
 
+            // Game does not start until first jump
+            if (!GameStarted)
+            {
+                return;
+            }
             _birdVelocity += Gravity;
             _field.BirdY += _birdVelocity;
 
@@ -408,6 +458,9 @@ namespace OOPGames
                 Highscores.RemoveAt(Highscores.Count - 1);
 
             SaveHighscores();
+
+            // Switch player atfer each round
+            ActivePlayer = (ActivePlayer == 1 ? 2 : 1);
         }
 
         public void LoadHighscores()
@@ -463,6 +516,7 @@ namespace OOPGames
             _birdVelocity = 0;
             MovesPossible = true;
             GameOver = false;
+            GameStarted = false; // reset start state  
         }
 
         public int CheckIfPLayerWon()
@@ -493,10 +547,10 @@ namespace OOPGames
         public IPlayMove GetMove(IMoveSelection selection, IGameField field)
         {
             if (selection is IClickSelection)
-                return new FlappyBirdJumpMove(PlayerNumber);
+                return new FlappyBirdJumpMove(FlappyBirdRules.ActivePlayer);
 
             if (selection is IKeySelection keySel && keySel.Key == Key.Space)
-                return new FlappyBirdJumpMove(PlayerNumber);
+                return new FlappyBirdJumpMove(FlappyBirdRules.ActivePlayer);
 
             return null;
         }
