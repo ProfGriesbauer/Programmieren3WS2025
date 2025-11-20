@@ -10,15 +10,14 @@ Two tanks face each other on randomly generated terrain. Players take turns adju
 
 ### Controls
 
-**Player Controls:**
-- **A / Left Arrow**: Move tank left (limited to 5 per turn)
-- **D / Right Arrow**: Move tank right (limited to 5 per turn)
+**Player Controls (single human controls both tanks sequentially):**
+- **A / Left Arrow**: Move active tank left (max 5 moves before firing)
+- **D / Right Arrow**: Move active tank right (max 5 moves before firing)
 - **W / Up Arrow**: Increase shooting angle (unlimited)
 - **S / Down Arrow**: Decrease shooting angle (unlimited)
 - **Q**: Decrease power (unlimited)
 - **E**: Increase power (unlimited)
-- **SPACE / ENTER**: Fire! (ends your turn)
-- **Mouse Click**: Fire! (ends your turn)
+- **F**: Fire projectile (turn will switch only after collision)
 
 ### Game Rules
 
@@ -27,7 +26,7 @@ Two tanks face each other on randomly generated terrain. Players take turns adju
    - Move your tank left/right up to **5 times** (A/D keys)
    - Adjust cannon angle **unlimited times** (W/S keys)
    - Adjust power **unlimited times** (Q/E keys)
-3. **Your turn ends when you fire** (SPACE key)
+3. **Your turn ends only after the fired projectile collides** (press **F** to shoot)
 4. Projectile follows realistic physics with gravity and wind
 5. Direct hits deal 50 damage
 6. First tank to reach 0 health loses
@@ -61,19 +60,17 @@ Two tanks face each other on randomly generated terrain. Players take turns adju
 
 ### Turn System
 
-The game implements a simple turn system that works around the OOPGames framework's player switching:
+The turn system is tank-centric and delays switching until the projectile has finished its flight:
 
-- **Framework behavior**: The framework switches `_CurrentPlayer` after every non-null move
-- **Our solution**: Ignore the framework's player concept entirely - track which **TANK** is active instead
-- **How it works**: 
-  - Rules maintains `_activeTankNumber` (1 or 2) to track which tank is taking its turn
-  - Both "Player 1" and "Player 2" framework instances can send moves, but moves always apply to the active tank
-  - When a tank shoots, `_activeTankNumber` switches to the other tank
-- **Result**: The framework can switch players freely, but only the active tank actually moves/shoots
-- **Movement limiting**: Each turn gets 5 position movements (tracked in Rules and Field)
-- **Projectile blocking**: While projectile flies, all moves return `null` to block input
+- **Single human controller**: One human player operates both tanks in alternating turns.
+- **Active tank tracking**: `ActiveTankNumber` in the Field indicates which tank is currently under control.
+- **Direct state mutation**: Movement, angle, and power keys mutate the active tank directly and return `null` moves so the framework does not auto-switch players prematurely.
+- **Shooting flow**: Pressing **F** returns a Shoot move; Rules spawns the projectile and sets a pending turn switch.
+- **Delayed switch**: The actual turn handoff occurs only after the projectile collides (hit ground or tank). At that moment movement count resets to 5 and the other tank becomes active.
+- **Input blocking**: While a projectile is in flight, all inputs (except internal tick updates) are ignored to prevent mid-flight adjustments.
+- **Movement limit**: Up to 5 left/right moves per turn before firing; angle and power changes are unlimited.
 
-This design decouples the framework's player management from the game's turn-based logic.
+This approach cleanly decouples the framework's player swapping from game logic and guarantees the turn does not advance until the shot outcome is resolved.
 
 ### Classes
 

@@ -84,4 +84,19 @@ namespace OOPGames
             // Intentionally left blank: no hover preview required for this simple player.
         }
     }
+
+    // Einfacher Move-Container für B5 TicTacToe; implementiert IPlayMove so GetMove ein Objekt zurückgeben kann.
+    public class B5_TicTacToeMove : IPlayMove
+    {
+        public int PlayerNumber { get; }
+        public int Row { get; }
+        public int Col { get; }
+
+        public B5_TicTacToeMove(int playerNumber, int row, int col)
+        {
+            PlayerNumber = playerNumber;
+            Row = row;
+            Col = col;
+        }
+    }
 }

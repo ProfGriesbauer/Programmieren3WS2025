@@ -282,7 +282,7 @@ namespace OOPGames
         }
 
         /// <summary>
-        /// Bewegt den Spieler in eine Richtung bis zur nächsten Kreuzung
+        /// Bewegt den Spieler in eine Richtung um ein einzelnes Kästchen
         /// </summary>
         public bool MovePlayer(int playerNumber, B2_MazeDirection direction)
         {
@@ -293,46 +293,17 @@ namespace OOPGames
             int newRow = currentRow;
             int newCol = currentCol;
 
-            // Bestimme Richtungsvektor
-            int dr = 0, dc = 0;
+            // Bestimme neue Position (nur ein Schritt)
             switch (direction)
             {
-                case B2_MazeDirection.Up: dr = -1; break;
-                case B2_MazeDirection.Down: dr = 1; break;
-                case B2_MazeDirection.Left: dc = -1; break;
-                case B2_MazeDirection.Right: dc = 1; break;
+                case B2_MazeDirection.Up: newRow--; break;
+                case B2_MazeDirection.Down: newRow++; break;
+                case B2_MazeDirection.Left: newCol--; break;
+                case B2_MazeDirection.Right: newCol++; break;
             }
 
-            // Erste Bewegung prüfen
-            int nextRow = currentRow + dr;
-            int nextCol = currentCol + dc;
-            if (!IsWalkable(nextRow, nextCol))
-                return false;
-
-            // Bewege bis zur nächsten Kreuzung oder bis Weg endet
-            bool moved = false;
-            while (true)
-            {
-                nextRow = newRow + dr;
-                nextCol = newCol + dc;
-
-                // Prüfe ob Bewegung möglich ist
-                if (!IsWalkable(nextRow, nextCol))
-                    break;
-
-                // Bewege einen Schritt
-                newRow = nextRow;
-                newCol = nextCol;
-                moved = true;
-                MarkVisited(newRow, newCol);
-
-                // Stoppe bei Kreuzung oder am Ziel
-                if (IsIntersection(newRow, newCol) || 
-                    (newRow == goalRow && newCol == goalCol))
-                    break;
-            }
-
-            if (!moved)
+            // Prüfe ob Bewegung möglich ist
+            if (!IsWalkable(newRow, newCol))
                 return false;
 
             // Alte Position zurücksetzen
@@ -352,6 +323,9 @@ namespace OOPGames
                 player2Row = newRow;
                 player2Col = newCol;
             }
+
+            // Markiere als besucht
+            MarkVisited(newRow, newCol);
 
             // Update Grid (außer wenn es das Ziel ist)
             if (grid[newRow, newCol] != B2_MazeCellType.Goal)

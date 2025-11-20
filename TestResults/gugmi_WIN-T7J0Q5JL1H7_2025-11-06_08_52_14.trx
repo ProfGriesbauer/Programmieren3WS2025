@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="b9841aad-ce69-4a6f-90ec-a98801f7f6cc" name="gugmi@WIN-T7J0Q5JL1H7 2025-11-06 08:52:14" runUser="WIN-T7J0Q5JL1H7\gugmi" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2025-11-06T08:52:14.5333398+01:00" queuing="2025-11-06T08:52:14.5333403+01:00" start="2025-11-06T08:52:14.0007182+01:00" finish="2025-11-06T08:52:14.5338701+01:00" />
+  <TestSettings name="default" id="f7d4af31-94c1-44c7-9eff-5b9d2af51756">
+    <Deployment runDeploymentRoot="gugmi_WIN-T7J0Q5JL1H7_2025-11-06_08_52_14" />
+  </TestSettings>
+  <TestLists>
+    <TestList name="Ergebnisse nicht in einer Liste" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="Alle geladenen Ergebnisse" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Failed">
+    <Counters total="0" executed="0" passed="0" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>Error:&#xD;
+  An assembly specified in the application dependencies manifest (OOPGames.Tests.deps.json) was not found:&#xD;
+    package: 'MSTest.TestFramework', version: '3.0.2'&#xD;
+    path: 'lib/net6.0/Microsoft.VisualStudio.TestPlatform.TestFramework.dll'&#xD;
+</StdOut>
+    </Output>
+    <RunInfos>
+      <RunInfo computerName="WIN-T7J0Q5JL1H7" outcome="Error" timestamp="2025-11-06T08:52:14.3512274+01:00">
+        <Text>Der TestHost-Prozess für die Quelle(n) C:\Users\gugmi\OneDrive - Hochschule für angewandte Wissenschaften Kempten\Dokumente\MT_Studium\Semester_3\Programmieren 3\Programmieren3WS2025\.\OOPGames\OOPGames.Tests\bin\Debug\net6.0-windows\OOPGames.Tests.dll wurde mit folgendem Fehler beendet: Error:&#xD;
+  An assembly specified in the application dependencies manifest (OOPGames.Tests.deps.json) was not found:&#xD;
+    package: 'MSTest.TestFramework', version: '3.0.2'&#xD;
+    path: 'lib/net6.0/Microsoft.VisualStudio.TestPlatform.TestFramework.dll'&#xD;
+. Weitere Informationen finden Sie in den Diagnoseprotokollen.</Text>
+      </RunInfo>
+    </RunInfos>
+  </ResultSummary>
+</TestRun>
