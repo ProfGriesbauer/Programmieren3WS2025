@@ -458,19 +458,175 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
                 }
             }
 
-            // Spielstatus-Text im unteren Bereich (reserviert für Würfel und Figurenauswahl)
+            // Spielstatus-Text im unteren Bereich
+            string statusText = "";
+            if (!board.Dice.HasBeenRolled)
+            {
+                statusText = $"Spieler {board.CurrentPlayer}: Klicke auf den Würfel";
+            }
+            else
+            {
+                statusText = $"Spieler {board.CurrentPlayer}: Würfel = {board.Dice.CurrentValue} - Wähle Figur 1-4 zum Bewegen";
+            }
+            
             TextBlock status = new TextBlock
             {
-                Text = "Würfeln und auf ein gültiges Feld klicken",
+                Text = statusText,
                 FontSize = 16,
-                FontWeight = FontWeights.Bold
+                FontWeight = FontWeights.Bold,
+                TextAlignment = TextAlignment.Center
             };
-            Canvas.SetLeft(status, 20);
-            Canvas.SetTop(status, boardTop + size + 20); // Unter dem Spielfeld
+            status.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            Canvas.SetLeft(status, w/2 - status.DesiredSize.Width/2);
+            Canvas.SetTop(status, boardTop + size + 20);
             canvas.Children.Add(status);
             
-            // Platzhalter für Würfel-Animation (kann später implementiert werden)
-            // Bereich: Y = boardTop + size + 50, Höhe ca. 70px
+            // Berechne zentrierte Position für Controls
+            double controlsY = boardTop + size + 50;
+            double diceSize = 70;
+            double buttonSize = 50;
+            double buttonSpacing = 10;
+            
+            // Gesamtbreite: Würfel + Abstand + 4 Buttons mit Spacing
+            double totalWidth = diceSize + 30 + (4 * buttonSize) + (3 * buttonSpacing);
+            double controlsStartX = (w - totalWidth) / 2;
+            
+            // Würfel zeichnen - zentriert
+            double diceX = controlsStartX;
+            
+            // Würfel-Hintergrund
+            Rectangle diceRect = new Rectangle
+            {
+                Width = diceSize,
+                Height = diceSize,
+                Fill = board.Dice.HasBeenRolled ? Brushes.LightGray : Brushes.White,
+                Stroke = Brushes.Black,
+                StrokeThickness = 3,
+                RadiusX = 5,
+                RadiusY = 5
+            };
+            Canvas.SetLeft(diceRect, diceX);
+            Canvas.SetTop(diceRect, controlsY);
+            
+            // Würfel nur klickbar wenn noch nicht gewürfelt
+            if (!board.Dice.HasBeenRolled)
+            {
+                diceRect.MouseDown += (sender, e) => {
+                    e.Handled = true; // Verhindere Event-Bubbling
+                    if (board.IsProcessing) return; // Verhindere Doppelverarbeitung
+                    if (board.Dice.HasBeenRolled) return; // Doppelcheck: Nicht nochmal würfeln
+                    
+                    try
+                    {
+                        board.IsProcessing = true;
+                        
+                        // Würfeln - NUR würfeln, keine Figurenbewegung!
+                        board.Dice.Roll();
+                        board.SelectedPiece = null;
+                        
+                        // Neuzeichnen
+                        PaintGameField(canvas, board);
+                    }
+                    finally
+                    {
+                        board.IsProcessing = false;
+                    }
+                };
+            }
+            canvas.Children.Add(diceRect);
+            
+            // Würfel-Wert anzeigen
+            TextBlock diceValue = new TextBlock
+            {
+                Text = board.Dice.HasBeenRolled ? board.Dice.CurrentValue.ToString() : "?",
+                FontSize = 40,
+                FontWeight = FontWeights.Bold,
+                Foreground = Brushes.Black,
+                TextAlignment = TextAlignment.Center
+            };
+            diceValue.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            Canvas.SetLeft(diceValue, diceX + diceSize/2 - diceValue.DesiredSize.Width/2);
+            Canvas.SetTop(diceValue, controlsY + diceSize/2 - diceValue.DesiredSize.Height/2);
+            canvas.Children.Add(diceValue);
+            
+            // Figurenauswahl-Buttons (1-4) - nur sichtbar und klickbar wenn gewürfelt wurde
+            if (board.Dice.HasBeenRolled)
+            {
+                double buttonsStartX = diceX + diceSize + 30;
+                double buttonsY = controlsY + diceSize/2 - buttonSize/2;
+                
+                // Speichere den aktuellen Spieler beim Zeichnen für eindeutige Identifikation
+                int drawingPlayer = board.CurrentPlayer;
+                
+                for (int i = 0; i < 4; i++)
+                {
+                    int pieceIndex = i; // Kopie für Lambda - wichtig!
+                    
+                    double btnX = buttonsStartX + i * (buttonSize + buttonSpacing);
+                    
+                    // Button-Hintergrund
+                    Rectangle btnRect = new Rectangle
+                    {
+                        Width = buttonSize,
+                        Height = buttonSize,
+                        Fill = PlayerColors[board.CurrentPlayer - 1],
+                        Stroke = Brushes.Black,
+                        StrokeThickness = 2,
+                        RadiusX = 5,
+                        RadiusY = 5
+                    };
+                    Canvas.SetLeft(btnRect, btnX);
+                    Canvas.SetTop(btnRect, buttonsY);
+                    
+                    btnRect.MouseDown += (sender, e) => {
+                        e.Handled = true; // Verhindere Event-Bubbling und Doppelklicks
+                        if (board.IsProcessing) return; // Verhindere Doppelverarbeitung
+                        
+                        // WICHTIG: Prüfe ob dieser Button noch für den aktuellen Spieler gilt!
+                        if (board.CurrentPlayer != drawingPlayer) return;
+                        if (!board.Dice.HasBeenRolled) return; // Nur wenn gewürfelt wurde
+                        
+                        try
+                        {
+                            board.IsProcessing = true;
+                            
+                            // Verwende GetPlayerPiece mit gespeichertem drawingPlayer für eindeutige Identifikation
+                            var clickPiece = board.GetPlayerPiece(drawingPlayer, pieceIndex);
+                            if (clickPiece == null) return; // Sicherheitscheck
+                            
+                            // Figur auswählen und Bewegung ausführen
+                            board.SelectedPiece = clickPiece;
+                            bool moved = board.TryMoveSelectedPiece();
+                            
+                            // Nach Bewegungsversuch automatisch Spielerwechsel (egal ob erfolgreich oder nicht)
+                            board.EndTurn();
+                            
+                            // Neuzeichnen
+                            PaintGameField(canvas, board);
+                        }
+                        finally
+                        {
+                            board.IsProcessing = false;
+                        }
+                    };
+                    canvas.Children.Add(btnRect);
+                    
+                    // Button-Text (Figurnummer)
+                    TextBlock btnText = new TextBlock
+                    {
+                        Text = (i + 1).ToString(),
+                        FontSize = 24,
+                        FontWeight = FontWeights.Bold,
+                        Foreground = (board.CurrentPlayer - 1 == 0 || board.CurrentPlayer - 1 == 2 || board.CurrentPlayer - 1 == 3) ? Brushes.Black : Brushes.White,
+                        TextAlignment = TextAlignment.Center,
+                        IsHitTestVisible = false  // Text blockiert keine Klicks
+                    };
+                    btnText.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+                    Canvas.SetLeft(btnText, btnX + buttonSize/2 - btnText.DesiredSize.Width/2);
+                    Canvas.SetTop(btnText, buttonsY + buttonSize/2 - btnText.DesiredSize.Height/2);
+                    canvas.Children.Add(btnText);
+                }
+            }
         }
     }
 }

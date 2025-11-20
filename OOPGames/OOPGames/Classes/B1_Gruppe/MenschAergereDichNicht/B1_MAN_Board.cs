@@ -12,6 +12,18 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
         public const int HomeBaseStart = 100; // home slots start index
 
         public List<B1_MAN_Player> Players { get; } = new List<B1_MAN_Player>();
+        
+        // Dice for the game
+        public B1_MAN_Dice Dice { get; } = new B1_MAN_Dice();
+        
+        // Current player (1-4)
+        public int CurrentPlayer { get; set; } = 1;
+        
+        // Selected piece for movement (null if none selected)
+        public B1_MAN_Piece SelectedPiece { get; set; } = null;
+        
+        // Flag to prevent double-processing of events
+        public bool IsProcessing { get; set; } = false;
 
         // Helper map: track index -> piece (only one piece allowed per track square)
         private Dictionary<int, B1_MAN_Piece> _trackMap = new Dictionary<int, B1_MAN_Piece>();
@@ -189,6 +201,24 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
 
             return (false, false, null);
         }
+        
+        // Try to move selected piece with the current dice value
+        public bool TryMoveSelectedPiece()
+        {
+            if (SelectedPiece == null || !Dice.HasBeenRolled) return false;
+            
+            var result = MovePiece(SelectedPiece, Dice.CurrentValue);
+            // SelectedPiece wird in EndTurn() zurückgesetzt
+            return result.moved;
+        }
+        
+        // End current turn and switch to next player
+        public void EndTurn()
+        {
+            Dice.Reset();
+            SelectedPiece = null;
+            CurrentPlayer = (CurrentPlayer % Players.Count) + 1;
+        }
 
         // Clears the board: send all pieces back to base and clear track map
         public void Clear()
@@ -201,6 +231,9 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
                     pc.SetPosition(-1);
                 }
             }
+            Dice.Reset();
+            CurrentPlayer = 1;
+            SelectedPiece = null;
         }
 
         // IGameField implementation: simple painter acceptance check
