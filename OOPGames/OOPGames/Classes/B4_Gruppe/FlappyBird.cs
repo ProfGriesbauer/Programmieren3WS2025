@@ -9,7 +9,6 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using System.Media;
 
 namespace OOPGames
 {
@@ -22,7 +21,6 @@ namespace OOPGames
     {
         private ImageSource _image;
         public PipeHead(ImageSource image) => _image = image;
-
         public override void Draw(Canvas canvas, double x, double y, double width, double height, bool isTop)
         {
             var img = new Image()
@@ -32,13 +30,11 @@ namespace OOPGames
                 Height = height,
                 Stretch = Stretch.Fill
             };
-
             if (isTop)
             {
                 img.RenderTransformOrigin = new Point(0.5, 0.5);
                 img.RenderTransform = new RotateTransform(180);
             }
-
             Canvas.SetLeft(img, x);
             Canvas.SetTop(img, y);
             canvas.Children.Add(img);
@@ -49,7 +45,6 @@ namespace OOPGames
     {
         private ImageSource _image;
         public PipeBody(ImageSource image) => _image = image;
-
         public override void Draw(Canvas canvas, double x, double y, double width, double height, bool isTop)
         {
             var img = new Image()
@@ -72,34 +67,93 @@ namespace OOPGames
 
     public class SoundManager
     {
-        private SoundPlayer jumpSound;
-        private SoundPlayer hitSound;
-        private SoundPlayer scoreSound;
+        private MediaPlayer jumpSound;
+        private MediaPlayer hitSound;
+        private MediaPlayer scoreSound;
         private MediaPlayer backgroundMusic;
+
+        private string backgroundMusicPath;
+        private double _volume = 0.3;
+        private bool isBackgroundPlaying = false;
+
+        public double Volume
+        {
+            get => _volume;
+            set
+            {
+                _volume = value;
+                jumpSound.Volume = _volume;
+                hitSound.Volume = _volume;
+                scoreSound.Volume = _volume;
+                if (backgroundMusic != null)
+                    backgroundMusic.Volume = _volume * 0.5;
+            }
+        }
 
         public SoundManager(string basePath)
         {
-            jumpSound = new SoundPlayer(System.IO.Path.Combine(basePath, "jump.wav"));
-            hitSound = new SoundPlayer(System.IO.Path.Combine(basePath, "hit.wav"));
-            scoreSound = new SoundPlayer(System.IO.Path.Combine(basePath, "score.wav"));
+            jumpSound = CreateMediaPlayer(System.IO.Path.Combine(basePath, "jump.wav"));
+            hitSound = CreateMediaPlayer(System.IO.Path.Combine(basePath, "hit.wav"));
+            scoreSound = CreateMediaPlayer(System.IO.Path.Combine(basePath, "score.wav"));
 
-            backgroundMusic = new MediaPlayer();
-            backgroundMusic.Open(new Uri(System.IO.Path.Combine(basePath, "background.mp3"), UriKind.Absolute));
-            backgroundMusic.Volume = 0.3;
-            backgroundMusic.MediaEnded += (s, e) => backgroundMusic.Position = TimeSpan.Zero;
+            backgroundMusicPath = System.IO.Path.Combine(basePath, "background.mp3");
+            backgroundMusic = null; // Lade erst beim Start
         }
 
-        public void PlayJump() => jumpSound.Play();
-        public void PlayHit() => hitSound.Play();
-        public void PlayScore() => scoreSound.Play();
+        private MediaPlayer CreateMediaPlayer(string file)
+        {
+            var player = new MediaPlayer();
+            player.Open(new Uri(file, UriKind.Absolute));
+            player.Volume = _volume;
+            return player;
+        }
+
+        public void PlayJump()
+        {
+            jumpSound.Stop();
+            jumpSound.Position = TimeSpan.Zero;
+            jumpSound.Play();
+        }
+
+        public void PlayHit()
+        {
+            hitSound.Stop();
+            hitSound.Position = TimeSpan.Zero;
+            hitSound.Play();
+        }
+
+        public void PlayScore()
+        {
+            scoreSound.Stop();
+            scoreSound.Position = TimeSpan.Zero;
+            scoreSound.Play();
+        }
 
         public void StartBackgroundMusic()
         {
+            if (isBackgroundPlaying) return;
+            if (backgroundMusic == null)
+            {
+                backgroundMusic = new MediaPlayer();
+                backgroundMusic.Open(new Uri(backgroundMusicPath, UriKind.Absolute));
+                backgroundMusic.Volume = _volume * 0.5;
+                backgroundMusic.MediaEnded += (s, e) =>
+                {
+                    backgroundMusic.Position = TimeSpan.Zero;
+                    backgroundMusic.Play();
+                };
+            }
             backgroundMusic.Position = TimeSpan.Zero;
             backgroundMusic.Play();
+            isBackgroundPlaying = true;
         }
 
-        public void StopMusic() => backgroundMusic.Stop();
+        public void StopMusic()
+        {
+            if (backgroundMusic != null)
+                backgroundMusic.Stop();
+            isBackgroundPlaying = false;
+        }
     }
 
     public class FlappyBirdJumpMove : IPlayMove
@@ -141,7 +195,6 @@ namespace OOPGames
             double yBottom = gapY + gap;
             double heightBottom = FieldHeight - yBottom;
             Obstacles.Add(new Obstacle(480, yBottom, 75, heightBottom, false));
-            System.Diagnostics.Debug.WriteLine($"Obstacle created: gapY={gapY}, bottomHeight={heightBottom}");
         }
 
         public void UpdateScoreIfPassed()
@@ -152,15 +205,11 @@ namespace OOPGames
                 {
                     obs.Passed = true;
                     Score++;
-                    System.Diagnostics.Debug.WriteLine($"Score updated: {Score}");
                 }
             }
         }
 
-        public bool CanBePaintedBy(IPaintGame painter)
-        {
-            return painter is FlappyBirdPainter;
-        }
+        public bool CanBePaintedBy(IPaintGame painter) => painter is FlappyBirdPainter;
     }
 
     public class Obstacle
@@ -173,6 +222,7 @@ namespace OOPGames
         {
             X = x; Y = y; Width = width; Height = height; IsTop = isTop;
         }
+
         public Rect Rectangle => new Rect(X, Y, Width, Height);
     }
 
@@ -189,7 +239,7 @@ namespace OOPGames
         private PipePart _pipeHead;
         private PipePart _pipeBody;
 
-        private const double PipeHeadHeight = 24; // Höhe des Kopfes der Pipe, anpassen nach Grafikgröße
+        private const double PipeHeadHeight = 24;
 
         public FlappyBirdPainter()
         {
@@ -251,26 +301,20 @@ namespace OOPGames
                     {
                         if (obs.IsTop)
                         {
-                            // Oben: Body oben zeichnen (höhe minus Kopf)
                             _pipeBody.Draw(canvas, obs.X, obs.Y, obs.Width, obs.Height - PipeHeadHeight, true);
-                            // Kopf unterhalb des Körpers, Kopf um 180 Grad gedreht
                             _pipeHead.Draw(canvas, obs.X, obs.Y + (obs.Height - PipeHeadHeight), obs.Width, PipeHeadHeight, true);
                         }
                         else
                         {
-                            // Unten: Kopf oben, normal gezeichnet
                             _pipeHead.Draw(canvas, obs.X, obs.Y, obs.Width, PipeHeadHeight, false);
-                            // Körper darunter
                             _pipeBody.Draw(canvas, obs.X, obs.Y + PipeHeadHeight, obs.Width, obs.Height - PipeHeadHeight, false);
                         }
                     }
                     else
                     {
-                        // Klein: Nur Kopf zeichnen
                         _pipeHead.Draw(canvas, obs.X, obs.Y, obs.Width, obs.Height, obs.IsTop);
                     }
                 }
-                System.Diagnostics.Debug.WriteLine($"Painting obstacles: count={f.Obstacles.Count}");
 
                 var scoreText = new TextBlock()
                 {
@@ -289,15 +333,19 @@ namespace OOPGames
         {
             PaintGameField(canvas, currentField);
 
-            if (currentField is FlappyBirdField f && !FlappyBirdRules.GameStarted && !FlappyBirdRules.GameOver)
+            if (currentField is FlappyBirdField f)
             {
-                DrawStartMessage(canvas, f);
-            }
-
-            if (currentField is FlappyBirdField && FlappyBirdRules.GameOver)
-            {
-                DrawGameOver(canvas);
-                DrawHighscore(canvas);
+                // Musik nur starten, wenn Spiel begonnen - sonst Musik stoppen
+                if (!FlappyBirdRules.GameStarted)
+                {
+                    FlappyBirdRules.SoundManagerInstance?.StopMusic();
+                    DrawStartMessage(canvas, f);
+                }
+                else if (FlappyBirdRules.GameOver)
+                {
+                    DrawGameOver(canvas);
+                    DrawHighscore(canvas);
+                }
             }
         }
 
@@ -393,14 +441,12 @@ namespace OOPGames
     {
         public string Name => "Flappy Bird Rules";
 
-        public static bool GameStarted = false; //start only when user clicks first
-
-        public static int ActivePlayer = 1;   // Player 1 starts
-
-        private bool _jumpPressed = false;
-        private DateTime _jumpPressStart;
+        public static bool GameStarted = false;
+        public static int ActivePlayer = 1;
 
         private FlappyBirdField _field;
+
+        public static SoundManager SoundManagerInstance;
 
         private const double Gravity = 2.9;
         private const double JumpForce = -18;
@@ -408,7 +454,6 @@ namespace OOPGames
 
         public IGameField CurrentField => _field;
         public bool MovesPossible { get; private set; } = true;
-
         public static readonly List<int> Highscores = new List<int>();
         public static bool GameOver = false;
 
@@ -418,6 +463,7 @@ namespace OOPGames
         {
             string basePath = GetProjectFolderPath() + @"\Classes\B4_Gruppe\Grafics";
             soundManager = new SoundManager(basePath);
+            SoundManagerInstance = soundManager;
 
             LoadHighscores();
             ClearField();
@@ -426,8 +472,7 @@ namespace OOPGames
         public static string GetProjectFolderPath()
         {
             string exePath = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? "";
-            string projectFolder = System.IO.Path.GetFullPath(System.IO.Path.Combine(exePath, @"..\..\.."));
-            return projectFolder;
+            return System.IO.Path.GetFullPath(System.IO.Path.Combine(exePath, @"..\..\.."));
         }
 
         public void DoMove(IPlayMove move)
@@ -436,8 +481,7 @@ namespace OOPGames
 
             if (move is FlappyBirdJumpMove jm)
             {
-                if (jm.PlayerNumber != ActivePlayer)
-                    return;
+                if (jm.PlayerNumber != ActivePlayer) return;
 
                 if (!GameStarted)
                 {
@@ -452,12 +496,8 @@ namespace OOPGames
 
         public void TickGameCall()
         {
-            if (!MovesPossible) return;
+            if (!MovesPossible || !GameStarted) return;
 
-            if (!GameStarted)
-            {
-                return;
-            }
             _birdVelocity += Gravity;
             _field.BirdY += _birdVelocity;
 
@@ -467,19 +507,13 @@ namespace OOPGames
                 obs.X -= 5;
                 if (obs.X + obs.Width < 0)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Obstacle removed at X={obs.X}");
                     _field.Obstacles.RemoveAt(i);
-                }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine($"Obstacle position: X={obs.X}");
                 }
             }
 
             if (_field.NeedsObstacle)
             {
                 _field.CreateObstacle();
-                System.Diagnostics.Debug.WriteLine("New obstacles created");
             }
 
             int oldScore = _field.Score;
@@ -510,7 +544,6 @@ namespace OOPGames
         {
             MovesPossible = false;
             GameOver = true;
-
             soundManager.PlayHit();
             soundManager.StopMusic();
 
@@ -538,16 +571,8 @@ namespace OOPGames
                         Highscores.Clear();
                         Highscores.AddRange(loaded);
                     }
-                    System.Diagnostics.Debug.WriteLine($"Highscores geladen.");
                 }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Fehler beim Laden der Highscores: {ex.Message}");
-                }
-            }
-            else
-            {
-                System.Diagnostics.Debug.WriteLine($"Highscore-Datei nicht gefunden.");
+                catch { }
             }
         }
 
@@ -559,16 +584,10 @@ namespace OOPGames
                 string directory = System.IO.Path.GetDirectoryName(file);
                 if (!Directory.Exists(directory))
                     Directory.CreateDirectory(directory);
-
                 string json = JsonSerializer.Serialize(Highscores);
                 File.WriteAllText(file, json);
-
-                System.Diagnostics.Debug.WriteLine($"Highscores gespeichert.");
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Fehler beim Speichern der Highscores: {ex.Message}");
-            }
+            catch { }
         }
 
         public void ClearField()
@@ -580,15 +599,9 @@ namespace OOPGames
             GameStarted = false;
         }
 
-        public int CheckIfPLayerWon()
-        {
-            return MovesPossible ? -1 : 1;
-        }
+        public int CheckIfPLayerWon() => MovesPossible ? -1 : 1;
 
-        public void StartedGameCall()
-        {
-            soundManager.StartBackgroundMusic();
-        }
+        public void StartedGameCall() => soundManager.StartBackgroundMusic();
     }
 
     public class FlappyBirdHumanPlayer : IHumanGamePlayer
@@ -596,6 +609,7 @@ namespace OOPGames
         public string Name => "Flappy Bird Human Player";
 
         private int _playerNumber;
+
         public int PlayerNumber => _playerNumber;
 
         public void SetPlayerNumber(int number) => _playerNumber = number;
@@ -606,11 +620,9 @@ namespace OOPGames
 
         public IPlayMove GetMove(IMoveSelection selection, IGameField field)
         {
-            if (selection is IClickSelection)
-                return new FlappyBirdJumpMove(FlappyBirdRules.ActivePlayer);
+            if (selection is IClickSelection) return new FlappyBirdJumpMove(FlappyBirdRules.ActivePlayer);
 
-            if (selection is IKeySelection keySel && keySel.Key == Key.Space)
-                return new FlappyBirdJumpMove(FlappyBirdRules.ActivePlayer);
+            if (selection is IKeySelection keySel && keySel.Key == Key.Space) return new FlappyBirdJumpMove(FlappyBirdRules.ActivePlayer);
 
             return null;
         }
