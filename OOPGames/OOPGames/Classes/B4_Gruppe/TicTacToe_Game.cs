@@ -10,46 +10,114 @@ using System.Windows.Shapes;
 
 namespace OOPGames
 {
+    public enum PlayerSymbol
+    {
+        Cross,
+        Circle,
+        Triangle,
+        Rectangle
+    }
+
     public class B4_TicTacToePaint : B4_BaseTicTacToePaint
     {
+        private PlayerSymbol player1Symbol = PlayerSymbol.Cross;
+        private PlayerSymbol player2Symbol = PlayerSymbol.Circle;
+        private readonly SolidColorBrush blackBrush = new SolidColorBrush(Colors.Black);
+        private readonly SolidColorBrush player1Brush = new SolidColorBrush(Colors.Blue);
+        private readonly SolidColorBrush player2Brush = new SolidColorBrush(Colors.Red);
+
         public override string Name { get { return "B4_TicTacToe_Paint"; } }
+
+        public void SetPlayerSymbol(int playerNumber, PlayerSymbol symbol)
+        {
+            if (playerNumber == 1)
+                player1Symbol = symbol;
+            else if (playerNumber == 2)
+                player2Symbol = symbol;
+        }
+
+        private void DrawSymbol(Canvas canvas, PlayerSymbol symbol, int x, int y, bool isPlayer1)
+        {
+            var brush = isPlayer1 ? player1Brush : player2Brush;
+            
+            switch (symbol)
+            {
+                case PlayerSymbol.Cross:
+                    Line X1 = new Line() { X1 = x, Y1 = y, X2 = x + 100, Y2 = y + 100, Stroke = brush, StrokeThickness = 3.0 };
+                    Line X2 = new Line() { X1 = x, Y1 = y + 100, X2 = x + 100, Y2 = y, Stroke = brush, StrokeThickness = 3.0 };
+                    canvas.Children.Add(X1);
+                    canvas.Children.Add(X2);
+                    break;
+
+                case PlayerSymbol.Circle:
+                    Ellipse circle = new Ellipse() 
+                    { 
+                        Width = 80, 
+                        Height = 80, 
+                        Stroke = brush, 
+                        StrokeThickness = 3.0,
+                        Margin = new Thickness(x + 10, y + 10, 0, 0)
+                    };
+                    canvas.Children.Add(circle);
+                    break;
+
+                case PlayerSymbol.Triangle:
+                    Polygon triangle = new Polygon()
+                    {
+                        Points = new PointCollection
+                        {
+                            new Point(x + 50, y + 10),      // Spitze
+                            new Point(x + 90, y + 90),      // Rechts unten
+                            new Point(x + 10, y + 90)       // Links unten
+                        },
+                        Stroke = brush,
+                        StrokeThickness = 3.0,
+                        Fill = null
+                    };
+                    canvas.Children.Add(triangle);
+                    break;
+
+                case PlayerSymbol.Rectangle:
+                    Rectangle rect = new Rectangle()
+                    {
+                        Width = 80,
+                        Height = 80,
+                        Stroke = brush,
+                        StrokeThickness = 3.0,
+                        Margin = new Thickness(x + 10, y + 10, 0, 0)
+                    };
+                    canvas.Children.Add(rect);
+                    break;
+            }
+        }
 
         public override void PaintTicTacToeField(Canvas canvas, IB4_TicTacToeField currentField)
         {
             canvas.Children.Clear();
-            Color bgColor = Color.FromRgb(255, 255, 255);
-            canvas.Background = new SolidColorBrush(bgColor);
-            Color lineColor = Color.FromRgb(255, 0, 0);
-            Brush lineStroke = new SolidColorBrush(lineColor);
-            Color XColor = Color.FromRgb(0, 255, 0);
-            Brush XStroke = new SolidColorBrush(XColor);
-            Color OColor = Color.FromRgb(0, 0, 255);
-            Brush OStroke = new SolidColorBrush(OColor);
+            canvas.Background = new SolidColorBrush(Colors.White);
 
-            Line l1 = new Line() { X1 = 120, Y1 = 20, X2 = 120, Y2 = 320, Stroke = lineStroke, StrokeThickness = 3.0 };
+            // Zeichne schwarze Spielfeldlinien
+            Line l1 = new Line() { X1 = 120, Y1 = 20, X2 = 120, Y2 = 320, Stroke = blackBrush, StrokeThickness = 3.0 };
+            Line l2 = new Line() { X1 = 220, Y1 = 20, X2 = 220, Y2 = 320, Stroke = blackBrush, StrokeThickness = 3.0 };
+            Line l3 = new Line() { X1 = 20, Y1 = 120, X2 = 320, Y2 = 120, Stroke = blackBrush, StrokeThickness = 3.0 };
+            Line l4 = new Line() { X1 = 20, Y1 = 220, X2 = 320, Y2 = 220, Stroke = blackBrush, StrokeThickness = 3.0 };
             canvas.Children.Add(l1);
-            Line l2 = new Line() { X1 = 220, Y1 = 20, X2 = 220, Y2 = 320, Stroke = lineStroke, StrokeThickness = 3.0 };
             canvas.Children.Add(l2);
-            Line l3 = new Line() { X1 = 20, Y1 = 120, X2 = 320, Y2 = 120, Stroke = lineStroke, StrokeThickness = 3.0 };
             canvas.Children.Add(l3);
-            Line l4 = new Line() { X1 = 20, Y1 = 220, X2 = 320, Y2 = 220, Stroke = lineStroke, StrokeThickness = 3.0 };
             canvas.Children.Add(l4);
 
+            // Zeichne Spielersymbole
             for (int i = 0; i < 3; i++)
             {
                 for (int j = 0; j < 3; j++)
                 {
                     if (currentField[i, j] == 1)
                     {
-                        Line X1 = new Line() { X1 = 20 + (j * 100), Y1 = 20 + (i * 100), X2 = 120 + (j * 100), Y2 = 120 + (i * 100), Stroke = XStroke, StrokeThickness = 3.0 };
-                        canvas.Children.Add(X1);
-                        Line X2 = new Line() { X1 = 20 + (j * 100), Y1 = 120 + (i * 100), X2 = 120 + (j * 100), Y2 = 20 + (i * 100), Stroke = XStroke, StrokeThickness = 3.0 };
-                        canvas.Children.Add(X2);
+                        DrawSymbol(canvas, player1Symbol, 20 + (j * 100), 20 + (i * 100), true);
                     }
                     else if (currentField[i, j] == 2)
                     {
-                        Ellipse OE = new Ellipse() { Margin = new Thickness(20 + (j * 100), 20 + (i * 100), 0, 0), Width = 100, Height = 100, Stroke = OStroke, StrokeThickness = 3.0 };
-                        canvas.Children.Add(OE);
+                        DrawSymbol(canvas, player2Symbol, 20 + (j * 100), 20 + (i * 100), false);
                     }
                 }
             }
@@ -181,7 +249,7 @@ namespace OOPGames
     {
         int _PlayerNumber = 0;
 
-        public override string Name { get { return "B4_HumanPlayer_01"; } }
+        public override string Name { get { return "B4_HumanPlayer"; } }
 
         public override int PlayerNumber { get { return _PlayerNumber; } }
 
@@ -224,7 +292,7 @@ namespace OOPGames
     {
         int _PlayerNumber = 0;
 
-        public override string Name { get { return "B4_HumanPlayer_02"; } }
+        public override string Name { get { return "B4_TicTacToeEasyComputer"; } }
 
         public override int PlayerNumber { get { return _PlayerNumber; } }
 

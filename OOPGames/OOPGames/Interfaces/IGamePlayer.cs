@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Input;
 
 namespace OOPGames
 {
@@ -36,6 +37,13 @@ namespace OOPGames
         //the given state of the play field.
         //IF THE GIVEN SELECTION IS NO VALID MOVE, NULL HAS TO BE RETURNED.
         IPlayMove GetMove(IMoveSelection selection, IGameField field);
+    }
+
+    //Extension of IHumanGamePlayer for an EventHandler giving the actual mouse position
+    public interface IHumanGamePlayerWithMouse : IHumanGamePlayer
+    {
+        //function called when mouse moved
+        void OnMouseMoved(MouseEventArgs e);
     }
 
     //A computer player: when asked for a move, a valid move is produced by a computer
