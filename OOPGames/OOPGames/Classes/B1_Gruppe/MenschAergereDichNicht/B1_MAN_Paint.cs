@@ -254,55 +254,57 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
             track.Add((5, 10)); track.Add((4, 10));  // 21-22
             
             // Linker unterer Arm (x=4)
-            track.Add((4, 9)); track.Add((4, 8)); track.Add((4, 7)); track.Add((4, 6));  // 23-26
+            track.Add((4, 9)); track.Add((4, 8)); track.Add((4, 7)); track.Add((4, 6));  // 32-35
             
             // Untere Mitte (y=6)
-            track.Add((3, 6)); track.Add((2, 6)); track.Add((1, 6)); track.Add((0, 6));  // 27-30
-            
-            // Zurück zum Start (x=0)
-            track.Add((0, 5));  // 31
+            track.Add((3, 6)); track.Add((2, 6)); track.Add((1, 6)); track.Add((0, 6));  // 36-39
             
             // Immer noch nur 32... Die Pfeile zeigen auch Felder an den äußeren Ecken
             // Analysiere nochmal: es müssen noch 8 Felder sein auf y=10 und x=10
             
             track.Clear();
             
-            // FINALE Version mit allen 40 Feldern:
-            // Linker Arm (y=4)
+            // FINALE Version mit allen 40 Feldern - KORRIGIERTE REIHENFOLGE:
+            // Start bei Grün (0,4) und dann im Uhrzeigersinn rum
+            
+            // Grün startet hier: (0,4) - Index 0
             track.Add((0, 4)); track.Add((1, 4)); track.Add((2, 4)); track.Add((3, 4)); track.Add((4, 4));  // 0-4
             
-            // Oberer linker Arm (x=4)
+            // Nach oben (x=4)
             track.Add((4, 3)); track.Add((4, 2)); track.Add((4, 1)); track.Add((4, 0));  // 5-8
             
-            // Obere Mitte (y=0)
-            track.Add((5, 0)); track.Add((6, 0));  // 9-10
+            // Nach rechts oben (y=0) - Gelb startet bei Index 10: (6,0)
+            track.Add((5, 0)); track.Add((6, 0));  // 9-10 (Gelb Start bei 10)
             
-            // Oberer rechter Bereich (x=6) - eingeklappt!
+            // Nach unten (x=6)
             track.Add((6, 1)); track.Add((6, 2)); track.Add((6, 3)); track.Add((6, 4)); track.Add((6, 5));  // 11-15
-            
-            // Rechter Arm (x=6)
             track.Add((6, 6)); track.Add((6, 7)); track.Add((6, 8)); track.Add((6, 9)); track.Add((6, 10)); // 16-20
             
-            // Zusätzliche Felder bei y=4 (horizontal)
-            track.Add((7, 4)); track.Add((8, 4)); track.Add((9, 4)); // 21-23
+            // Nach rechts unten (y=10)
+            track.Add((7, 10)); track.Add((8, 10)); track.Add((9, 10)); track.Add((10, 10)); // 21-24
             
-            // Untere rechte Ecke - blau markierte Felder GELÖSCHT
-            // ENTFERNT: track.Add((7, 10)); track.Add((8, 10)); track.Add((9, 10)); track.Add((10, 10));
+            // Nach oben rechts (x=10) - Schwarz startet bei Index 25: (10,6) aber sollte bei 24 starten...
+            // Schwarz sollte bei (10,6) starten, nicht bei (10,10)!
+            // Ich muss die Reihenfolge anders machen
             
-            // Rechte Seite nach oben (x=10) - (10,3) GELÖSCHT!
-            track.Add((10, 6)); track.Add((10, 5)); track.Add((10, 4)); // 24-26 (nur noch 3 Felder)
+            track.Clear();
             
-            // Zusätzliche Felder bei y=6 (horizontal)
-            track.Add((9, 6)); track.Add((8, 6)); track.Add((7, 6)); // 27-29
+            // Track mit 40 Feldern im Uhrzeigersinn, passend zum visuellen Kreuz-Layout:
+            // Start bei Grün (0,4) - Index 0
             
-            // Zurück zur Mitte (y=10)
-            track.Add((5, 10)); track.Add((4, 10));  // 30-31
-            
-            // Linker unterer Arm (x=4)
-            track.Add((4, 9)); track.Add((4, 8)); track.Add((4, 7)); track.Add((4, 6));  // 32-35
-            
-            // Untere Mitte (y=6)
-            track.Add((3, 6)); track.Add((2, 6)); track.Add((1, 6)); track.Add((0, 6));  // 36-39
+            track.Add((0, 4));  // 0 - Grün Start (A)
+            track.Add((1, 4)); track.Add((2, 4)); track.Add((3, 4)); track.Add((4, 4));  // 1-4
+            track.Add((4, 3)); track.Add((4, 2)); track.Add((4, 1)); track.Add((4, 0));  // 5-8
+            track.Add((5, 0)); track.Add((6, 0));  // 9-10 (Gelb Start (A) bei 10)
+            track.Add((6, 1)); track.Add((6, 2)); track.Add((6, 3)); track.Add((6, 4));  // 11-14
+            track.Add((7, 4)); track.Add((8, 4)); track.Add((9, 4)); track.Add((10, 4));  // 15-18
+            track.Add((10, 5)); track.Add((10, 6));  // 19-20 (Schwarz Start (A) bei 20)
+            track.Add((9, 6)); track.Add((8, 6)); track.Add((7, 6)); track.Add((6, 6));  // 21-24
+            track.Add((6, 7)); track.Add((6, 8)); track.Add((6, 9)); track.Add((6, 10));  // 25-28
+            track.Add((5, 10)); track.Add((4, 10));  // 29-30 (Rot Start (A) bei 30)
+            track.Add((4, 9)); track.Add((4, 8)); track.Add((4, 7)); track.Add((4, 6));  // 31-34
+            track.Add((3, 6)); track.Add((2, 6)); track.Add((1, 6)); track.Add((0, 6));  // 35-38
+            track.Add((0, 5));  // 39
             
             // WICHTIG: Track muss genau 40 Felder haben, dann wird (0,5) durch Modulo erreicht
             // Aber für die Anzeige müssen wir (0,5) explizit zeichnen!
@@ -313,10 +315,30 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
                 trackPoints[i] = new Point(boardLeft + gridOffset + p.x * gridSize, boardTop + gridOffset + p.y * gridSize);
             }
 
+            // Definiere Startfelder mit ihren Farben und Grid-Koordinaten
+            var startFields = new System.Collections.Generic.Dictionary<(int x, int y), (Brush color, string label)>
+            {
+                { (0, 4), (PlayerColors[3], "A") },   // Grün
+                { (4, 10), (PlayerColors[0], "A") },  // Rot
+                { (10, 6), (PlayerColors[1], "A") },  // Schwarz
+                { (6, 0), (PlayerColors[2], "A") }    // Gelb
+            };
+
             // Zeichne Laufstrecke
             for (int i = 0; i < B1_MAN_Board.TrackLength; i++)
             {
-                DrawField(canvas, trackPoints[i].X, trackPoints[i].Y, Brushes.White, Brushes.Black, fieldSize);
+                var p = track[i];
+                
+                // Prüfe ob dieses Feld ein Startfeld ist
+                if (startFields.ContainsKey(p))
+                {
+                    var (color, label) = startFields[p];
+                    DrawFieldWithLabel(canvas, trackPoints[i].X, trackPoints[i].Y, color, Brushes.Black, fieldSize, label);
+                }
+                else
+                {
+                    DrawField(canvas, trackPoints[i].X, trackPoints[i].Y, Brushes.White, Brushes.Black, fieldSize);
+                }
 
                 // Zeichne Figur wenn vorhanden
                 var piece = board.GetPieceAt(i);
@@ -416,7 +438,7 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
                     switch (player.PlayerNumber)
                     {
                         case 1: // Rot (unten nach oben) -> y = 9,8,7,6
-                            homeX = boardLeft + gridOffset + gridSize;
+                            homeX = boardLeft + gridOffset + 5 * gridSize;
                             homeY = boardTop + gridOffset + (9 - homeIndex) * gridSize;
                             break;
                         case 2: // Schwarz (rechts nach links) -> x = 9,8,7,6
