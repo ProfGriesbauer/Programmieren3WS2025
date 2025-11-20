@@ -13,6 +13,63 @@ using System.Media;
 
 namespace OOPGames
 {
+    public abstract class PipePart
+    {
+        public abstract void Draw(Canvas canvas, double x, double y, double width, double height, bool isTop);
+    }
+
+    public class PipeHead : PipePart
+    {
+        private ImageSource _image;
+        public PipeHead(ImageSource image) => _image = image;
+
+        public override void Draw(Canvas canvas, double x, double y, double width, double height, bool isTop)
+        {
+            var img = new Image()
+            {
+                Source = _image,
+                Width = width,
+                Height = height,
+                Stretch = Stretch.Fill
+            };
+
+            if (isTop)
+            {
+                img.RenderTransformOrigin = new Point(0.5, 0.5);
+                img.RenderTransform = new RotateTransform(180);
+            }
+
+            Canvas.SetLeft(img, x);
+            Canvas.SetTop(img, y);
+            canvas.Children.Add(img);
+        }
+    }
+
+    public class PipeBody : PipePart
+    {
+        private ImageSource _image;
+        public PipeBody(ImageSource image) => _image = image;
+
+        public override void Draw(Canvas canvas, double x, double y, double width, double height, bool isTop)
+        {
+            var img = new Image()
+            {
+                Source = _image,
+                Width = width,
+                Height = height,
+                Stretch = Stretch.Fill
+            };
+            if (isTop)
+            {
+                img.RenderTransformOrigin = new Point(0.5, 0.5);
+                img.RenderTransform = new RotateTransform(180);
+            }
+            Canvas.SetLeft(img, x);
+            Canvas.SetTop(img, y);
+            canvas.Children.Add(img);
+        }
+    }
+
     public class SoundManager
     {
         private SoundPlayer jumpSound;
@@ -30,8 +87,6 @@ namespace OOPGames
             backgroundMusic.Open(new Uri(System.IO.Path.Combine(basePath, "background.mp3"), UriKind.Absolute));
             backgroundMusic.Volume = 0.3;
             backgroundMusic.MediaEnded += (s, e) => backgroundMusic.Position = TimeSpan.Zero;
-
-            // Kein automatischer Start mehr hier
         }
 
         public void PlayJump() => jumpSound.Play();
@@ -118,7 +173,6 @@ namespace OOPGames
         {
             X = x; Y = y; Width = width; Height = height; IsTop = isTop;
         }
-
         public Rect Rectangle => new Rect(X, Y, Width, Height);
     }
 
@@ -127,18 +181,28 @@ namespace OOPGames
         public string Name => "Flappy Bird";
 
         private static readonly Brush Bronze = new SolidColorBrush(Color.FromRgb(205, 127, 50));
-        private ImageSource _pipeImage;
+        private ImageSource _pipeHeadImage;
+        private ImageSource _pipeBodyImage;
         private ImageSource _birdImage;
         private ImageSource _backgroundImage;
+
+        private PipePart _pipeHead;
+        private PipePart _pipeBody;
+
+        private const double PipeHeadHeight = 24; // Höhe des Kopfes der Pipe, anpassen nach Grafikgröße
 
         public FlappyBirdPainter()
         {
             string projectRoot = FlappyBirdRules.GetProjectFolderPath();
             string graphicsPath = System.IO.Path.Combine(projectRoot, "Classes", "B4_Gruppe", "Grafics");
 
-            _pipeImage = LoadImage(System.IO.Path.Combine(graphicsPath, "pipe.png"));
+            _pipeHeadImage = LoadImage(System.IO.Path.Combine(graphicsPath, "pipe_head.png"));
+            _pipeBodyImage = LoadImage(System.IO.Path.Combine(graphicsPath, "pipe_body.png"));
             _birdImage = LoadImage(System.IO.Path.Combine(graphicsPath, "bird.png"));
             _backgroundImage = LoadImage(System.IO.Path.Combine(graphicsPath, "background.png"));
+
+            _pipeHead = new PipeHead(_pipeHeadImage);
+            _pipeBody = new PipeBody(_pipeBodyImage);
         }
 
         private ImageSource LoadImage(string fullPath)
@@ -183,22 +247,28 @@ namespace OOPGames
 
                 foreach (var obs in f.Obstacles)
                 {
-                    var pipe = new Image()
+                    if (obs.Height > PipeHeadHeight)
                     {
-                        Source = _pipeImage,
-                        Width = obs.Width,
-                        Height = obs.Height,
-                        Stretch = Stretch.Fill
-                    };
-                    Canvas.SetLeft(pipe, obs.X);
-                    Canvas.SetTop(pipe, obs.Y);
-
-                    if (obs.IsTop)
-                    {
-                        pipe.RenderTransformOrigin = new Point(0.5, 0.5);
-                        pipe.RenderTransform = new RotateTransform(180);
+                        if (obs.IsTop)
+                        {
+                            // Oben: Body oben zeichnen (höhe minus Kopf)
+                            _pipeBody.Draw(canvas, obs.X, obs.Y, obs.Width, obs.Height - PipeHeadHeight, true);
+                            // Kopf unterhalb des Körpers, Kopf um 180 Grad gedreht
+                            _pipeHead.Draw(canvas, obs.X, obs.Y + (obs.Height - PipeHeadHeight), obs.Width, PipeHeadHeight, true);
+                        }
+                        else
+                        {
+                            // Unten: Kopf oben, normal gezeichnet
+                            _pipeHead.Draw(canvas, obs.X, obs.Y, obs.Width, PipeHeadHeight, false);
+                            // Körper darunter
+                            _pipeBody.Draw(canvas, obs.X, obs.Y + PipeHeadHeight, obs.Width, obs.Height - PipeHeadHeight, false);
+                        }
                     }
-                    canvas.Children.Add(pipe);
+                    else
+                    {
+                        // Klein: Nur Kopf zeichnen
+                        _pipeHead.Draw(canvas, obs.X, obs.Y, obs.Width, obs.Height, obs.IsTop);
+                    }
                 }
                 System.Diagnostics.Debug.WriteLine($"Painting obstacles: count={f.Obstacles.Count}");
 
@@ -219,7 +289,6 @@ namespace OOPGames
         {
             PaintGameField(canvas, currentField);
 
-            // Draw text only BEFORE first click
             if (currentField is FlappyBirdField f && !FlappyBirdRules.GameStarted && !FlappyBirdRules.GameOver)
             {
                 DrawStartMessage(canvas, f);
@@ -242,7 +311,6 @@ namespace OOPGames
                 Foreground = Brushes.White
             };
 
-            // Position centered relative to the bird
             double textX = field.BirdX + field.BirdSize + 20;
             double textY = field.BirdY;
 
@@ -251,7 +319,6 @@ namespace OOPGames
 
             canvas.Children.Add(msg);
         }
-
 
         private void DrawGameOver(Canvas canvas)
         {
@@ -333,7 +400,6 @@ namespace OOPGames
         private bool _jumpPressed = false;
         private DateTime _jumpPressStart;
 
-        
         private FlappyBirdField _field;
 
         private const double Gravity = 2.9;
@@ -370,11 +436,9 @@ namespace OOPGames
 
             if (move is FlappyBirdJumpMove jm)
             {
-                // Only current player's moves count
                 if (jm.PlayerNumber != ActivePlayer)
                     return;
 
-                // First click starts game
                 if (!GameStarted)
                 {
                     GameStarted = true;
@@ -386,12 +450,10 @@ namespace OOPGames
             }
         }
 
-
         public void TickGameCall()
         {
             if (!MovesPossible) return;
 
-            // Game does not start until first jump
             if (!GameStarted)
             {
                 return;
@@ -459,7 +521,6 @@ namespace OOPGames
 
             SaveHighscores();
 
-            // Switch player atfer each round
             ActivePlayer = (ActivePlayer == 1 ? 2 : 1);
         }
 
@@ -516,7 +577,7 @@ namespace OOPGames
             _birdVelocity = 0;
             MovesPossible = true;
             GameOver = false;
-            GameStarted = false; // reset start state  
+            GameStarted = false;
         }
 
         public int CheckIfPLayerWon()
@@ -526,7 +587,6 @@ namespace OOPGames
 
         public void StartedGameCall()
         {
-            // Hintergrundmusik nur beim Start abspielen
             soundManager.StartBackgroundMusic();
         }
     }
