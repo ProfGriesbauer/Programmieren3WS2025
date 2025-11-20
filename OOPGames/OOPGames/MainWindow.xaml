@@ -55,7 +55,7 @@
                 <RowDefinition Height="1*"/>
             </Grid.RowDefinitions>
             <Label Grid.Row="0" Content="Painter:" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="5,5,5,5"/>
-            <ListBox x:Name="PaintList" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="5,5,5,5" ScrollViewer.VerticalScrollBarVisibility="Visible">
+            <ListBox x:Name="PaintList" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="5,5,5,5">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <Grid Margin="0,2">
@@ -65,7 +65,7 @@
                 </ListBox.ItemTemplate>
             </ListBox>
             <Label Grid.Row="2" Content="Player 1:" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="5,5,5,5"/>
-            <ListBox x:Name="Player1List" Grid.Row="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="5,5,5,5" ScrollViewer.VerticalScrollBarVisibility="Visible">
+            <ListBox x:Name="Player1List" Grid.Row="3" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="5,5,5,5">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <Grid Margin="0,2">
@@ -75,7 +75,7 @@
                 </ListBox.ItemTemplate>
             </ListBox>
             <Label Grid.Row="4" Content="Player 2:" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="5,5,5,5"/>
-            <ListBox x:Name="Player2List" Grid.Row="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="5,5,5,5" ScrollViewer.VerticalScrollBarVisibility="Visible">
+            <ListBox x:Name="Player2List" Grid.Row="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="5,5,5,5">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <Grid Margin="0,2">
@@ -85,7 +85,7 @@
                 </ListBox.ItemTemplate>
             </ListBox>
             <Label Grid.Row="6" Content="Rules:" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="5,5,5,5"/>
-            <ListBox x:Name="RulesList" Grid.Row="7" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="5,5,5,5" ScrollViewer.VerticalScrollBarVisibility="Visible">
+            <ListBox x:Name="RulesList" Grid.Row="7" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="5,5,5,5">
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <Grid Margin="0,2">

@@ -40,28 +40,7 @@ namespace OOPGames
                     for (int c = 0; c < 3; c++)
                         if (bf[r, c] == 0) free.Add(Tuple.Create(r, c));
             }
-            else
-            {
-                try
-                {
-                    var t = field.GetType();
-                    var prop = t.GetProperty("Item", new Type[] { typeof(int), typeof(int) });
-                    if (prop != null)
-                    {
-                        for (int r = 0; r < 3; r++)
-                            for (int c = 0; c < 3; c++)
-                            {
-                                var v = prop.GetValue(field, new object[] { r, c });
-                                if (v is int && (int)v == 0)
-                                    free.Add(Tuple.Create(r, c));
-                            }
-                    }
-                }
-                catch
-                {
-                    // ignore and return null below
-                }
-            }
+            
 
             if (free.Count == 0) return null;
 
