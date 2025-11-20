@@ -4,48 +4,106 @@ using System.Linq;
 
 namespace OOPGames
 {
-    /******************************************************************************
+    /*
      * B2 Labyrinth Game - Core Components
-     * 
      * Labyrinth-Spiel mit eingeschränktem Sichtfeld (Fog of War)
      * - Spieler navigiert durch Labyrinth mit Pfeiltasten
      * - Nur ein kleiner Bereich um den Spieler ist sichtbar
      * - Ziel: Finde den Ausgang
-     ******************************************************************************/
+     */
 
-    #region Enums and Constants
+    #region Cell Type Classes
 
-    /// <summary>
-    /// Zellentypen im Labyrinth
-    /// </summary>
-    public enum B2_MazeCellType
+    /// Zellentyp
+    public class B2_MazeCellType
     {
-        Wall = 0,      // Wand - nicht passierbar
-        Path = 1,      // Weg - passierbar
-        Player1 = 2,   // Spieler 1 Position
-        Player2 = 3,   // Spieler 2 Position
-        Goal = 4,      // Ziel
-        Visited = 5    // Bereits besuchter Weg
+        public string Name { get; }
+        public bool IsWalkable { get; }
+
+        private B2_MazeCellType(string name, bool isWalkable)
+        {
+            Name = name;
+            IsWalkable = isWalkable;
+        }
+
+        // Statische Instanzen für die verschiedenen Zellentypen
+        public static readonly B2_MazeCellType Wall = new B2_MazeCellType("Wall", false);
+        public static readonly B2_MazeCellType Path = new B2_MazeCellType("Path", true);
+        public static readonly B2_MazeCellType Player1 = new B2_MazeCellType("Player1", true);
+        public static readonly B2_MazeCellType Player2 = new B2_MazeCellType("Player2", true);
+        public static readonly B2_MazeCellType Goal = new B2_MazeCellType("Goal", true);
+        public static readonly B2_MazeCellType Visited = new B2_MazeCellType("Visited", true);
+
+        public override bool Equals(object obj)
+        {
+            return obj is B2_MazeCellType other && Name == other.Name;
+        }
+
+        public override int GetHashCode()
+        {
+            return Name.GetHashCode();
+        }
+
+        public static bool operator ==(B2_MazeCellType left, B2_MazeCellType right)
+        {
+            if (ReferenceEquals(left, right)) return true;
+            if (left is null || right is null) return false;
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(B2_MazeCellType left, B2_MazeCellType right)
+        {
+            return !(left == right);
+        }
     }
 
-    /// <summary>
-    /// Bewegungsrichtungen
-    /// </summary>
-    public enum B2_MazeDirection
+    /// Bewegungsrichtung
+    public class B2_MazeDirection
     {
-        Up,
-        Down,
-        Left,
-        Right
+        public string Name { get; }
+        public int DeltaRow { get; }
+        public int DeltaCol { get; }
+
+        private B2_MazeDirection(string name, int deltaRow, int deltaCol)
+        {
+            Name = name;
+            DeltaRow = deltaRow;
+            DeltaCol = deltaCol;
+        }
+
+        // Statische Instanzen für die vier Richtungen
+        public static readonly B2_MazeDirection Up = new B2_MazeDirection("Up", -1, 0);
+        public static readonly B2_MazeDirection Down = new B2_MazeDirection("Down", 1, 0);
+        public static readonly B2_MazeDirection Left = new B2_MazeDirection("Left", 0, -1);
+        public static readonly B2_MazeDirection Right = new B2_MazeDirection("Right", 0, 1);
+
+        public override bool Equals(object obj)
+        {
+            return obj is B2_MazeDirection other && Name == other.Name;
+        }
+
+        public override int GetHashCode()
+        {
+            return Name.GetHashCode();
+        }
+
+        public static bool operator ==(B2_MazeDirection left, B2_MazeDirection right)
+        {
+            if (ReferenceEquals(left, right)) return true;
+            if (left is null || right is null) return false;
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(B2_MazeDirection left, B2_MazeDirection right)
+        {
+            return !(left == right);
+        }
     }
 
     #endregion
 
     #region Abstract Base Classes
 
-    /// <summary>
-    /// Abstrakte Basis für das Labyrinth-Spielfeld
-    /// </summary>
     public abstract class B2_AbstractMazeField : IGameField
     {
         protected B2_MazeCellType[,] grid;
@@ -68,9 +126,7 @@ namespace OOPGames
         public virtual int GoalRow => goalRow;
         public virtual int GoalCol => goalCol;
 
-        /// <summary>
         /// Zugriff auf Zellentyp
-        /// </summary>
         public virtual B2_MazeCellType this[int r, int c]
         {
             get
@@ -87,29 +143,21 @@ namespace OOPGames
             }
         }
 
-        /// <summary>
         /// Prüft ob eine Position passierbar ist
-        /// </summary>
         public virtual bool IsWalkable(int r, int c)
         {
             if (r < 0 || r >= rows || c < 0 || c >= cols) return false;
             var cell = grid[r, c];
-            return cell == B2_MazeCellType.Path || 
-                   cell == B2_MazeCellType.Goal || 
-                   cell == B2_MazeCellType.Visited;
+            return cell.IsWalkable;
         }
 
-        /// <summary>
         /// Prüft ob eine Zelle bereits besucht wurde
-        /// </summary>
         public virtual bool IsVisited(int r, int c)
         {
             return visitedCells.Contains((r, c));
         }
 
-        /// <summary>
         /// Markiert aktuelle Position als besucht
-        /// </summary>
         public virtual void MarkVisited(int r, int c)
         {
             if (r >= 0 && r < rows && c >= 0 && c < cols)
@@ -128,18 +176,14 @@ namespace OOPGames
         }
     }
 
-    /// <summary>
     /// Abstrakte Basis für Labyrinth-Bewegungen
-    /// </summary>
     public abstract class B2_AbstractMazeMove : IPlayMove
     {
         public abstract int PlayerNumber { get; }
         public abstract B2_MazeDirection Direction { get; }
     }
 
-    /// <summary>
     /// Abstrakte Basis für Labyrinth-Regeln
-    /// </summary>
     public abstract class B2_AbstractMazeRules : IGameRules
     {
         protected B2_AbstractMazeField field;
@@ -152,14 +196,10 @@ namespace OOPGames
         public virtual string Name => "Abstract Maze Rules";
         public virtual IGameField CurrentField => field;
 
-        /// <summary>
         /// Prüft ob Spieler das Ziel erreicht hat
-        /// </summary>
         public abstract int CheckIfPLayerWon();
 
-        /// <summary>
         /// Bewegungen sind möglich solange Spieler nicht am Ziel ist
-        /// </summary>
         public virtual bool MovesPossible => CheckIfPLayerWon() == -1;
 
         public abstract void ClearField();
@@ -170,12 +210,10 @@ namespace OOPGames
 
     #region Concrete Implementations
 
-    /// <summary>
     /// Konkretes Labyrinth-Spielfeld mit vorgeneriertem Labyrinth
-    /// </summary>
     public class B2_MazeField : B2_AbstractMazeField
     {
-        public B2_MazeField(int rows = 21, int cols = 21)
+        public B2_MazeField(int rows = 31, int cols = 31)
         {
             this.rows = rows;
             this.cols = cols;
@@ -185,9 +223,7 @@ namespace OOPGames
             GenerateMaze();
         }
 
-        /// <summary>
         /// Generiert ein zufälliges Labyrinth mit Recursive Backtracking
-        /// </summary>
         private void GenerateMaze()
         {
             // Initialisiere alles als Wand
@@ -210,7 +246,12 @@ namespace OOPGames
             stack.Push((startR, startC));
             grid[startR, startC] = B2_MazeCellType.Path;
 
-            var directions = new[] { (-2, 0), (2, 0), (0, -2), (0, 2) }; // Up, Down, Left, Right (2 Schritte)
+            var directions = new[] { 
+                (B2_MazeDirection.Up, -2, 0), 
+                (B2_MazeDirection.Down, 2, 0), 
+                (B2_MazeDirection.Left, 0, -2), 
+                (B2_MazeDirection.Right, 0, 2) 
+            };
 
             while (stack.Count > 0)
             {
@@ -218,7 +259,7 @@ namespace OOPGames
                 var neighbors = new List<(int r, int c, int wallR, int wallC)>();
 
                 // Finde unbesuchte Nachbarn
-                foreach (var (dr, dc) in directions)
+                foreach (var (dir, dr, dc) in directions)
                 {
                     int newR = current.r + dr;
                     int newC = current.c + dc;
@@ -265,9 +306,7 @@ namespace OOPGames
             grid[goalRow, goalCol] = B2_MazeCellType.Goal;
         }
 
-        /// <summary>
         /// Prüft ob eine Position eine Kreuzung ist (mehr als 2 Ausgänge)
-        /// </summary>
         private bool IsIntersection(int row, int col)
         {
             if (!IsWalkable(row, col)) return false;
@@ -281,26 +320,15 @@ namespace OOPGames
             return walkableNeighbors > 2;
         }
 
-        /// <summary>
         /// Bewegt den Spieler in eine Richtung um ein einzelnes Kästchen
-        /// </summary>
         public bool MovePlayer(int playerNumber, B2_MazeDirection direction)
         {
             int currentRow = playerNumber == 1 ? player1Row : player2Row;
             int currentCol = playerNumber == 1 ? player1Col : player2Col;
             B2_MazeCellType playerType = playerNumber == 1 ? B2_MazeCellType.Player1 : B2_MazeCellType.Player2;
 
-            int newRow = currentRow;
-            int newCol = currentCol;
-
-            // Bestimme neue Position (nur ein Schritt)
-            switch (direction)
-            {
-                case B2_MazeDirection.Up: newRow--; break;
-                case B2_MazeDirection.Down: newRow++; break;
-                case B2_MazeDirection.Left: newCol--; break;
-                case B2_MazeDirection.Right: newCol++; break;
-            }
+            int newRow = currentRow + direction.DeltaRow;
+            int newCol = currentCol + direction.DeltaCol;
 
             // Prüfe ob Bewegung möglich ist
             if (!IsWalkable(newRow, newCol))
@@ -337,9 +365,7 @@ namespace OOPGames
         }
     }
 
-    /// <summary>
     /// Konkreter Labyrinth-Move (Richtungsbewegung)
-    /// </summary>
     public class B2_MazeMove : B2_AbstractMazeMove
     {
         public override int PlayerNumber { get; }
@@ -352,12 +378,10 @@ namespace OOPGames
         }
     }
 
-    /// <summary>
     /// Konkrete Labyrinth-Regeln
-    /// </summary>
     public class B2_MazeRules : B2_AbstractMazeRules
     {
-        public B2_MazeRules() : base(new B2_MazeField(21, 21))
+        public B2_MazeRules() : base(new B2_MazeField(31, 31))
         {
         }
 
