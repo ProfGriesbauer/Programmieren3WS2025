@@ -38,6 +38,82 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
             canvas.Children.Add(field);
         }
 
+        private void DrawFieldWithLabel(Canvas canvas, double x, double y, Brush fill, Brush stroke, double size, string label)
+        {
+            Ellipse field = new Ellipse
+            {
+                Width = size,
+                Height = size,
+                Fill = fill,
+                Stroke = stroke,
+                StrokeThickness = 1
+            };
+            Canvas.SetLeft(field, x - size/2);
+            Canvas.SetTop(field, y - size/2);
+            canvas.Children.Add(field);
+
+            // Bestimme Textfarbe: Schwarz für helle Farben (Rot, Gelb, Grün), Weiß für dunkle (Schwarz)
+            Brush textColor = Brushes.White;
+            if (fill == Brushes.Red || fill == Brushes.Yellow || fill == Brushes.Green)
+            {
+                textColor = Brushes.Black;
+            }
+
+            // Zeichne Label zentriert
+            TextBlock labelText = new TextBlock
+            {
+                Text = label,
+                FontSize = size * 0.6,
+                FontWeight = FontWeights.Bold,
+                Foreground = textColor,
+                TextAlignment = TextAlignment.Center
+            };
+            
+            labelText.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            Canvas.SetLeft(labelText, x - labelText.DesiredSize.Width / 2);
+            Canvas.SetTop(labelText, y - labelText.DesiredSize.Height / 2);
+            canvas.Children.Add(labelText);
+        }
+
+        private void DrawPiece(Canvas canvas, double x, double y, Brush color, double size, int pieceNumber)
+        {
+            // Zeichne Kreis
+            Ellipse piece = new Ellipse
+            {
+                Width = size,
+                Height = size,
+                Fill = color,
+                Stroke = Brushes.Black,
+                StrokeThickness = 1
+            };
+            Canvas.SetLeft(piece, x - size/2);
+            Canvas.SetTop(piece, y - size/2);
+            canvas.Children.Add(piece);
+
+            // Bestimme Textfarbe: Schwarz für helle Farben (Rot, Gelb, Grün), Weiß für dunkle (Schwarz)
+            Brush textColor = Brushes.White;
+            if (color == Brushes.Red || color == Brushes.Yellow || color == Brushes.Green)
+            {
+                textColor = Brushes.Black;
+            }
+
+            // Zeichne Nummer zentriert
+            TextBlock number = new TextBlock
+            {
+                Text = pieceNumber.ToString(),
+                FontSize = size * 0.6,
+                FontWeight = FontWeights.Bold,
+                Foreground = textColor,
+                TextAlignment = TextAlignment.Center
+            };
+            
+            // Measure the text size for proper centering
+            number.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            Canvas.SetLeft(number, x - number.DesiredSize.Width / 2);
+            Canvas.SetTop(number, y - number.DesiredSize.Height / 2);
+            canvas.Children.Add(number);
+        }
+
         // Zeichne 2x2 Startfelder, ausgerichtet an Grid-Zentren (gridSize übergeben)
         private void DrawStartFields(Canvas canvas, double x, double y, double gridSize, Brush color, double fieldSize)
         {
@@ -113,10 +189,10 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
             canvas.Children.Add(boardRect);
 
             // Startfelder (2x2) in den Ecken mit Padding
-            DrawStartFields(canvas, boardLeft + CORNER_PADDING, boardTop + CORNER_PADDING, gridSize, PlayerColors[2], fieldSize);                           // Gelb oben links
-            DrawStartFields(canvas, boardLeft + size - CORNER_PADDING - 2*gridSize, boardTop + CORNER_PADDING, gridSize, PlayerColors[3], fieldSize);      // Grün oben rechts
-            DrawStartFields(canvas, boardLeft + CORNER_PADDING, boardTop + size - CORNER_PADDING - 2*gridSize, gridSize, PlayerColors[1], fieldSize);      // Schwarz unten links
-            DrawStartFields(canvas, boardLeft + size - CORNER_PADDING - 2*gridSize, boardTop + size - CORNER_PADDING - 2*gridSize, gridSize, PlayerColors[0], fieldSize); // Rot unten rechts
+            DrawStartFields(canvas, boardLeft + CORNER_PADDING, boardTop + CORNER_PADDING, gridSize, PlayerColors[3], fieldSize);                           // Grün oben links
+            DrawStartFields(canvas, boardLeft + size - CORNER_PADDING - gridSize, boardTop + CORNER_PADDING, gridSize, PlayerColors[2], fieldSize);      // gelb oben rechts
+            DrawStartFields(canvas, boardLeft + CORNER_PADDING, boardTop + size - CORNER_PADDING - gridSize, gridSize, PlayerColors[0], fieldSize);      // rot unten links
+            DrawStartFields(canvas, boardLeft + size - CORNER_PADDING - gridSize, boardTop + size - CORNER_PADDING - gridSize, gridSize, PlayerColors[1], fieldSize); // Schwarz unten rechts
 
             // Laufstrecke: 40 Felder die ein Kreuz-Muster bilden
             // Korrigiert nach Pfeilen: rechte Seite muss auf x=6 sein, nicht x=10
@@ -246,12 +322,12 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
                 var piece = board.GetPieceAt(i);
                 if (piece != null)
                 {
-                    DrawField(canvas,
+                    DrawPiece(canvas,
                         trackPoints[i].X,
                         trackPoints[i].Y,
                         PlayerColors[piece.Owner - 1],
-                        Brushes.Black,
-                        pieceSize);
+                        pieceSize,
+                        piece.Id + 1);
                 }
             }
             
@@ -264,11 +340,12 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
 
             // Zielfelder als 4er-Reihen, die ein "+" bilden. Das Zentrum (5,5) bleibt frei.
             // Rot (unten nach oben) -> y = 9,8,7,6
+            string[] labels = { "a", "b", "c", "d" };
             for (int i = 0; i < 4; i++)
             {
                 double x = boardLeft + gridOffset + 5 * gridSize;
                 double y = boardTop + gridOffset + (9 - i) * gridSize;
-                DrawField(canvas, x, y, PlayerColors[0], Brushes.Black, fieldSize);
+                DrawFieldWithLabel(canvas, x, y, PlayerColors[0], Brushes.Black, fieldSize, labels[i]);
             }
 
             // Schwarz (rechts nach links) -> x = 9,8,7,6
@@ -276,7 +353,7 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
             {
                 double x = boardLeft + gridOffset + (9 - i) * gridSize;
                 double y = boardTop + gridOffset + 5 * gridSize;
-                DrawField(canvas, x, y, PlayerColors[1], Brushes.Black, fieldSize);
+                DrawFieldWithLabel(canvas, x, y, PlayerColors[1], Brushes.Black, fieldSize, labels[i]);
             }
 
             // Gelb (oben nach unten) -> y = 1,2,3,4
@@ -284,7 +361,7 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
             {
                 double x = boardLeft + gridOffset + 5 * gridSize;
                 double y = boardTop + gridOffset + (1 + i) * gridSize;
-                DrawField(canvas, x, y, PlayerColors[2], Brushes.Black, fieldSize);
+                DrawFieldWithLabel(canvas, x, y, PlayerColors[2], Brushes.Black, fieldSize, labels[i]);
             }
 
             // Grün (links nach rechts) -> x = 1,2,3,4
@@ -292,13 +369,13 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
             {
                 double x = boardLeft + gridOffset + (1 + i) * gridSize;
                 double y = boardTop + gridOffset + 5 * gridSize;
-                DrawField(canvas, x, y, PlayerColors[3], Brushes.Black, fieldSize);
+                DrawFieldWithLabel(canvas, x, y, PlayerColors[3], Brushes.Black, fieldSize, labels[i]);
             }
 
             // Zeichne Figuren in Zielfeldern und Basis
             foreach (var player in board.Players)
             {
-                // Basis-Figuren (2x2), positioniert an den neuen Start-Anchor-Punkten
+                // Basis-Figuren (2x2), zentriert auf den Startfeldern
                 var basePieces = player.Pieces.Where(p => p.IsInBase).ToList();
                 for (int i = 0; i < basePieces.Count; i++)
                 {
@@ -308,26 +385,26 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
                     double baseAnchorX = 0, baseAnchorY = 0;
                     switch (player.PlayerNumber)
                     {
-                        case 1: // Rot -> unten links (Grid 2,8)
-                            baseAnchorX = boardLeft + gridOffset + 2 * gridSize;
-                            baseAnchorY = boardTop + gridOffset + 8 * gridSize;
+                        case 1: // Rot -> unten links, Start bei CORNER_PADDING
+                            baseAnchorX = boardLeft + CORNER_PADDING;
+                            baseAnchorY = boardTop + size - CORNER_PADDING - gridSize;
                             break;
-                        case 2: // Schwarz -> unten rechts (Grid 8,8)
-                            baseAnchorX = boardLeft + gridOffset + 8 * gridSize;
-                            baseAnchorY = boardTop + gridOffset + 8 * gridSize;
+                        case 2: // Schwarz -> unten rechts
+                            baseAnchorX = boardLeft + size - CORNER_PADDING - gridSize;
+                            baseAnchorY = boardTop + size - CORNER_PADDING - gridSize;
                             break;
-                        case 3: // Gelb -> oben rechts (Grid 8,2)
-                            baseAnchorX = boardLeft + gridOffset + 8 * gridSize;
-                            baseAnchorY = boardTop + gridOffset + 2 * gridSize;
+                        case 3: // Gelb -> oben rechts
+                            baseAnchorX = boardLeft + size - CORNER_PADDING - gridSize;
+                            baseAnchorY = boardTop + CORNER_PADDING;
                             break;
-                        case 4: // Grün -> oben links (Grid 2,2)
-                            baseAnchorX = boardLeft + gridOffset + 2 * gridSize;
-                            baseAnchorY = boardTop + gridOffset + 2 * gridSize;
+                        case 4: // Grün -> oben links
+                            baseAnchorX = boardLeft + CORNER_PADDING;
+                            baseAnchorY = boardTop + CORNER_PADDING;
                             break;
                     }
                     double baseX = baseAnchorX + colIndex * gridSize;
                     double baseY = baseAnchorY + rowIndex * gridSize;
-                    DrawField(canvas, baseX, baseY, PlayerColors[player.PlayerNumber - 1], Brushes.Black, pieceSize);
+                    DrawPiece(canvas, baseX, baseY, PlayerColors[player.PlayerNumber - 1], pieceSize, basePieces[i].Id + 1);
                 }
 
                 // Zielfeld-Figuren
@@ -339,7 +416,7 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
                     switch (player.PlayerNumber)
                     {
                         case 1: // Rot (unten nach oben) -> y = 9,8,7,6
-                            homeX = boardLeft + gridOffset + 5 * gridSize;
+                            homeX = boardLeft + gridOffset + gridSize;
                             homeY = boardTop + gridOffset + (9 - homeIndex) * gridSize;
                             break;
                         case 2: // Schwarz (rechts nach links) -> x = 9,8,7,6
@@ -355,7 +432,7 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
                             homeY = boardTop + gridOffset + 5 * gridSize;
                             break;
                     }
-                    DrawField(canvas, homeX, homeY, PlayerColors[player.PlayerNumber - 1], Brushes.Black, pieceSize);
+                    DrawPiece(canvas, homeX, homeY, PlayerColors[player.PlayerNumber - 1], pieceSize, piece.Id + 1);
                 }
             }
 
