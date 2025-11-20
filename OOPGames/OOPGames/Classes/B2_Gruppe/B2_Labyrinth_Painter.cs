@@ -229,21 +229,29 @@ namespace OOPGames
         
         private Color GetCellColor(B2_MazeCellType cellType)
         {
-            switch (cellType)
+            if (cellType == B2_MazeCellType.Wall)
             {
-                case B2_MazeCellType.Wall:
-                    return Color.FromRgb(60, 60, 70); // Dunkelgrau für Wände
-                case B2_MazeCellType.Path:
-                    return Color.FromRgb(240, 240, 245); // Fast weiß für Wege
-                case B2_MazeCellType.Visited:
-                    return Color.FromRgb(200, 220, 240); // Hellblau für besuchte Wege
-                case B2_MazeCellType.Player1:
-                case B2_MazeCellType.Player2:
-                    return Color.FromRgb(240, 240, 245); // Wie Path (Spieler wird separat gezeichnet)
-                case B2_MazeCellType.Goal:
-                    return Color.FromRgb(255, 250, 220); // Helles Gelb für Ziel
-                default:
-                    return Colors.Gray;
+                return Color.FromRgb(60, 60, 70); // Dunkelgrau für Wände
+            }
+            else if (cellType == B2_MazeCellType.Path)
+            {
+                return Color.FromRgb(240, 240, 245); // Fast weiß für Wege
+            }
+            else if (cellType == B2_MazeCellType.Visited)
+            {
+                return Color.FromRgb(200, 220, 240); // Hellblau für besuchte Wege
+            }
+            else if (cellType == B2_MazeCellType.Player1 || cellType == B2_MazeCellType.Player2)
+            {
+                return Color.FromRgb(240, 240, 245); // Wie Path (Spieler wird separat gezeichnet)
+            }
+            else if (cellType == B2_MazeCellType.Goal)
+            {
+                return Color.FromRgb(255, 250, 220); // Helles Gelb für Ziel
+            }
+            else
+            {
+                return Colors.Gray;
             }
         }
 
