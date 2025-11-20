@@ -14,25 +14,41 @@ namespace OOPGames
 
     #region Cell Type Classes
 
-    /// Zellentyp
+    /// Zellentyp - jede Zelle bekommt ein eigenes Objekt
     public class B2_MazeCellType
     {
-        public string Name { get; }
-        public bool IsWalkable { get; }
+        public string Name { get; set; }  // Jetzt änderbar!
+        public bool IsWalkable { get; private set; }
 
-        private B2_MazeCellType(string name, bool isWalkable)
+        /// Konstruktor - öffentlich, damit neue Instanzen erstellt werden können
+        public B2_MazeCellType(string name, bool isWalkable)
         {
             Name = name;
             IsWalkable = isWalkable;
         }
 
-        // Statische Instanzen für die verschiedenen Zellentypen
-        public static readonly B2_MazeCellType Wall = new B2_MazeCellType("Wall", false);
-        public static readonly B2_MazeCellType Path = new B2_MazeCellType("Path", true);
-        public static readonly B2_MazeCellType Player1 = new B2_MazeCellType("Player1", true);
-        public static readonly B2_MazeCellType Player2 = new B2_MazeCellType("Player2", true);
-        public static readonly B2_MazeCellType Goal = new B2_MazeCellType("Goal", true);
-        public static readonly B2_MazeCellType Visited = new B2_MazeCellType("Visited", true);
+        /// Factory-Methoden für die verschiedenen Zellentypen (erzeugen neue Instanzen!)
+        public static B2_MazeCellType CreateWall() => new B2_MazeCellType("Wall", false);
+        public static B2_MazeCellType CreatePath() => new B2_MazeCellType("Path", true);
+        public static B2_MazeCellType CreatePlayer1() => new B2_MazeCellType("Player1", true);
+        public static B2_MazeCellType CreatePlayer2() => new B2_MazeCellType("Player2", true);
+        public static B2_MazeCellType CreateGoal() => new B2_MazeCellType("Goal", true);
+        public static B2_MazeCellType CreateVisited() => new B2_MazeCellType("Visited", true);
+        public static B2_MazeCellType CreateVisitedPlayer1() => new B2_MazeCellType("VisitedPlayer1", true);
+        public static B2_MazeCellType CreateVisitedPlayer2() => new B2_MazeCellType("VisitedPlayer2", true);
+
+        /// Methode zum Ändern des Zellentyps (für "verrücktes Labyrinth")
+        public void ChangeType(string newName, bool newIsWalkable)
+        {
+            Name = newName;
+            IsWalkable = newIsWalkable;
+        }
+
+        /// Convenience-Methoden zum Typ-Wechsel
+        public void BecomeWall() => ChangeType("Wall", false);
+        public void BecomePath() => ChangeType("Path", true);
+        public void BecomeVisitedPlayer1() => ChangeType("VisitedPlayer1", true);
+        public void BecomeVisitedPlayer2() => ChangeType("VisitedPlayer2", true);
 
         public override bool Equals(object obj)
         {
@@ -55,6 +71,9 @@ namespace OOPGames
         {
             return !(left == right);
         }
+
+        /// Helper-Methode zum Prüfen des Typs
+        public bool IsType(string typeName) => Name == typeName;
     }
 
     /// Bewegungsrichtung
@@ -116,6 +135,8 @@ namespace OOPGames
         protected int rows;
         protected int cols;
         protected HashSet<(int, int)> visitedCells;
+        protected DateTime gameStartTime;
+        protected const double CountdownSeconds = 3.0;
 
         public virtual int Rows => rows;
         public virtual int Cols => cols;
@@ -125,13 +146,28 @@ namespace OOPGames
         public virtual int Player2Col => player2Col;
         public virtual int GoalRow => goalRow;
         public virtual int GoalCol => goalCol;
+        public virtual DateTime GameStartTime => gameStartTime;
+        
+        /// Gibt zurück wie viele Sekunden vom Countdown noch übrig sind (0 wenn vorbei)
+        public virtual double RemainingCountdown
+        {
+            get
+            {
+                double elapsed = (DateTime.Now - gameStartTime).TotalSeconds;
+                double remaining = CountdownSeconds - elapsed;
+                return remaining > 0 ? remaining : 0;
+            }
+        }
+        
+        /// Prüft ob der Countdown noch läuft
+        public virtual bool IsCountdownActive => RemainingCountdown > 0;
 
         /// Zugriff auf Zellentyp
         public virtual B2_MazeCellType this[int r, int c]
         {
             get
             {
-                if (r < 0 || r >= rows || c < 0 || c >= cols) return B2_MazeCellType.Wall;
+                if (r < 0 || r >= rows || c < 0 || c >= cols) return B2_MazeCellType.CreateWall();
                 return grid[r, c];
             }
             protected set
@@ -163,9 +199,9 @@ namespace OOPGames
             if (r >= 0 && r < rows && c >= 0 && c < cols)
             {
                 visitedCells.Add((r, c));
-                if (grid[r, c] == B2_MazeCellType.Path)
+                if (grid[r, c].IsType("Path"))
                 {
-                    grid[r, c] = B2_MazeCellType.Visited;
+                    grid[r, c] = B2_MazeCellType.CreateVisited();
                 }
             }
         }
@@ -187,6 +223,7 @@ namespace OOPGames
     public abstract class B2_AbstractMazeRules : IGameRules
     {
         protected B2_AbstractMazeField field;
+        protected bool gameEnded = false;
 
         protected B2_AbstractMazeRules(B2_AbstractMazeField field)
         {
@@ -195,12 +232,20 @@ namespace OOPGames
 
         public virtual string Name => "Abstract Maze Rules";
         public virtual IGameField CurrentField => field;
+        public virtual bool GameEnded => gameEnded;
 
         /// Prüft ob Spieler das Ziel erreicht hat
         public abstract int CheckIfPLayerWon();
 
-        /// Bewegungen sind möglich solange Spieler nicht am Ziel ist
-        public virtual bool MovesPossible => CheckIfPLayerWon() == -1;
+        /// Bewegungen sind möglich solange Countdown vorbei ist und Spieler nicht am Ziel ist
+        public virtual bool MovesPossible
+        {
+            get
+            {
+                // Countdown muss vorbei sein UND Spiel nicht beendet
+                return !field.IsCountdownActive && CheckIfPLayerWon() == -1;
+            }
+        }
 
         public abstract void ClearField();
         public abstract void DoMove(IPlayMove move);
@@ -219,6 +264,7 @@ namespace OOPGames
             this.cols = cols;
             this.grid = new B2_MazeCellType[rows, cols];
             this.visitedCells = new HashSet<(int, int)>();
+            this.gameStartTime = DateTime.Now;
             
             GenerateMaze();
         }
@@ -231,7 +277,7 @@ namespace OOPGames
             {
                 for (int c = 0; c < cols; c++)
                 {
-                    grid[r, c] = B2_MazeCellType.Wall;
+                    grid[r, c] = B2_MazeCellType.CreateWall();
                 }
             }
 
@@ -244,7 +290,7 @@ namespace OOPGames
             // Recursive Backtracking Algorithmus
             Stack<(int r, int c)> stack = new Stack<(int, int)>();
             stack.Push((startR, startC));
-            grid[startR, startC] = B2_MazeCellType.Path;
+            grid[startR, startC] = B2_MazeCellType.CreatePath();
 
             var directions = new[] { 
                 (B2_MazeDirection.Up, -2, 0), 
@@ -267,7 +313,7 @@ namespace OOPGames
                     int wallC = current.c + dc / 2;
 
                     if (newR > 0 && newR < rows - 1 && newC > 0 && newC < cols - 1 &&
-                        grid[newR, newC] == B2_MazeCellType.Wall)
+                        grid[newR, newC].IsType("Wall"))
                     {
                         neighbors.Add((newR, newC, wallR, wallC));
                     }
@@ -277,8 +323,8 @@ namespace OOPGames
                 {
                     // Wähle zufälligen Nachbarn
                     var next = neighbors[rand.Next(neighbors.Count)];
-                    grid[next.r, next.c] = B2_MazeCellType.Path;
-                    grid[next.wallR, next.wallC] = B2_MazeCellType.Path; // Entferne Wand dazwischen
+                    grid[next.r, next.c] = B2_MazeCellType.CreatePath();
+                    grid[next.wallR, next.wallC] = B2_MazeCellType.CreatePath(); // Entferne Wand dazwischen
                     stack.Push((next.r, next.c));
                 }
                 else
@@ -290,20 +336,20 @@ namespace OOPGames
             // Setze Spieler 1 Startposition (oben links)
             player1Row = 1;
             player1Col = 1;
-            grid[player1Row, player1Col] = B2_MazeCellType.Player1;
+            grid[player1Row, player1Col] = B2_MazeCellType.CreatePlayer1();
             visitedCells.Add((player1Row, player1Col));
 
             // Setze Spieler 2 Startposition (unten rechts)
             player2Row = rows - 2;
             player2Col = cols - 2;
-            grid[player2Row, player2Col] = B2_MazeCellType.Player2;
+            grid[player2Row, player2Col] = B2_MazeCellType.CreatePlayer2();
             visitedCells.Add((player2Row, player2Col));
 
             // Setze Ziel (Mitte des Labyrinths)
             goalRow = rows / 2;
             goalCol = cols / 2;
             // Stelle sicher dass Ziel begehbar ist
-            grid[goalRow, goalCol] = B2_MazeCellType.Goal;
+            grid[goalRow, goalCol] = B2_MazeCellType.CreateGoal();
         }
 
         /// Prüft ob eine Position eine Kreuzung ist (mehr als 2 Ausgänge)
@@ -325,7 +371,7 @@ namespace OOPGames
         {
             int currentRow = playerNumber == 1 ? player1Row : player2Row;
             int currentCol = playerNumber == 1 ? player1Col : player2Col;
-            B2_MazeCellType playerType = playerNumber == 1 ? B2_MazeCellType.Player1 : B2_MazeCellType.Player2;
+            string playerTypeName = playerNumber == 1 ? "Player1" : "Player2";
 
             int newRow = currentRow + direction.DeltaRow;
             int newCol = currentCol + direction.DeltaCol;
@@ -334,10 +380,12 @@ namespace OOPGames
             if (!IsWalkable(newRow, newCol))
                 return false;
 
-            // Alte Position zurücksetzen
-            if (grid[currentRow, currentCol] == playerType)
+            // Alte Position zurücksetzen (mit spielerspezifischer Spur)
+            if (grid[currentRow, currentCol].IsType(playerTypeName))
             {
-                grid[currentRow, currentCol] = B2_MazeCellType.Visited;
+                grid[currentRow, currentCol] = playerNumber == 1 ? 
+                    B2_MazeCellType.CreateVisitedPlayer1() : 
+                    B2_MazeCellType.CreateVisitedPlayer2();
             }
 
             // Neue Position setzen
@@ -356,9 +404,11 @@ namespace OOPGames
             MarkVisited(newRow, newCol);
 
             // Update Grid (außer wenn es das Ziel ist)
-            if (grid[newRow, newCol] != B2_MazeCellType.Goal)
+            if (!grid[newRow, newCol].IsType("Goal"))
             {
-                grid[newRow, newCol] = playerType;
+                grid[newRow, newCol] = playerNumber == 1 ? 
+                    B2_MazeCellType.CreatePlayer1() : 
+                    B2_MazeCellType.CreatePlayer2();
             }
 
             return true;
@@ -381,7 +431,7 @@ namespace OOPGames
     /// Konkrete Labyrinth-Regeln
     public class B2_MazeRules : B2_AbstractMazeRules
     {
-        public B2_MazeRules() : base(new B2_MazeField(31, 31))
+        public B2_MazeRules() : base(new B2_MazeField(21, 21))
         {
         }
 
@@ -396,6 +446,7 @@ namespace OOPGames
             if (mazeField.Player1Row == mazeField.GoalRow && 
                 mazeField.Player1Col == mazeField.GoalCol)
             {
+                gameEnded = true;
                 return 1;
             }
 
@@ -403,6 +454,7 @@ namespace OOPGames
             if (mazeField.Player2Row == mazeField.GoalRow && 
                 mazeField.Player2Col == mazeField.GoalCol)
             {
+                gameEnded = true;
                 return 2;
             }
 
@@ -413,6 +465,7 @@ namespace OOPGames
         {
             // Neues Labyrinth generieren
             field = new B2_MazeField(21, 21);
+            gameEnded = false;
         }
 
         public override void DoMove(IPlayMove move)

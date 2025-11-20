@@ -70,9 +70,23 @@ namespace OOPGames
             double offsetX = (canvasW - (field.Cols * cellSize)) / 2;
             double offsetY = (canvasH - (field.Rows * cellSize)) / 2;
 
-            // Zeichne Sichtfelder ZUERST (als Hintergrund)
-            DrawViewRadius(canvas, offsetX, offsetY, cellSize, field.Player1Row, field.Player1Col, Color.FromArgb(30, 50, 120, 255));
-            DrawViewRadius(canvas, offsetX, offsetY, cellSize, field.Player2Row, field.Player2Col, Color.FromArgb(30, 255, 80, 80));
+            // Prüfe ob Spiel beendet ist (für Rules-Cast)
+            bool gameEnded = false;
+            if (field is B2_AbstractMazeField)
+            {
+                // Suche nach der Rules-Instanz über CanBeRuledBy
+                var rulesType = typeof(B2_MazeRules);
+                // Wir nutzen einen Workaround: Prüfe ob ein Spieler am Ziel ist
+                gameEnded = (field.Player1Row == field.GoalRow && field.Player1Col == field.GoalCol) ||
+                           (field.Player2Row == field.GoalRow && field.Player2Col == field.GoalCol);
+            }
+
+            // Zeichne Sichtfelder nur wenn Spiel noch läuft
+            if (!gameEnded)
+            {
+                DrawViewRadius(canvas, offsetX, offsetY, cellSize, field.Player1Row, field.Player1Col, Color.FromArgb(30, 50, 120, 255));
+                DrawViewRadius(canvas, offsetX, offsetY, cellSize, field.Player2Row, field.Player2Col, Color.FromArgb(30, 255, 80, 80));
+            }
 
             // Zeichne komplettes Labyrinth
             for (int r = 0; r < field.Rows; r++)
@@ -96,7 +110,8 @@ namespace OOPGames
                     bool isGoal = (r == field.GoalRow && c == field.GoalCol);
 
                     Color cellColor;
-                    if (visible1 || visible2 || isGoal)
+                    // Wenn Spiel beendet: Alles aufdecken, sonst nur Sichtfeld
+                    if (gameEnded || visible1 || visible2 || isGoal)
                     {
                         // Vollständig sichtbar - helle Farben
                         cellColor = GetCellColor(cellType);
@@ -122,19 +137,19 @@ namespace OOPGames
                     canvas.Children.Add(rect);
 
                     // Zeichne Spieler 1 Männchen (Blau)
-                    if (cellType == B2_MazeCellType.Player1)
+                    if (cellType.IsType("Player1"))
                     {
                         DrawPlayer(canvas, x, y, cellSize, Color.FromRgb(50, 120, 255), "1");
                     }
 
                     // Zeichne Spieler 2 Männchen (Rot)
-                    if (cellType == B2_MazeCellType.Player2)
+                    if (cellType.IsType("Player2"))
                     {
                         DrawPlayer(canvas, x, y, cellSize, Color.FromRgb(255, 80, 80), "2");
                     }
 
                     // Zeichne Ziel-Symbol
-                    if (cellType == B2_MazeCellType.Goal)
+                    if (cellType.IsType("Goal"))
                     {
                         // Stern-Form für Ziel
                         var goalStar = new Polygon
@@ -150,6 +165,12 @@ namespace OOPGames
                 }
             }
 
+            // Zeichne Countdown wenn aktiv
+            if (field.IsCountdownActive)
+            {
+                DrawCountdown(canvas, canvasW, canvasH, field.RemainingCountdown);
+            }
+            
             // Zeichne HUD
             DrawHUD(canvas, canvasW, canvasH, field);
         }
@@ -229,23 +250,31 @@ namespace OOPGames
         
         private Color GetCellColor(B2_MazeCellType cellType)
         {
-            if (cellType == B2_MazeCellType.Wall)
+            if (cellType.IsType("Wall"))
             {
                 return Color.FromRgb(60, 60, 70); // Dunkelgrau für Wände
             }
-            else if (cellType == B2_MazeCellType.Path)
+            else if (cellType.IsType("Path"))
             {
                 return Color.FromRgb(240, 240, 245); // Fast weiß für Wege
             }
-            else if (cellType == B2_MazeCellType.Visited)
+            else if (cellType.IsType("Visited"))
             {
-                return Color.FromRgb(200, 220, 240); // Hellblau für besuchte Wege
+                return Color.FromRgb(200, 220, 240); // Hellblau für besuchte Wege (allgemein)
             }
-            else if (cellType == B2_MazeCellType.Player1 || cellType == B2_MazeCellType.Player2)
+            else if (cellType.IsType("VisitedPlayer1"))
+            {
+                return Color.FromRgb(180, 200, 255); // Hellblau für Spieler 1 Spur
+            }
+            else if (cellType.IsType("VisitedPlayer2"))
+            {
+                return Color.FromRgb(255, 180, 180); // Hellrot für Spieler 2 Spur
+            }
+            else if (cellType.IsType("Player1") || cellType.IsType("Player2"))
             {
                 return Color.FromRgb(240, 240, 245); // Wie Path (Spieler wird separat gezeichnet)
             }
-            else if (cellType == B2_MazeCellType.Goal)
+            else if (cellType.IsType("Goal"))
             {
                 return Color.FromRgb(255, 250, 220); // Helles Gelb für Ziel
             }
@@ -276,6 +305,50 @@ namespace OOPGames
             return collection;
         }
 
+        /// Zeichnet Countdown 3-2-1
+        private void DrawCountdown(Canvas canvas, double canvasW, double canvasH, double remaining)
+        {
+            // Berechne welche Zahl angezeigt wird: 3, 2, oder 1
+            int countdownNumber = (int)Math.Ceiling(remaining);
+            if (countdownNumber < 1) countdownNumber = 1;
+            if (countdownNumber > 3) countdownNumber = 3;
+
+            // Große Zahl in der Mitte
+            var countdownText = new TextBlock
+            {
+                Text = countdownNumber.ToString(),
+                FontSize = 120,
+                FontWeight = FontWeights.Bold,
+                Foreground = new SolidColorBrush(Color.FromArgb(200, 255, 100, 0)),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            // Messe die Text-Größe
+            countdownText.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            double textWidth = countdownText.DesiredSize.Width;
+            double textHeight = countdownText.DesiredSize.Height;
+
+            // Zentriere den Text
+            Canvas.SetLeft(countdownText, (canvasW - textWidth) / 2);
+            Canvas.SetTop(countdownText, (canvasH - textHeight) / 2);
+            canvas.Children.Add(countdownText);
+
+            // "Start in..." Text darüber
+            var startText = new TextBlock
+            {
+                Text = "Start in...",
+                FontSize = 30,
+                FontWeight = FontWeights.Bold,
+                Foreground = new SolidColorBrush(Color.FromRgb(80, 80, 90))
+            };
+
+            startText.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            Canvas.SetLeft(startText, (canvasW - startText.DesiredSize.Width) / 2);
+            Canvas.SetTop(startText, (canvasH - textHeight) / 2 - 60);
+            canvas.Children.Add(startText);
+        }
+
         
         /// Zeichnet HUD mit Spielerinformationen
         
@@ -286,23 +359,23 @@ namespace OOPGames
             {
                 Text = "Race to the Center!",
                 Foreground = new SolidColorBrush(Color.FromRgb(40, 40, 50)),
-                FontSize = 15,
+                FontSize = 20,
                 FontWeight = FontWeights.Bold,
-                Background = new SolidColorBrush(Color.FromArgb(225, 255, 255, 255)),
+                //Background = new SolidColorBrush(Color.FromArgb(225, 255, 255, 255)),
                 Padding = new Thickness(15, 8, 15, 8)
             };
-            Canvas.SetLeft(title, canvasW / 2 - 100);
-            Canvas.SetTop(title, 5);
+            Canvas.SetLeft(title, canvasW / 2 - 83);
+            Canvas.SetTop(title, 2);
             canvas.Children.Add(title);
 
             // Spieler 1 Info
             var player1Info = new TextBlock
             {
-                Text = $"Player 1 Blau",
+                Text = $"Player 1 Blue",
                 Foreground = new SolidColorBrush(Color.FromRgb(50, 120, 255)),
-                FontSize = 12,
+                FontSize = 15,
                 FontWeight = FontWeights.Bold,
-                Background = new SolidColorBrush(Color.FromArgb(220, 255, 255, 255)),
+                //Background = new SolidColorBrush(Color.FromArgb(220, 255, 255, 255)),
                 Padding = new Thickness(10, 6, 10, 6)
             };
             Canvas.SetLeft(player1Info, 10);
@@ -312,14 +385,14 @@ namespace OOPGames
             // Spieler 2 Info
             var player2Info = new TextBlock
             {
-                Text = $"Player 2 Rot",
+                Text = $"Player 2 Red",
                 Foreground = new SolidColorBrush(Color.FromRgb(255, 80, 80)),
-                FontSize = 12,
+                FontSize = 15,
                 FontWeight = FontWeights.Bold,
-                Background = new SolidColorBrush(Color.FromArgb(220, 255, 255, 255)),
+                //Background = new SolidColorBrush(Color.FromArgb(220, 255, 255, 255)),
                 Padding = new Thickness(10, 6, 10, 6)
             };
-            Canvas.SetRight(player2Info, 10);
+            Canvas.SetRight(player2Info, 11);
             Canvas.SetTop(player2Info, 5);
             canvas.Children.Add(player2Info);
 
@@ -327,13 +400,13 @@ namespace OOPGames
             var instructions = new TextBlock
             {
                 Text = "Use Arrow Keys / WASD\n to Move",
-                Foreground = new SolidColorBrush(Color.FromRgb(80, 80, 90)),
+                Foreground = new SolidColorBrush(Color.FromRgb(40, 40, 50)),
                 FontSize = 11,
                 TextAlignment = TextAlignment.Center,
-                Background = new SolidColorBrush(Color.FromArgb(200, 255, 255, 255)),
-                Padding = new Thickness(10, 5, 10, 5)
+                //Background = new SolidColorBrush(Color.FromArgb(200, 255, 255, 255)),
+                Padding = new Thickness(15, 6, 15, 6)
             };
-            Canvas.SetLeft(instructions, canvasW / 2 - 100);
+            Canvas.SetLeft(instructions, canvasW / 2 - 70);
             Canvas.SetBottom(instructions, 5);
             canvas.Children.Add(instructions);
         }
