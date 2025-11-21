@@ -237,6 +237,7 @@ namespace OOPGames
         private ImageSource _backgroundImage;
         private ImageSource _startImage;
         private ImageSource _gameOverImage;
+        private ImageSource _highscoreImage;
 
         private PipePart _pipeHead;
         private PipePart _pipeBody;
@@ -246,7 +247,7 @@ namespace OOPGames
         public FlappyBirdPainter()
         {
             string projectRoot = FlappyBirdRules.GetProjectFolderPath();
-            string graphicsPath = System.IO.Path.Combine(projectRoot, "Classes", "B4_Gruppe", "Grafics");
+            string graphicsPath = System.IO.Path.Combine(projectRoot, "Classes", "B4_Gruppe", "Graphic"); // geändert von Grafics
 
             _pipeHeadImage = LoadImage(System.IO.Path.Combine(graphicsPath, "pipe_head.png"));
             _pipeBodyImage = LoadImage(System.IO.Path.Combine(graphicsPath, "pipe_body.png"));
@@ -254,6 +255,7 @@ namespace OOPGames
             _backgroundImage = LoadImage(System.IO.Path.Combine(graphicsPath, "background.png"));
             _startImage = LoadImage(System.IO.Path.Combine(graphicsPath, "start.png"));
             _gameOverImage = LoadImage(System.IO.Path.Combine(graphicsPath, "GameOver.png"));
+            _highscoreImage = LoadImage(System.IO.Path.Combine(graphicsPath, "highscore.png"));
 
             _pipeHead = new PipeHead(_pipeHeadImage);
             _pipeBody = new PipeBody(_pipeBodyImage);
@@ -377,13 +379,11 @@ namespace OOPGames
             {
                 Source = _gameOverImage,
                 Width = 300,
-                Height = 150,
+                Height = 100,
                 Stretch = Stretch.Fill
             };
-            double posX = (canvas.ActualWidth - gameOverImg.Width) / 2;
-            double posY = (canvas.ActualHeight / 2) - 180; 
-            Canvas.SetLeft(gameOverImg, posX);
-            Canvas.SetTop(gameOverImg, posY);
+            Canvas.SetLeft(gameOverImg, (canvas.ActualWidth - gameOverImg.Width) / 2);
+            Canvas.SetTop(gameOverImg, (canvas.ActualHeight / 2) - 190); // nach oben versetzt über Highscores
             canvas.Children.Add(gameOverImg);
         }
 
@@ -392,19 +392,18 @@ namespace OOPGames
             var hs = FlappyBirdRules.Highscores;
             var yStart = (canvas.ActualHeight / 2) - 40;
 
-            var title = new TextBlock()
+            var img = new Image()
             {
-                Text = "Highscores",
-                FontSize = 30,
-                FontWeight = FontWeights.Bold,
-                Foreground = Brushes.White,
-                TextAlignment = TextAlignment.Center
+                Source = _highscoreImage,
+                Width = 250,
+                Height = 50,
+                Stretch = Stretch.Fill
             };
-            Canvas.SetLeft(title, (canvas.ActualWidth / 2) - 60);
-            Canvas.SetTop(title, yStart);
-            canvas.Children.Add(title);
+            Canvas.SetLeft(img, (canvas.ActualWidth - img.Width) / 2);
+            Canvas.SetTop(img, yStart - 40);
+            canvas.Children.Add(img);
 
-            yStart += 40;
+            yStart += 20;
 
             for (int i = 0; i < hs.Count; i++)
             {
@@ -465,7 +464,7 @@ namespace OOPGames
 
         public FlappyBirdRules()
         {
-            string basePath = GetProjectFolderPath() + @"\Classes\B4_Gruppe\Grafics";
+            string basePath = GetProjectFolderPath() + @"\Classes\B4_Gruppe\Graphic";
             soundManager = new SoundManager(basePath);
             SoundManagerInstance = soundManager;
 
@@ -563,7 +562,7 @@ namespace OOPGames
 
         public void LoadHighscores()
         {
-            string file = System.IO.Path.Combine(GetProjectFolderPath(), "Classes", "B4_Gruppe", "FlappyBirdHighscore.json");
+            string file = System.IO.Path.Combine(GetProjectFolderPath(), "Classes", "B4_Gruppe", "Graphic", "FlappyBirdHighscore.json");
             if (File.Exists(file))
             {
                 try
@@ -582,7 +581,7 @@ namespace OOPGames
 
         public void SaveHighscores()
         {
-            string file = System.IO.Path.Combine(GetProjectFolderPath(), "Classes", "B4_Gruppe", "FlappyBirdHighscore.json");
+            string file = System.IO.Path.Combine(GetProjectFolderPath(), "Classes", "B4_Gruppe", "Graphic", "FlappyBirdHighscore.json");
             try
             {
                 string directory = System.IO.Path.GetDirectoryName(file);
