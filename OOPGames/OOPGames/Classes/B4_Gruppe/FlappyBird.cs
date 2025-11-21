@@ -118,7 +118,7 @@ namespace OOPGames
         public void PlayRocket()
         {
             if (rocketSound == null) return;
-            rocketSound.Stop(); // Flamme animieren: immer neu abspielen
+            rocketSound.Stop();
             rocketSound.Position = TimeSpan.Zero;
             rocketSound.Play();
         }
@@ -133,21 +133,18 @@ namespace OOPGames
             jumpSound.Position = TimeSpan.Zero;
             jumpSound.Play();
         }
-
         public void PlayHit()
         {
             hitSound.Stop();
             hitSound.Position = TimeSpan.Zero;
             hitSound.Play();
         }
-
         public void PlayScore()
         {
             scoreSound.Stop();
             scoreSound.Position = TimeSpan.Zero;
             scoreSound.Play();
         }
-
         public void StartBackgroundMusic()
         {
             if (isBackgroundPlaying) return;
@@ -166,7 +163,6 @@ namespace OOPGames
             backgroundMusic.Play();
             isBackgroundPlaying = true;
         }
-
         public void StopMusic()
         {
             if (backgroundMusic != null)
@@ -191,16 +187,13 @@ namespace OOPGames
         {
             X = x; Y = y; Width = width; Height = height; IsTop = isTop;
         }
-
         public Rect Rectangle => new Rect(X, Y, Width, Height);
     }
 
     public class RocketObstacle : Obstacle
     {
-        // Flammen-Sprites
         private ImageSource _rocketImage1;
         private ImageSource _rocketImage2;
-
         public double Speed { get; set; } = 8;
 
         public RocketObstacle(double x, double y, double width, double height, ImageSource rocketImage1, ImageSource rocketImage2)
@@ -209,12 +202,10 @@ namespace OOPGames
             _rocketImage1 = rocketImage1;
             _rocketImage2 = rocketImage2;
         }
-
         public void Move()
         {
             X -= Speed;
         }
-
         public void Draw(Canvas canvas, int frameCount)
         {
             var img = new Image()
@@ -233,17 +224,14 @@ namespace OOPGames
     public class FlappyBirdField : IGameField
     {
         public bool CanBePaintedBy(IPaintGame painter) => painter is FlappyBirdPainter;
-
         public double BirdX { get; set; } = 100;
         public double BirdY { get; set; } = 200;
         public double BirdSize { get; set; } = 30;
         public double FieldHeight { get; set; } = 600;
-
         public List<Obstacle> Obstacles { get; private set; } = new List<Obstacle>();
         public List<RocketObstacle> Rockets { get; private set; } = new List<RocketObstacle>();
 
         private static readonly Random _rand = new Random();
-
         private int _pipeCount = 0;
 
         public Rect BirdRectangle => new Rect(BirdX, BirdY, BirdSize, BirdSize);
@@ -257,22 +245,17 @@ namespace OOPGames
                 return last.X < 250;
             }
         }
-
         public int Score { get; set; } = 0;
 
-        // Flammen-Animation: Beide Bilder werden übergeben
         public void CreateObstacle(ImageSource rocketImage1, ImageSource rocketImage2)
         {
             _pipeCount++;
-
             double gap = 140;
             double gapY = _rand.Next(50, (int)(FieldHeight - gap - 50));
             Obstacles.Add(new Obstacle(480, 0, 75, gapY, true));
             double yBottom = gapY + gap;
             double heightBottom = FieldHeight - yBottom;
             Obstacles.Add(new Obstacle(480, yBottom, 75, heightBottom, false));
-
-            // Zusätzlich bei jedem 5. Rohr eine Rakete erzeugen
             if (_pipeCount % 5 == 0)
             {
                 double rocketWidth = 80;
@@ -281,7 +264,6 @@ namespace OOPGames
                 Rockets.Add(new RocketObstacle(480, rocketY, rocketWidth, rocketHeight, rocketImage1, rocketImage2));
             }
         }
-
         public void UpdateScoreIfPassed()
         {
             foreach (var obs in Obstacles)
@@ -298,7 +280,6 @@ namespace OOPGames
     public class FlappyBirdPainter : IPaintGame2
     {
         public string Name => "Flappy Bird";
-
         private static readonly Brush Bronze = new SolidColorBrush(Color.FromRgb(205, 127, 50));
         private ImageSource _pipeHeadImage;
         private ImageSource _pipeBodyImage;
@@ -307,20 +288,17 @@ namespace OOPGames
         private ImageSource _startImage;
         private ImageSource _gameOverImage;
         private ImageSource _highscoreImage;
-        // Flammen-Animation: Beide Flammen-Bilder
         private ImageSource _rocketImage1;
         private ImageSource _rocketImage2;
 
         private PipePart _pipeHead;
         private PipePart _pipeBody;
-
         private const double PipeHeadHeight = 24;
 
         public FlappyBirdPainter()
         {
             string projectRoot = FlappyBirdRules.GetProjectFolderPath();
             string graphicsPath = System.IO.Path.Combine(projectRoot, "Classes", "B4_Gruppe", "Graphic");
-
             _pipeHeadImage = LoadImage(System.IO.Path.Combine(graphicsPath, "pipe_head.png"));
             _pipeBodyImage = LoadImage(System.IO.Path.Combine(graphicsPath, "pipe_body.png"));
             _birdImage = LoadImage(System.IO.Path.Combine(graphicsPath, "bird.png"));
@@ -330,7 +308,6 @@ namespace OOPGames
             _highscoreImage = LoadImage(System.IO.Path.Combine(graphicsPath, "highscore.png"));
             _rocketImage1 = LoadImage(System.IO.Path.Combine(graphicsPath, "rocket1.png"));
             _rocketImage2 = LoadImage(System.IO.Path.Combine(graphicsPath, "rocket2.png"));
-
             _pipeHead = new PipeHead(_pipeHeadImage);
             _pipeBody = new PipeBody(_pipeBodyImage);
         }
@@ -351,7 +328,6 @@ namespace OOPGames
             if (field is FlappyBirdField f)
             {
                 f.FieldHeight = canvas.ActualHeight;
-
                 var bgImage = new Image()
                 {
                     Source = _backgroundImage,
@@ -360,10 +336,8 @@ namespace OOPGames
                     Stretch = Stretch.Fill
                 };
                 canvas.Children.Add(bgImage);
-
                 double birdDrawFactor = 1.35;
                 double drawBirdSize = f.BirdSize * birdDrawFactor;
-
                 var bird = new Image()
                 {
                     Source = _birdImage,
@@ -371,10 +345,13 @@ namespace OOPGames
                     Height = drawBirdSize,
                     Stretch = Stretch.Fill
                 };
+                // Rotation nach Fallbewegung
+                double angle = FlappyBirdRules.Instance?.BirdRotationAngle ?? 0;
+                bird.RenderTransformOrigin = new Point(0.5, 0.5);
+                bird.RenderTransform = new RotateTransform(angle);
                 Canvas.SetLeft(bird, f.BirdX + (f.BirdSize - drawBirdSize) / 2);
                 Canvas.SetTop(bird, f.BirdY + (f.BirdSize - drawBirdSize) / 2);
                 canvas.Children.Add(bird);
-
                 foreach (var obs in f.Obstacles)
                 {
                     if (obs.Height > PipeHeadHeight)
@@ -395,13 +372,10 @@ namespace OOPGames
                         _pipeHead.Draw(canvas, obs.X, obs.Y, obs.Width, obs.Height, obs.IsTop);
                     }
                 }
-
-                // Flammen-Animation: FrameCount von FlappyBirdRules übergeben!
                 foreach (var rocket in f.Rockets)
                 {
                     rocket.Draw(canvas, FlappyBirdRules.FrameCount);
                 }
-
                 var scoreText = new TextBlock()
                 {
                     Text = $"Score: {f.Score}",
@@ -442,13 +416,10 @@ namespace OOPGames
                 Height = 225,
                 Stretch = Stretch.Fill
             };
-
             double imgX = field.BirdX + field.BirdSize + 20;
             double imgY = field.BirdY;
-
             Canvas.SetLeft(startImg, imgX);
             Canvas.SetTop(startImg, imgY);
-
             canvas.Children.Add(startImg);
         }
 
@@ -470,7 +441,6 @@ namespace OOPGames
         {
             var hs = FlappyBirdRules.Highscores;
             var yStart = (canvas.ActualHeight / 2) - 40;
-
             var img = new Image()
             {
                 Source = _highscoreImage,
@@ -481,9 +451,7 @@ namespace OOPGames
             Canvas.SetLeft(img, (canvas.ActualWidth - img.Width) / 2);
             Canvas.SetTop(img, yStart - 40);
             canvas.Children.Add(img);
-
             yStart += 20;
-
             for (int i = 0; i < hs.Count; i++)
             {
                 int score = hs[i];
@@ -492,7 +460,6 @@ namespace OOPGames
                 else if (score >= 20) medalColor = Brushes.Silver;
                 else if (score >= 10) medalColor = Bronze;
                 else medalColor = Brushes.Black;
-
                 var medal = new Ellipse()
                 {
                     Width = 20,
@@ -504,7 +471,6 @@ namespace OOPGames
                 Canvas.SetLeft(medal, (canvas.ActualWidth / 2) - 70);
                 Canvas.SetTop(medal, yStart + i * 30 + 3);
                 canvas.Children.Add(medal);
-
                 var tb = new TextBlock()
                 {
                     Text = $"{i + 1}. {score}",
@@ -521,39 +487,42 @@ namespace OOPGames
 
     public class FlappyBirdRules : IGameRules2
     {
+        public static FlappyBirdRules Instance; // Singleton für Zugang
         public string Name => "Flappy Bird Rules";
         public static bool GameStarted = false;
         public static int ActivePlayer = 1;
-        // **FRAME COUNTER FÜR ANIMATION**
         public static int FrameCount = 0;
-
         private FlappyBirdField _field;
         public static SoundManager SoundManagerInstance;
-
         private const double Gravity = 2.9;
         private const double JumpForce = -18;
         private double _birdVelocity = 0;
-        // Flammenbilder
         private ImageSource _rocketImage1;
         private ImageSource _rocketImage2;
-
         public IGameField CurrentField => _field;
         public bool MovesPossible { get; private set; } = true;
         public static readonly List<int> Highscores = new List<int>();
         public static bool GameOver = false;
-
         private readonly SoundManager soundManager;
+
+        public double BirdRotationAngle
+        {
+            get
+            {
+                double angle = Math.Max(-30, Math.Min(_birdVelocity * 3, 60));
+                return angle;
+            }
+        }
 
         public FlappyBirdRules()
         {
+            Instance = this;
             string basePath = GetProjectFolderPath() + @"\Classes\B4_Gruppe\Graphic";
             soundManager = new SoundManager(basePath);
             SoundManagerInstance = soundManager;
-
             var painter = new FlappyBirdPainter();
             _rocketImage1 = painter.LoadImage(System.IO.Path.Combine(basePath, "rocket1.png"));
             _rocketImage2 = painter.LoadImage(System.IO.Path.Combine(basePath, "rocket2.png"));
-
             LoadHighscores();
             ClearField();
         }
@@ -580,14 +549,12 @@ namespace OOPGames
             }
         }
         private bool _rocketSoundPlaying = false;
-
         public void TickGameCall()
         {
             if (!MovesPossible || !GameStarted) return;
-            FrameCount++; // bei jedem Tick erhöhen!
+            FrameCount++;
             _birdVelocity += Gravity;
             _field.BirdY += _birdVelocity;
-
             for (int i = _field.Obstacles.Count - 1; i >= 0; i--)
             {
                 var obs = _field.Obstacles[i];
@@ -604,10 +571,8 @@ namespace OOPGames
                 {
                     rocketsVisible = true;
                 }
-
                 var birdRect = _field.BirdRectangle;
                 var rocketRect = rocket.Rectangle;
-
                 if (birdRect.IntersectsWith(rocketRect))
                 {
                     EndGame();
@@ -622,7 +587,6 @@ namespace OOPGames
                 if (rocket.X + rocket.Width < 0)
                     _field.Rockets.RemoveAt(i);
             }
-
             if (rocketsVisible && !_rocketSoundPlaying)
             {
                 soundManager.PlayRocket();
@@ -635,7 +599,7 @@ namespace OOPGames
             }
             if (_field.NeedsObstacle)
             {
-                _field.CreateObstacle(_rocketImage1, _rocketImage2); // beide Bilder!
+                _field.CreateObstacle(_rocketImage1, _rocketImage2);
             }
             int oldScore = _field.Score;
             _field.UpdateScoreIfPassed();
@@ -658,23 +622,19 @@ namespace OOPGames
                 }
             }
         }
-
         private void EndGame()
         {
             MovesPossible = false;
             GameOver = true;
             soundManager.PlayHit();
             soundManager.StopMusic();
-
+            soundManager.StopRocket();
             Highscores.Add(_field.Score);
             Highscores.Sort((a, b) => b.CompareTo(a));
             if (Highscores.Count > 10) Highscores.RemoveAt(Highscores.Count - 1);
-
             SaveHighscores();
-
             ActivePlayer = (ActivePlayer == 1 ? 2 : 1);
         }
-
         public void LoadHighscores()
         {
             string file = System.IO.Path.Combine(GetProjectFolderPath(), "Classes", "B4_Gruppe", "Graphic", "FlappyBirdHighscore.json");
@@ -693,7 +653,6 @@ namespace OOPGames
                 catch { }
             }
         }
-
         public void SaveHighscores()
         {
             string file = System.IO.Path.Combine(GetProjectFolderPath(), "Classes", "B4_Gruppe", "Graphic", "FlappyBirdHighscore.json");
@@ -707,7 +666,6 @@ namespace OOPGames
             }
             catch { }
         }
-
         public void ClearField()
         {
             _field = new FlappyBirdField();
@@ -716,9 +674,7 @@ namespace OOPGames
             GameOver = false;
             GameStarted = false;
         }
-
         public int CheckIfPLayerWon() => MovesPossible ? -1 : 1;
-
         public void StartedGameCall() => soundManager.StartBackgroundMusic();
     }
 
@@ -730,7 +686,6 @@ namespace OOPGames
         public void SetPlayerNumber(int number) => _playerNumber = number;
         public IGamePlayer Clone() => new FlappyBirdHumanPlayer();
         public bool CanBeRuledBy(IGameRules rules) => rules is FlappyBirdRules;
-
         public IPlayMove GetMove(IMoveSelection selection, IGameField field)
         {
             if (selection is IClickSelection) return new FlappyBirdJumpMove(FlappyBirdRules.ActivePlayer);
