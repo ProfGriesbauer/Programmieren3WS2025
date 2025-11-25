@@ -11,6 +11,9 @@ namespace OOPGames
         private readonly SnakeGameConfig _config;
         private PixelPosition _pendingDirection;
         private PixelPosition _targetPosition;
+        private PixelPosition _queuedDirection; // Zweite Eingabe wird gepuffert
+        private int _lastTurnGridX = -1;
+        private int _lastTurnGridY = -1;
 
         public SnakeMovementController(SnakeGameConfig config)
         {
@@ -22,6 +25,20 @@ namespace OOPGames
             if (newDirection.IsOpposite(currentDirection))
                 return;
 
+            // Blockiere Richtungsänderung wenn bereits eine Drehung in diesem Kästchen stattgefunden hat
+            int currentGridX = (int)(headPosition.X / _config.CellSize);
+            int currentGridY = (int)(headPosition.Y / _config.CellSize);
+
+            if (_lastTurnGridX == currentGridX && _lastTurnGridY == currentGridY)
+            {
+                // Puffere die zweite Eingabe für das nächste Kästchen
+                if (_queuedDirection == null && !newDirection.IsOpposite(currentDirection))
+                {
+                    _queuedDirection = newDirection;
+                }
+                return;
+            }
+
             _pendingDirection = newDirection;
             _targetPosition = CalculateTurnTarget(headPosition, currentDirection);
         }
@@ -32,7 +49,25 @@ namespace OOPGames
             targetPos = null;
 
             if (_targetPosition == null || _pendingDirection == null)
-                return false;
+            {
+                // Prüfe ob gepufferte Richtung aktiviert werden kann
+                if (_queuedDirection != null && !_queuedDirection.IsOpposite(currentDirection))
+                {
+                    int currentGridX = (int)(headPosition.X / _config.CellSize);
+                    int currentGridY = (int)(headPosition.Y / _config.CellSize);
+                    
+                    // Aktiviere gepufferte Richtung wenn wir in ein neues Kästchen gewechselt haben
+                    if (_lastTurnGridX != currentGridX || _lastTurnGridY != currentGridY)
+                    {
+                        _pendingDirection = _queuedDirection;
+                        _targetPosition = CalculateTurnTarget(headPosition, currentDirection);
+                        _queuedDirection = null;
+                    }
+                }
+                
+                if (_targetPosition == null || _pendingDirection == null)
+                    return false;
+            }
 
             bool reachedTarget = HasReachedTarget(headPosition, currentDirection, _targetPosition);
 
@@ -40,6 +75,11 @@ namespace OOPGames
             {
                 newDirection = _pendingDirection;
                 targetPos = _targetPosition;
+                
+                // Merke Position der Drehung
+                _lastTurnGridX = (int)(targetPos.X / _config.CellSize);
+                _lastTurnGridY = (int)(targetPos.Y / _config.CellSize);
+                
                 _pendingDirection = null;
                 _targetPosition = null;
                 return true;
@@ -89,6 +129,9 @@ namespace OOPGames
         {
             _pendingDirection = null;
             _targetPosition = null;
+            _queuedDirection = null;
+            _lastTurnGridX = -1;
+            _lastTurnGridY = -1;
         }
     }
 }

@@ -130,22 +130,22 @@ namespace OOPGames
 
         private void DrawStartHint(RenderContext context)
         {
-            string message = "Press SPACE to start";
+            string message = "press SPACE to start";
             double centerX = context.OffsetX + (context.FieldWidth * context.Scale / 2);
             double centerY = context.OffsetY + (context.FieldHeight * context.Scale / 2);
 
             // Box dimensions (approx around the text + padding)
-            double boxWidth = 560 * context.Scale;
-            double boxHeight = 100 * context.Scale;
-            double boxLeft = centerX - (boxWidth / 2) + 32; // shift 32px right
+            double boxWidth = 420;
+            double boxHeight = 80;
+            double boxLeft = centerX - (boxWidth / 2);
             double boxTop = centerY - (boxHeight / 2);
 
             var box = new Rectangle
             {
                 Width = boxWidth,
                 Height = boxHeight,
-                RadiusX = 20 * context.Scale,
-                RadiusY = 20 * context.Scale,
+                RadiusX = 15,
+                RadiusY = 15,
                 Fill = new SolidColorBrush(Color.FromArgb(160, 128, 128, 128)) // semi-transparent gray
             };
             Canvas.SetLeft(box, boxLeft);
@@ -155,18 +155,15 @@ namespace OOPGames
             var textBlock = new TextBlock
             {
                 Text = message,
-                FontSize = 48 * context.Scale,
+                FontSize = 36,
                 FontWeight = FontWeights.Bold,
                 Foreground = Brushes.Black,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
+                TextAlignment = TextAlignment.Center,
+                Width = boxWidth
             };
 
-            // Approx text position inside the box
-            double textLeft = boxLeft + (boxWidth / 2) - (260 * context.Scale);
-            double textTop = boxTop + (boxHeight / 2) - (30 * context.Scale);
-            Canvas.SetLeft(textBlock, textLeft);
-            Canvas.SetTop(textBlock, textTop);
+            Canvas.SetLeft(textBlock, boxLeft);
+            Canvas.SetTop(textBlock, boxTop + (boxHeight / 2) - 22);
             context.Canvas.Children.Add(textBlock);
         }
 
