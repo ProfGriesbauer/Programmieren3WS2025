@@ -142,6 +142,8 @@ namespace OOPGames
             if (_snake1.IsAlive && _collisionDetector.IsFoodEaten(_snake1.Head, _foodManager.CurrentFood))
             {
                 _snake1.Grow();
+                // increase score for player 1
+                A5_Score.AddScore1(1);
                 _foodManager.SpawnFood();
             }
             
@@ -149,6 +151,8 @@ namespace OOPGames
                 _collisionDetector.IsFoodEaten(_snake2.Head, _foodManager.CurrentFood))
             {
                 _snake2.Grow();
+                // increase score for player 2
+                A5_Score.AddScore2(1);
                 _foodManager.SpawnFood();
             }
         }
@@ -225,6 +229,8 @@ namespace OOPGames
 
         public void StartGame()
         {
+            // Reset score when starting a new game
+            A5_Score.Reset();
             _timerManager.StartCountdown(_config.CountdownSeconds);
         }
     }

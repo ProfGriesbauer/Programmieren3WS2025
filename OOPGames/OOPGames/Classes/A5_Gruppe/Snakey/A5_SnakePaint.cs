@@ -35,6 +35,19 @@ namespace OOPGames
             
             DrawFood(field, renderContext);
 
+            // Draw scores based on game mode
+            if (field.IsTwoPlayerMode)
+            {
+                // Multiplayer: P1 left (red), P2 right (blue)
+                DrawScorePlayer1Multiplayer(renderContext, field);
+                DrawScorePlayer2Multiplayer(renderContext, field);
+            }
+            else
+            {
+                // Singleplayer: Score right
+                DrawScoreSingleplayer(renderContext, field);
+            }
+
             if (field.IsCountingDown)
             {
                 DrawCountdown(field, renderContext);
@@ -184,6 +197,174 @@ namespace OOPGames
             Canvas.SetLeft(textBlock, boxLeft);
             Canvas.SetTop(textBlock, boxTop + (boxHeight / 2) - 22);
             context.Canvas.Children.Add(textBlock);
+        }
+
+        private void DrawScoreSingleplayer(RenderContext context, A5_SnakeField field)
+        {
+            try
+            {
+                string scoreText = "Score: " + A5_Score.Score1;
+                string highScoreText = "Highscore: " + A5_Score.HighScore1;
+                double padding = 8;
+                double boxWidth = 160;
+                double boxHeight = 55;
+                double left = context.OffsetX + (context.FieldWidth * context.Scale) - boxWidth - padding;
+                double top = context.OffsetY + padding;
+
+                var box = new Rectangle
+                {
+                    Width = boxWidth,
+                    Height = boxHeight,
+                    RadiusX = 6,
+                    RadiusY = 6,
+                    Fill = new SolidColorBrush(Color.FromArgb(160, 0, 0, 0))
+                };
+                Canvas.SetLeft(box, left);
+                Canvas.SetTop(box, top);
+                context.Canvas.Children.Add(box);
+
+                var textBlockScore = new TextBlock
+                {
+                    Text = scoreText,
+                    FontSize = 14,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = Brushes.White,
+                    Width = boxWidth,
+                    TextAlignment = TextAlignment.Center
+                };
+                Canvas.SetLeft(textBlockScore, left);
+                Canvas.SetTop(textBlockScore, top + 4);
+                context.Canvas.Children.Add(textBlockScore);
+
+                var textBlockHighScore = new TextBlock
+                {
+                    Text = highScoreText,
+                    FontSize = 12,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = Brushes.Yellow,
+                    Width = boxWidth,
+                    TextAlignment = TextAlignment.Center
+                };
+                Canvas.SetLeft(textBlockHighScore, left);
+                Canvas.SetTop(textBlockHighScore, top + 25);
+                context.Canvas.Children.Add(textBlockHighScore);
+            }
+            catch
+            {
+                // ignore drawing errors to avoid breaking the entire paint cycle
+            }
+        }
+
+        private void DrawScorePlayer1Multiplayer(RenderContext context, A5_SnakeField field)
+        {
+            try
+            {
+                string scoreText = "P1 Score: " + A5_Score.Score1;
+                string highScoreText = "HS: " + A5_Score.HighScore1;
+                double padding = 8;
+                double boxWidth = 160;
+                double boxHeight = 55;
+                double left = context.OffsetX + padding;
+                double top = context.OffsetY + padding;
+
+                var box = new Rectangle
+                {
+                    Width = boxWidth,
+                    Height = boxHeight,
+                    RadiusX = 6,
+                    RadiusY = 6,
+                    Fill = new SolidColorBrush(Color.FromArgb(160, 200, 0, 0))
+                };
+                Canvas.SetLeft(box, left);
+                Canvas.SetTop(box, top);
+                context.Canvas.Children.Add(box);
+
+                var textBlockScore = new TextBlock
+                {
+                    Text = scoreText,
+                    FontSize = 14,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = Brushes.White,
+                    Width = boxWidth,
+                    TextAlignment = TextAlignment.Center
+                };
+                Canvas.SetLeft(textBlockScore, left);
+                Canvas.SetTop(textBlockScore, top + 4);
+                context.Canvas.Children.Add(textBlockScore);
+
+                var textBlockHighScore = new TextBlock
+                {
+                    Text = highScoreText,
+                    FontSize = 12,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = Brushes.Yellow,
+                    Width = boxWidth,
+                    TextAlignment = TextAlignment.Center
+                };
+                Canvas.SetLeft(textBlockHighScore, left);
+                Canvas.SetTop(textBlockHighScore, top + 25);
+                context.Canvas.Children.Add(textBlockHighScore);
+            }
+            catch
+            {
+                // ignore drawing errors to avoid breaking the entire paint cycle
+            }
+        }
+
+        private void DrawScorePlayer2Multiplayer(RenderContext context, A5_SnakeField field)
+        {
+            try
+            {
+                string scoreText = "P2 Score: " + A5_Score.Score2;
+                string highScoreText = "HS: " + A5_Score.HighScore2;
+                double padding = 8;
+                double boxWidth = 160;
+                double boxHeight = 55;
+                double left = context.OffsetX + (context.FieldWidth * context.Scale) - boxWidth - padding;
+                double top = context.OffsetY + padding;
+
+                var box = new Rectangle
+                {
+                    Width = boxWidth,
+                    Height = boxHeight,
+                    RadiusX = 6,
+                    RadiusY = 6,
+                    Fill = new SolidColorBrush(Color.FromArgb(160, 0, 0, 200))
+                };
+                Canvas.SetLeft(box, left);
+                Canvas.SetTop(box, top);
+                context.Canvas.Children.Add(box);
+
+                var textBlockScore = new TextBlock
+                {
+                    Text = scoreText,
+                    FontSize = 14,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = Brushes.White,
+                    Width = boxWidth,
+                    TextAlignment = TextAlignment.Center
+                };
+                Canvas.SetLeft(textBlockScore, left);
+                Canvas.SetTop(textBlockScore, top + 4);
+                context.Canvas.Children.Add(textBlockScore);
+
+                var textBlockHighScore = new TextBlock
+                {
+                    Text = highScoreText,
+                    FontSize = 12,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = Brushes.Yellow,
+                    Width = boxWidth,
+                    TextAlignment = TextAlignment.Center
+                };
+                Canvas.SetLeft(textBlockHighScore, left);
+                Canvas.SetTop(textBlockHighScore, top + 25);
+                context.Canvas.Children.Add(textBlockHighScore);
+            }
+            catch
+            {
+                // ignore drawing errors to avoid breaking the entire paint cycle
+            }
         }
 
         public void TickPaintGameField(Canvas canvas, IGameField currentField)

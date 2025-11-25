@@ -503,6 +503,9 @@ namespace OOPGames
             ClearField();
             _currentDifficulty = Math.Min(Math.Max(challengeNumber / 24 + 1, 1), 5);
 
+            // Stelle sicher, dass Standard-Pieces verwendet werden (nicht Random-generierte)
+            _allPieces = A3_LEA_IQPuzzlePieceFactory.CreateAllPieces();
+
             // Lade Level aus der Level-Datei
             var level = A3_LEA_IQPuzzleLevels.GetLevel(challengeNumber);
             if (level != null && level.GridLayout != null)
@@ -552,6 +555,268 @@ namespace OOPGames
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Generiert ein zufälliges Level
+        /// </summary>
+        /// <param name="difficulty">1 = Normal (5-7 Teile), 2 = Schwer (8-11 Teile)</param>
+        public void GenerateRandomLevel(int difficulty = 1)
+        {
+            ClearField();
+            _currentDifficulty = difficulty + 2;
+            
+            var random = new Random();
+            int nextPieceId = 1;
+            int[,] grid = new int[11, 5];
+            
+            // Solange noch freie Felder existieren
+            while (HasEmptyCells(grid))
+            {
+                // Finde ein zufälliges leeres Feld
+                var emptyCell = GetRandomEmptyCell(grid, random);
+                if (emptyCell == null) break;
+                
+                int startX = emptyCell.Value.x;
+                int startY = emptyCell.Value.y;
+                
+                // Generiere zufälliges Teil mit 2-5 Zellen
+                int pieceSize = random.Next(2, 6);
+                var pieceCells = GenerateRandomPiece(grid, startX, startY, pieceSize, random);
+                
+                // Platziere das Teil im Grid
+                foreach (var cell in pieceCells)
+                {
+                    grid[cell.x, cell.y] = nextPieceId;
+                }
+                
+                nextPieceId++;
+            }
+            
+            // Lade das generierte Grid ins Spielfeld
+            LoadGeneratedGrid(grid);
+            
+            // Entferne Teile basierend auf Schwierigkeitsgrad
+            // Normal: 5-7 Teile, Schwer: 8-11 Teile
+            int minPieces = difficulty == 1 ? 5 : 8;
+            int maxPieces = difficulty == 1 ? 8 : 12;
+            int piecesToRemove = random.Next(minPieces, maxPieces);
+            var piecesToRemoveList = GetConnectedPiecesToRemove(piecesToRemove, random);
+            
+            foreach (var pieceId in piecesToRemoveList)
+            {
+                var pieceToRemove = _placedPieces.FirstOrDefault(p => p.Id == pieceId);
+                if (pieceToRemove != null)
+                {
+                    RemovePiece(pieceToRemove);
+                }
+            }
+        }
+        
+        private bool HasEmptyCells(int[,] grid)
+        {
+            for (int x = 0; x < 11; x++)
+                for (int y = 0; y < 5; y++)
+                    if (grid[x, y] == 0)
+                        return true;
+            return false;
+        }
+        
+        private (int x, int y)? GetRandomEmptyCell(int[,] grid, Random random)
+        {
+            var emptyCells = new List<(int x, int y)>();
+            for (int x = 0; x < 11; x++)
+                for (int y = 0; y < 5; y++)
+                    if (grid[x, y] == 0)
+                        emptyCells.Add((x, y));
+            
+            if (emptyCells.Count == 0) return null;
+            return emptyCells[random.Next(emptyCells.Count)];
+        }
+        
+        private List<(int x, int y)> GenerateRandomPiece(int[,] grid, int startX, int startY, int targetSize, Random random)
+        {
+            var cells = new List<(int x, int y)> { (startX, startY) };
+            var candidates = new List<(int x, int y)>();
+            
+            // Füge Nachbarn vom Startzelle hinzu
+            AddNeighborsIfEmpty(grid, startX, startY, candidates);
+            
+            // Wachse das Teil bis zur Zielgröße
+            while (cells.Count < targetSize && candidates.Count > 0)
+            {
+                // Wähle zufällig einen Nachbarn
+                int randomIndex = random.Next(candidates.Count);
+                var nextCell = candidates[randomIndex];
+                candidates.RemoveAt(randomIndex);
+                
+                // Füge die Zelle hinzu
+                cells.Add(nextCell);
+                
+                // Füge deren Nachbarn zu den Kandidaten hinzu
+                AddNeighborsIfEmpty(grid, nextCell.x, nextCell.y, candidates, cells);
+            }
+            
+            return cells;
+        }
+        
+        private void AddNeighborsIfEmpty(int[,] grid, int x, int y, List<(int x, int y)> candidates, List<(int x, int y)> existingCells = null)
+        {
+            var neighbors = new[] { (x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1) };
+            
+            foreach (var (nx, ny) in neighbors)
+            {
+                if (nx >= 0 && nx < 11 && ny >= 0 && ny < 5 && 
+                    grid[nx, ny] == 0 && 
+                    !candidates.Contains((nx, ny)) &&
+                    (existingCells == null || !existingCells.Contains((nx, ny))))
+                {
+                    candidates.Add((nx, ny));
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Findet zusammenhängende Teile zum Entfernen, um ein zusammenhängendes Loch zu erstellen
+        /// </summary>
+        private List<int> GetConnectedPiecesToRemove(int targetCount, Random random)
+        {
+            var result = new List<int>();
+            if (_placedPieces.Count == 0) return result;
+            
+            // Starte mit einem zufälligen Teil
+            var startPiece = _placedPieces[random.Next(_placedPieces.Count)];
+            result.Add(startPiece.Id);
+            
+            // Finde benachbarte Teile und füge sie hinzu
+            while (result.Count < targetCount && result.Count < _placedPieces.Count)
+            {
+                var neighbors = FindNeighboringPieces(result);
+                var availableNeighbors = neighbors.Where(n => !result.Contains(n)).ToList();
+                
+                if (availableNeighbors.Count == 0)
+                    break;
+                
+                // Wähle zufälligen Nachbarn
+                var nextPiece = availableNeighbors[random.Next(availableNeighbors.Count)];
+                result.Add(nextPiece);
+            }
+            
+            return result;
+        }
+        
+        /// <summary>
+        /// Findet alle Teile, die an die gegebenen Teile angrenzen
+        /// </summary>
+        private List<int> FindNeighboringPieces(List<int> pieceIds)
+        {
+            var neighbors = new HashSet<int>();
+            
+            // Finde alle Zellen der gegebenen Teile
+            var occupiedCells = new HashSet<(int x, int y)>();
+            for (int x = 0; x < 11; x++)
+            {
+                for (int y = 0; y < 5; y++)
+                {
+                    int pieceId = _field[x, y];
+                    if (pieceIds.Contains(pieceId))
+                    {
+                        occupiedCells.Add((x, y));
+                    }
+                }
+            }
+            
+            // Prüfe alle Nachbarzellen
+            foreach (var (x, y) in occupiedCells)
+            {
+                var adjacentCells = new[] { (x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1) };
+                foreach (var (ax, ay) in adjacentCells)
+                {
+                    if (ax >= 0 && ax < 11 && ay >= 0 && ay < 5)
+                    {
+                        int neighborId = _field[ax, ay];
+                        if (neighborId > 0 && !pieceIds.Contains(neighborId))
+                        {
+                            neighbors.Add(neighborId);
+                        }
+                    }
+                }
+            }
+            
+            return neighbors.ToList();
+        }
+        
+        private void LoadGeneratedGrid(int[,] grid)
+        {
+            // Erstelle dynamisch Puzzle-Pieces aus dem Grid
+            var generatedPieces = new List<IA3_LEA_IQPuzzlePiece>();
+            var pieceIds = new HashSet<int>();
+            
+            // Finde alle eindeutigen Piece-IDs
+            for (int x = 0; x < 11; x++)
+                for (int y = 0; y < 5; y++)
+                    if (grid[x, y] > 0)
+                        pieceIds.Add(grid[x, y]);
+            
+            // Erstelle für jede ID ein Piece
+            foreach (int pieceId in pieceIds)
+            {
+                var cells = new List<(int x, int y)>();
+                for (int x = 0; x < 11; x++)
+                    for (int y = 0; y < 5; y++)
+                        if (grid[x, y] == pieceId)
+                            cells.Add((x, y));
+                
+                // Finde Bounding Box
+                int minX = cells.Min(c => c.x);
+                int minY = cells.Min(c => c.y);
+                int maxX = cells.Max(c => c.x);
+                int maxY = cells.Max(c => c.y);
+                int width = maxX - minX + 1;
+                int height = maxY - minY + 1;
+                
+                // Erstelle Shape-Array
+                int[,] shape = new int[height, width];
+                foreach (var (x, y) in cells)
+                {
+                    shape[y - minY, x - minX] = 1;
+                }
+                
+                // Zufällige Farbe aus erweiterter Palette
+                var colors = new[] { 
+                    Color.FromRgb(148, 0, 211),    // Lila
+                    Color.FromRgb(50, 205, 50),    // Limonengrün
+                    Color.FromRgb(255, 215, 0),    // Gold
+                    Color.FromRgb(255, 140, 0),    // Dunkelorange
+                    Color.FromRgb(220, 20, 60),    // Karmesinrot
+                    Color.FromRgb(30, 144, 255),   // Dodgerblau
+                    Color.FromRgb(0, 191, 255),    // Tiefes Himmelblau
+                    Color.FromRgb(255, 20, 147),   // Tiefes Pink
+                    Color.FromRgb(34, 139, 34),    // Waldgrün
+                    Color.FromRgb(210, 105, 30),   // Schokoladenbraun
+                    Color.FromRgb(186, 85, 211),   // Mittel-Orchidee
+                    Color.FromRgb(255, 99, 71),    // Tomatenrot
+                    Color.FromRgb(64, 224, 208),   // Türkis
+                    Color.FromRgb(238, 130, 238),  // Violett
+                    Color.FromRgb(255, 69, 0),     // Orangerot
+                    Color.FromRgb(72, 61, 139),    // Dunkles Schieferblau
+                    Color.FromRgb(199, 21, 133),   // Mittel-Violettrot
+                    Color.FromRgb(0, 206, 209),    // Dunkles Türkis
+                    Color.FromRgb(154, 205, 50),   // Gelbgrün
+                    Color.FromRgb(255, 160, 122)   // Helles Lachsrosa
+                };
+                var random = new Random(pieceId * 7919); // Seed für konsistente Farben pro ID
+                var color = colors[random.Next(colors.Length)];
+                
+                var piece = new A3_LEA_IQPuzzlePiece(pieceId, $"Random{pieceId}", color, shape);
+                generatedPieces.Add(piece);
+            }
+            
+            // Ersetze _allPieces mit den generierten Teilen
+            _allPieces = generatedPieces;
+            
+            // Lade das Grid ins Spielfeld
+            LoadLevelFromGrid(grid);
         }
     }
 
@@ -922,13 +1187,12 @@ namespace OOPGames
 
         private void DrawLevelButtons(Canvas canvas)
         {
-            // Level 1 Button
-            double buttonX1 = 500;
             double buttonY = 30;
             double buttonWidth = 100;
             double buttonHeight = 40;
             
-            // Button 1 - Hintergrund
+            // Level 1 Button
+            double buttonX1 = 500;
             var buttonRect1 = new Rectangle
             {
                 Width = buttonWidth,
@@ -943,7 +1207,6 @@ namespace OOPGames
             Canvas.SetTop(buttonRect1, buttonY);
             canvas.Children.Add(buttonRect1);
             
-            // Button 1 - Text (mittig zentriert)
             var buttonText1 = new TextBlock
             {
                 Text = "Level 1",
@@ -989,13 +1252,81 @@ namespace OOPGames
             Canvas.SetLeft(buttonText2, buttonX1 + (buttonWidth - buttonText2.DesiredSize.Width) / 2);
             Canvas.SetTop(buttonText2, buttonY2 + (buttonHeight - buttonText2.DesiredSize.Height) / 2);
             canvas.Children.Add(buttonText2);
+
+            // Random Button (unter Challenge)
+            double buttonY3 = 170;
+            var buttonRect_random = new Rectangle
+            {
+                Width = buttonWidth,
+                Height = buttonHeight,
+                Fill = new SolidColorBrush(Color.FromRgb(255, 150, 0)),
+                Stroke = Brushes.DarkOrange,
+                StrokeThickness = 2,
+                RadiusX = 5,
+                RadiusY = 5
+            };
+            Canvas.SetLeft(buttonRect_random, buttonX1);
+            Canvas.SetTop(buttonRect_random, buttonY3);
+            canvas.Children.Add(buttonRect_random);
+            
+            var buttonText_random = new TextBlock
+            {
+                Text = "Random",
+                FontSize = 18,
+                FontWeight = FontWeights.Bold,
+                Foreground = Brushes.White,
+                TextAlignment = TextAlignment.Center
+            };
+            buttonText_random.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            Canvas.SetLeft(buttonText_random, buttonX1 + (buttonWidth - buttonText_random.DesiredSize.Width) / 2);
+            Canvas.SetTop(buttonText_random, buttonY3 + (buttonHeight - buttonText_random.DesiredSize.Height) / 2);
+            canvas.Children.Add(buttonText_random);
+
+            // Random Hard Button (unter Random)
+            double buttonY4 = 240;
+            var buttonRect_hard = new Rectangle
+            {
+                Width = buttonWidth,
+                Height = buttonHeight,
+                Fill = new SolidColorBrush(Color.FromRgb(200, 0, 0)),
+                Stroke = Brushes.DarkRed,
+                StrokeThickness = 2,
+                RadiusX = 5,
+                RadiusY = 5
+            };
+            Canvas.SetLeft(buttonRect_hard, buttonX1);
+            Canvas.SetTop(buttonRect_hard, buttonY4);
+            canvas.Children.Add(buttonRect_hard);
+            
+            var buttonText_hard = new TextBlock
+            {
+                Text = "Hard",
+                FontSize = 18,
+                FontWeight = FontWeights.Bold,
+                Foreground = Brushes.White,
+                TextAlignment = TextAlignment.Center
+            };
+            buttonText_hard.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            Canvas.SetLeft(buttonText_hard, buttonX1 + (buttonWidth - buttonText_hard.DesiredSize.Width) / 2);
+            Canvas.SetTop(buttonText_hard, buttonY4 + (buttonHeight - buttonText_hard.DesiredSize.Height) / 2);
+            canvas.Children.Add(buttonText_hard);
         }
 
         private Color GetColorForPieceId(int pieceId)
         {
+            // Hole Farbe aus den aktuellen Rules (wichtig für Random-Levels)
+            var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_IQPuzzleRules;
+            if (rules != null)
+            {
+                var piece = rules.AllPieces.FirstOrDefault(p => p.Id == pieceId);
+                if (piece != null)
+                    return piece.Color;
+            }
+            
+            // Fallback: Standard-Pieces
             var allPieces = A3_LEA_IQPuzzlePieceFactory.CreateAllPieces();
-            var piece = allPieces.FirstOrDefault(p => p.Id == pieceId);
-            return piece != null ? piece.Color : Colors.Gray;
+            var standardPiece = allPieces.FirstOrDefault(p => p.Id == pieceId);
+            return standardPiece != null ? standardPiece.Color : Colors.Gray;
         }
     }
 
@@ -1087,7 +1418,7 @@ namespace OOPGames
             {
                 var click = (IClickSelection)selection;
                 
-                // Prüfe ob auf den "Easy" Button geklickt wurde (X: 500-600, Y: 30-70)
+                // Prüfe ob auf den "Level 1" Button geklickt wurde (X: 500-600, Y: 30-70)
                 if (click.ChangedButton == 0 && // Linksklick
                     click.XClickPos >= 500 && click.XClickPos <= 600 &&
                     click.YClickPos >= 30 && click.YClickPos <= 70)
@@ -1097,6 +1428,42 @@ namespace OOPGames
                     if (levelRules != null)
                     {
                         levelRules.LoadChallenge(1);
+
+                        // Zurücksetzen der Auswahl
+                        _selectedPiece = null;
+                        levelRules.SelectedPieceForPainting = null;
+                    }
+                    return null; // Kein Move, nur Button-Klick
+                }
+
+                // Prüfe ob auf den "Random" Button geklickt wurde (X: 500-600, Y: 170-210)
+                if (click.ChangedButton == 0 && // Linksklick
+                    click.XClickPos >= 500 && click.XClickPos <= 600 &&
+                    click.YClickPos >= 170 && click.YClickPos <= 210)
+                {
+                    // Generiere zufälliges Level (Normal)
+                    var levelRules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_IQPuzzleRules;
+                    if (levelRules != null)
+                    {
+                        levelRules.GenerateRandomLevel(1);
+
+                        // Zurücksetzen der Auswahl
+                        _selectedPiece = null;
+                        levelRules.SelectedPieceForPainting = null;
+                    }
+                    return null; // Kein Move, nur Button-Klick
+                }
+
+                // Prüfe ob auf den "Random Hard" Button geklickt wurde (X: 500-600, Y: 240-280)
+                if (click.ChangedButton == 0 && // Linksklick
+                    click.XClickPos >= 500 && click.XClickPos <= 600 &&
+                    click.YClickPos >= 240 && click.YClickPos <= 280)
+                {
+                    // Generiere zufälliges Level (Schwer)
+                    var levelRules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_IQPuzzleRules;
+                    if (levelRules != null)
+                    {
+                        levelRules.GenerateRandomLevel(2);
 
                         // Zurücksetzen der Auswahl
                         _selectedPiece = null;

@@ -43,6 +43,10 @@ namespace OOPGames
         // Expose shots so painter and player input can check for misses/duplicates
         public List<(int x, int y)> Shots => _shots;
         public List<(int x, int y)> Shots2 => _shots2;
+        
+        // Animation für versenkte Schiffe
+        public Dictionary<int, double> SunkShipAnimationTime = new Dictionary<int, double>();
+        public Dictionary<int, System.DateTime> SunkShipTimestamp = new Dictionary<int, System.DateTime>();
 
         // Phase: 1 = Player1 setup, 2 = Player2 setup, 3 = Playing
         private int _phase = 1;
@@ -50,39 +54,52 @@ namespace OOPGames
         public bool IsSetupPhase => Phase == 1 || Phase == 2;
         public int CurrentSetupPlayer => Phase == 1 ? 1 : (Phase == 2 ? 2 : 0);
 
-        public int PlacedShipsCount1 => _ships.Count(s => s.X > 0 || s.Y > 0);
-        public int PlacedShipsCount2 => _ships2.Count(s => s.X > 0 || s.Y > 0);
+        public int PlacedShipsCount1 => _ships.Count(s => s.X >= 0 && s.Y >= 0);
+        public int PlacedShipsCount2 => _ships2.Count(s => s.X >= 0 && s.Y >= 0);
         public bool AllShipsPlaced1 => PlacedShipsCount1 == _ships.Count;
         public bool AllShipsPlaced2 => PlacedShipsCount2 == _ships2.Count;
 
-        // Whether ships are visible in Phase 3 (playing). Default: hidden.
-        public bool ShowShipsPhase3 { get; set; } = false;
+        // Separate visibility control for each player's ships in Phase 3
+        public bool ShowShipsPlayer1 { get; set; } = false;
+        public bool ShowShipsPlayer2 { get; set; } = false;
         // Whether the last move grants an extra turn (e.g., hit in Battleship)
         public bool LastMoveGivesExtraTurn { get; private set; } = false;
-
-        // Ausgewähltes Schiff (vom aktiven Spieler)
-        public A3_LEA_Ship SelectedShip { get; set; } = null;
 
         // Maus-Tracking (wie IQ-Puzzle)
         public int MouseX { get; set; } = -1;
         public int MouseY { get; set; } = -1;
+        
+        // Manuell ausgewähltes Schiff (überschreibt automatische Auswahl)
+        public A3_LEA_Ship ManuallySelectedShip { get; set; } = null;
+        
+        // Hilfsmethode: Gibt das aktuelle Schiff zurück (manuell ausgewählt oder nächstes unplatziertes)
+        public A3_LEA_Ship GetCurrentShip(List<A3_LEA_Ship> shipsList)
+        {
+            // Wenn manuell ein Schiff ausgewählt wurde und es noch nicht platziert ist, verwende es
+            if (ManuallySelectedShip != null && ManuallySelectedShip.X < 0 && ManuallySelectedShip.Y < 0 && shipsList.Contains(ManuallySelectedShip))
+            {
+                return ManuallySelectedShip;
+            }
+            // Ansonsten: nächstes unplatziertes Schiff
+            return shipsList.FirstOrDefault(s => s.X < 0 && s.Y < 0);
+        }
 
         public A3_LEA_SchiffeRules()
         {
-            // Spieler 1
-            _ships.Add(new A3_LEA_Ship(1, 4));
+            // Spieler 1 (IDs 1-5) - Initialisiere mit -1 für 'nicht platziert'
+            _ships.Add(new A3_LEA_Ship(1, 4) { X = -1, Y = -1 });
             // add 5-cell ship
-            _ships.Add(new A3_LEA_Ship(5, 5));
-            _ships.Add(new A3_LEA_Ship(2, 3));
-            _ships.Add(new A3_LEA_Ship(3, 3));
-            _ships.Add(new A3_LEA_Ship(4, 2));
-            // Spieler 2 (eigene Objekte)
-            _ships2.Add(new A3_LEA_Ship(1, 4));
+            _ships.Add(new A3_LEA_Ship(2, 5) { X = -1, Y = -1 });
+            _ships.Add(new A3_LEA_Ship(3, 3) { X = -1, Y = -1 });
+            _ships.Add(new A3_LEA_Ship(4, 3) { X = -1, Y = -1 });
+            _ships.Add(new A3_LEA_Ship(5, 2) { X = -1, Y = -1 });
+            // Spieler 2 (IDs 101-105 für eindeutige Animation-Keys)
+            _ships2.Add(new A3_LEA_Ship(101, 4) { X = -1, Y = -1 });
             // add 5-cell ship for player 2
-            _ships2.Add(new A3_LEA_Ship(5, 5));
-            _ships2.Add(new A3_LEA_Ship(2, 3));
-            _ships2.Add(new A3_LEA_Ship(3, 3));
-            _ships2.Add(new A3_LEA_Ship(4, 2));
+            _ships2.Add(new A3_LEA_Ship(102, 5) { X = -1, Y = -1 });
+            _ships2.Add(new A3_LEA_Ship(103, 3) { X = -1, Y = -1 });
+            _ships2.Add(new A3_LEA_Ship(104, 3) { X = -1, Y = -1 });
+            _ships2.Add(new A3_LEA_Ship(105, 2) { X = -1, Y = -1 });
         }
 
         public override IA3_LEA_SchiffeField SchiffeField => _field;
@@ -185,6 +202,13 @@ namespace OOPGames
                     int hitIndex = ship.IsHorizontal ? x - ship.X : y - ship.Y;
                     if (hitIndex >= 0 && hitIndex < ship.Size)
                         ship.HitCells[hitIndex] = true;
+                    
+                    // Wenn Schiff versenkt wurde, starte Animation
+                    if (ship.Hits == ship.Size && !SunkShipTimestamp.ContainsKey(ship.Id))
+                    {
+                        SunkShipTimestamp[ship.Id] = System.DateTime.Now;
+                        SunkShipAnimationTime[ship.Id] = 0;
+                    }
                 }
                 return true;
             }
@@ -208,22 +232,23 @@ namespace OOPGames
             _shots2.Clear();
             foreach (var ship in _ships)
             {
-                ship.X = 0;
-                ship.Y = 0;
+                ship.X = -1;
+                ship.Y = -1;
                 ship.IsHorizontal = true;
                 ship.HitCells = new bool[ship.Size];
             }
             foreach (var ship in _ships2)
             {
-                ship.X = 0;
-                ship.Y = 0;
+                ship.X = -1;
+                ship.Y = -1;
                 ship.IsHorizontal = true;
                 ship.HitCells = new bool[ship.Size];
             }
             Phase = 1;
-            SelectedShip = null;
             MouseX = -1;
             MouseY = -1;
+            SunkShipAnimationTime.Clear();
+            SunkShipTimestamp.Clear();
         }
 
         // IGameRules2 Implementation
@@ -234,7 +259,16 @@ namespace OOPGames
 
         public void TickGameCall()
         {
-            // Für Tick-basierte Spiele, nicht benötigt für Schiffe versenken
+            // Update Animation für versenkte Schiffe
+            var keysToUpdate = SunkShipAnimationTime.Keys.ToList();
+            foreach (var shipId in keysToUpdate)
+            {
+                if (SunkShipTimestamp.ContainsKey(shipId))
+                {
+                    var elapsed = (System.DateTime.Now - SunkShipTimestamp[shipId]).TotalSeconds;
+                    SunkShipAnimationTime[shipId] = elapsed;
+                }
+            }
         }
 
         public override void DoMove(IPlayMove move)
@@ -244,17 +278,23 @@ namespace OOPGames
                 // reset extra-turn flag by default; rules will set it for hits
                 LastMoveGivesExtraTurn = false;
 
-                if (IsSetupPhase && SelectedShip != null)
+                if (IsSetupPhase)
                 {
-                    // Setup-Phase: Ausgewähltes Schiff platzieren
-                    bool horizontal = SelectedShip.IsHorizontal;
-                    if (CanPlaceShip(SelectedShip, m.X, m.Y, horizontal))
+                    // Setup-Phase: Aktuelles Schiff platzieren (manuell ausgewählt oder nächstes)
+                    var shipsList = CurrentSetupPlayer == 1 ? _ships : _ships2;
+                    var currentShip = GetCurrentShip(shipsList);
+                    if (currentShip != null)
                     {
-                        PlaceShip(SelectedShip, m.X, m.Y, horizontal);
-                        SelectedShip = null;
-                        MouseX = -1;
-                        MouseY = -1;
+                        bool horizontal = currentShip.IsHorizontal;
+                        if (CanPlaceShip(currentShip, m.X, m.Y, horizontal))
+                        {
+                            PlaceShip(currentShip, m.X, m.Y, horizontal);
+                            // Zurücksetzen der manuellen Auswahl nach Platzierung
+                            ManuallySelectedShip = null;
+                        }
                     }
+                    MouseX = -1;
+                    MouseY = -1;
                 }
                 else
                 {
@@ -324,16 +364,17 @@ namespace OOPGames
                 // draw placed ships
                 foreach (var ship in shipsList)
                 {
-                    if (ship.X > 0 && ship.Y > 0)
+                    if (ship.X >= 0 && ship.Y >= 0)
                     {
                         DrawWarship(canvas, ship, baseX, baseY, cellSize, ship.IsHorizontal);
                     }
                 }
 
-                // preview
-                if (rules.SelectedShip != null && rules.MouseX >= 0 && rules.MouseY >= 0)
+                // preview: Zeige das aktuelle Schiff (manuell ausgewählt oder nächstes)
+                var nextShip = rules.GetCurrentShip(shipsList);
+                if (nextShip != null && rules.MouseX >= 0 && rules.MouseY >= 0)
                 {
-                    var ship = rules.SelectedShip;
+                    var ship = nextShip;
                     bool canPlace = rules.CanPlaceShip(ship, rules.MouseX, rules.MouseY, ship.IsHorizontal);
                     var previewBrush = new SolidColorBrush(canPlace ? Color.FromArgb(100, 0, 255, 0) : Color.FromArgb(100, 255, 0, 0));
                     for (int i = 0; i < ship.Size; i++)
@@ -351,21 +392,32 @@ namespace OOPGames
                 }
 
                 // selection bar
-                double shipPreviewY = baseY + targetField.Height * cellSize + 50;
+                double shipPreviewY = baseY + targetField.Height * cellSize + 80;
                 double shipPreviewX = baseX;
                 const double shipCellSize = 12;
                 const double shipStep = 80;
-                var shipLabel = new TextBlock { Text = "Available Ships:", FontSize = 12, FontWeight = System.Windows.FontWeights.Bold };
+                var shipLabel = new TextBlock { Text = "Verfügbare Schiffe:", FontSize = 12, FontWeight = System.Windows.FontWeights.Bold };
                 Canvas.SetLeft(shipLabel, shipPreviewX);
                 Canvas.SetTop(shipLabel, shipPreviewY - 25);
                 canvas.Children.Add(shipLabel);
+                var currentShip = rules.GetCurrentShip(shipsList);
                 for (int idx = 0; idx < shipsList.Count; idx++)
                 {
                     var s = shipsList[idx];
                     double x = shipPreviewX + idx * shipStep;
-                    bool isSelected = rules.SelectedShip != null && rules.SelectedShip == s;
-                    bool isPlaced = s.X > 0 || s.Y > 0;
-                    if (isSelected)
+                    bool isPlaced = s.X >= 0 && s.Y >= 0;
+                    bool isCurrent = s == currentShip;
+                    
+                    // Grüne Umrandung für platzierte Schiffe
+                    if (isPlaced)
+                    {
+                        var border = new Rectangle { Width = s.Size * shipCellSize + 6, Height = shipCellSize + 6, Stroke = Brushes.LimeGreen, StrokeThickness = 3, RadiusX = 3, RadiusY = 3 };
+                        Canvas.SetLeft(border, x - 3);
+                        Canvas.SetTop(border, shipPreviewY - 3);
+                        canvas.Children.Add(border);
+                    }
+                    // Goldene Umrandung für das aktuelle (nächste) Schiff
+                    else if (isCurrent)
                     {
                         var border = new Rectangle { Width = s.Size * shipCellSize + 6, Height = shipCellSize + 6, Stroke = Brushes.Gold, StrokeThickness = 3, RadiusX = 3, RadiusY = 3 };
                         Canvas.SetLeft(border, x - 3);
@@ -387,13 +439,17 @@ namespace OOPGames
                     double buttonHeight = 40;
                     var buttonRect = new Rectangle { Width = buttonWidth, Height = buttonHeight, Fill = new SolidColorBrush(Color.FromRgb(0, 150, 0)), Stroke = Brushes.DarkGreen, StrokeThickness = 2, RadiusX = 5, RadiusY = 5 };
                     Canvas.SetLeft(buttonRect, buttonX); Canvas.SetTop(buttonRect, buttonY); canvas.Children.Add(buttonRect);
-                    var buttonText = new TextBlock { Text = "Next", FontSize = 14, FontWeight = System.Windows.FontWeights.Bold, Foreground = Brushes.White };
-                    Canvas.SetLeft(buttonText, buttonX + 20); Canvas.SetTop(buttonText, buttonY + 10); canvas.Children.Add(buttonText);
+                    var buttonText = new TextBlock { Text = "Weiter", FontSize = 14, FontWeight = System.Windows.FontWeights.Bold, Foreground = Brushes.White };
+                    Canvas.SetLeft(buttonText, buttonX + 30); Canvas.SetTop(buttonText, buttonY + 10); canvas.Children.Add(buttonText);
                 }
 
-                var label = new TextBlock { Text = rules.IsSetupPhase ? (rules.SelectedShip != null ? $"Selected: {rules.SelectedShip.Size} cells - R: Rotate, Click on grid to place" : $"Player {rules.CurrentSetupPlayer}: Click a ship to select it") : "Playing: Click to shoot", FontSize = 14, Foreground = Brushes.Black };
+                var nextShipInfo = rules.GetCurrentShip(shipsList);
+                string labelText = nextShipInfo != null 
+                    ? $"Spieler {rules.CurrentSetupPlayer}: Platziere Schiff ({nextShipInfo.Size} Felder) - R: Drehen" 
+                    : $"Spieler {rules.CurrentSetupPlayer}: Alle Schiffe platziert";
+                var label = new TextBlock { Text = labelText, FontSize = 13, Foreground = Brushes.Black };
                 Canvas.SetLeft(label, baseX);
-                Canvas.SetTop(label, baseY + targetField.Height * cellSize + 20);
+                Canvas.SetTop(label, baseY + targetField.Height * cellSize + 30);
                 canvas.Children.Add(label);
                 return;
             }
@@ -409,11 +465,17 @@ namespace OOPGames
             var f1 = rules.SchiffeField;
             for (int x = 0; x <= f1.Width; x++) canvas.Children.Add(new Line { X1 = topBaseX + x * smallCell, Y1 = topBaseY, X2 = topBaseX + x * smallCell, Y2 = topBaseY + f1.Height * smallCell, Stroke = Brushes.Black, StrokeThickness = 1 });
             for (int y = 0; y <= f1.Height; y++) canvas.Children.Add(new Line { X1 = topBaseX, Y1 = topBaseY + y * smallCell, X2 = topBaseX + f1.Width * smallCell, Y2 = topBaseY + y * smallCell, Stroke = Brushes.Black, StrokeThickness = 1 });
-            var title1 = new TextBlock { Text = "Player 1 Field", FontWeight = System.Windows.FontWeights.Bold }; Canvas.SetLeft(title1, topBaseX); Canvas.SetTop(title1, topBaseY - 18); canvas.Children.Add(title1);
-            // draw occupied cells only if ships are visible in Phase 3
-            if (rules.ShowShipsPhase3)
+            var title1 = new TextBlock { Text = "Spielfeld Spieler 1", FontWeight = System.Windows.FontWeights.Bold }; Canvas.SetLeft(title1, topBaseX); Canvas.SetTop(title1, topBaseY - 18); canvas.Children.Add(title1);
+            // draw ships as warship models if visible for Player 1
+            if (rules.ShowShipsPlayer1)
             {
-                foreach (var cell in f1.GetOccupiedCells()) { var rect = new Rectangle { Width = smallCell - 1, Height = smallCell - 1, Fill = Brushes.Gray, Stroke = Brushes.Black, StrokeThickness = 1 }; Canvas.SetLeft(rect, topBaseX + cell.x * smallCell + 1); Canvas.SetTop(rect, topBaseY + cell.y * smallCell + 1); canvas.Children.Add(rect); }
+                foreach (var s in rules.Ships)
+                {
+                    if (s.X >= 0 && s.Y >= 0 && s.Hits < s.Size) // Nur nicht-versenkte Schiffe
+                    {
+                        DrawWarship(canvas, s, topBaseX, topBaseY, smallCell, s.IsHorizontal);
+                    }
+                }
             }
             // draw hits on player1 ships
             foreach (var s in rules.Ships)
@@ -442,20 +504,102 @@ namespace OOPGames
                 }
             }
 
-            // draw sunk ships for player1 as faded gray (visible even when ships are hidden)
+            // draw sunk ships for player1 with explosion animation
             foreach (var s in rules.Ships)
             {
                 if (s.Hits == s.Size)
                 {
-                    for (int i = 0; i < s.Size; i++)
+                    double animTime = rules.SunkShipAnimationTime.ContainsKey(s.Id) ? rules.SunkShipAnimationTime[s.Id] : 999;
+                    
+                    // Phase 1 (0-1.5s): Feuerbälle auf getroffenen Feldern
+                    if (animTime < 1.5)
                     {
-                        int sx = s.IsHorizontal ? s.X + i : s.X;
-                        int sy = s.IsHorizontal ? s.Y : s.Y + i;
-                        if (!f1.IsValidPosition(sx, sy)) continue;
-                        var faded = new Rectangle { Width = smallCell - 1, Height = smallCell - 1, Fill = new SolidColorBrush(Color.FromArgb(140, 180, 180, 180)), Stroke = Brushes.DarkGray, StrokeThickness = 0.5 };
-                        Canvas.SetLeft(faded, topBaseX + sx * smallCell + 1);
-                        Canvas.SetTop(faded, topBaseY + sy * smallCell + 1);
-                        canvas.Children.Add(faded);
+                        for (int i = 0; i < s.Size; i++)
+                        {
+                            int sx = s.IsHorizontal ? s.X + i : s.X;
+                            int sy = s.IsHorizontal ? s.Y : s.Y + i;
+                            
+                            // Feuerball-Animation mit mehreren Schichten
+                            double explosionPhase = (animTime * 2) % 1.0; // Pulsiert
+                            double baseSize = smallCell * 0.8;
+                            double pulseSize = baseSize * (1.0 + explosionPhase * 0.3);
+                            
+                            // Äußerer Feuerring (Orange)
+                            var outerFire = new Ellipse 
+                            { 
+                                Width = pulseSize, 
+                                Height = pulseSize,
+                                Fill = new RadialGradientBrush(
+                                    Color.FromArgb((byte)(200 - explosionPhase * 100), 255, 100, 0),
+                                    Color.FromArgb((byte)(100 - explosionPhase * 60), 255, 50, 0))
+                            };
+                            Canvas.SetLeft(outerFire, topBaseX + sx * smallCell + smallCell / 2 - pulseSize / 2);
+                            Canvas.SetTop(outerFire, topBaseY + sy * smallCell + smallCell / 2 - pulseSize / 2);
+                            Canvas.SetZIndex(outerFire, 95);
+                            canvas.Children.Add(outerFire);
+                            
+                            // Innerer Kern (Gelb-Weiß)
+                            var innerCore = new Ellipse 
+                            { 
+                                Width = pulseSize * 0.5, 
+                                Height = pulseSize * 0.5,
+                                Fill = new RadialGradientBrush(
+                                    Color.FromArgb(255, 255, 255, 200),
+                                    Color.FromArgb((byte)(220 - explosionPhase * 100), 255, 200, 0))
+                            };
+                            Canvas.SetLeft(innerCore, topBaseX + sx * smallCell + smallCell / 2 - pulseSize * 0.25);
+                            Canvas.SetTop(innerCore, topBaseY + sy * smallCell + smallCell / 2 - pulseSize * 0.25);
+                            Canvas.SetZIndex(innerCore, 96);
+                            canvas.Children.Add(innerCore);
+                            
+                            // Rauch-Partikel
+                            var smoke = new Ellipse 
+                            { 
+                                Width = smallCell * 0.6, 
+                                Height = smallCell * 0.6,
+                                Fill = new RadialGradientBrush(
+                                    Color.FromArgb((byte)(60 + explosionPhase * 40), 50, 50, 50),
+                                    Color.FromArgb(0, 30, 30, 30))
+                            };
+                            Canvas.SetLeft(smoke, topBaseX + sx * smallCell + smallCell / 2 - smallCell * 0.3);
+                            Canvas.SetTop(smoke, topBaseY + sy * smallCell + smallCell / 2 - smallCell * 0.3 - animTime * 5);
+                            Canvas.SetZIndex(smoke, 94);
+                            canvas.Children.Add(smoke);
+                        }
+                    }
+                    // Phase 2 (1.5s+): Zeige Kriegsschiff mit Fade-In
+                    else if (animTime >= 1.5 && animTime < 2.5)
+                    {
+                        // Fade-In des Schiffes
+                        double fadeAlpha = (animTime - 1.5) / 1.0; // 0 bis 1
+                        fadeAlpha = System.Math.Min(1.0, fadeAlpha);
+                        
+                        DrawWarship(canvas, s, topBaseX, topBaseY, smallCell, s.IsHorizontal);
+                        
+                        // Weißer Fade-Overlay
+                        if (fadeAlpha < 1.0)
+                        {
+                            for (int i = 0; i < s.Size; i++)
+                            {
+                                int sx = s.IsHorizontal ? s.X + i : s.X;
+                                int sy = s.IsHorizontal ? s.Y : s.Y + i;
+                                var fadeOverlay = new Rectangle 
+                                { 
+                                    Width = smallCell - 1, 
+                                    Height = smallCell - 1, 
+                                    Fill = new SolidColorBrush(Color.FromArgb((byte)((1.0 - fadeAlpha) * 180), 255, 255, 255))
+                                };
+                                Canvas.SetLeft(fadeOverlay, topBaseX + sx * smallCell + 1);
+                                Canvas.SetTop(fadeOverlay, topBaseY + sy * smallCell + 1);
+                                Canvas.SetZIndex(fadeOverlay, 98);
+                                canvas.Children.Add(fadeOverlay);
+                            }
+                        }
+                    }
+                    // Phase 3 (2.5s+): Schiff vollständig sichtbar
+                    else
+                    {
+                        DrawWarship(canvas, s, topBaseX, topBaseY, smallCell, s.IsHorizontal);
                     }
                 }
             }
@@ -464,10 +608,17 @@ namespace OOPGames
             var f2 = rules.SchiffeField2;
             for (int x = 0; x <= f2.Width; x++) canvas.Children.Add(new Line { X1 = bottomBaseX + x * smallCell, Y1 = bottomBaseY, X2 = bottomBaseX + x * smallCell, Y2 = bottomBaseY + f2.Height * smallCell, Stroke = Brushes.Black, StrokeThickness = 1 });
             for (int y = 0; y <= f2.Height; y++) canvas.Children.Add(new Line { X1 = bottomBaseX, Y1 = bottomBaseY + y * smallCell, X2 = bottomBaseX + f2.Width * smallCell, Y2 = bottomBaseY + y * smallCell, Stroke = Brushes.Black, StrokeThickness = 1 });
-            var title2 = new TextBlock { Text = "Player 2 Field", FontWeight = System.Windows.FontWeights.Bold }; Canvas.SetLeft(title2, bottomBaseX); Canvas.SetTop(title2, bottomBaseY - 18); canvas.Children.Add(title2);
-            if (rules.ShowShipsPhase3)
+            var title2 = new TextBlock { Text = "Spielfeld Spieler 2", FontWeight = System.Windows.FontWeights.Bold }; Canvas.SetLeft(title2, bottomBaseX); Canvas.SetTop(title2, bottomBaseY - 18); canvas.Children.Add(title2);
+            // draw ships as warship models if visible for Player 2
+            if (rules.ShowShipsPlayer2)
             {
-                foreach (var cell in f2.GetOccupiedCells()) { var rect = new Rectangle { Width = smallCell - 1, Height = smallCell - 1, Fill = Brushes.Gray, Stroke = Brushes.Black, StrokeThickness = 1 }; Canvas.SetLeft(rect, bottomBaseX + cell.x * smallCell + 1); Canvas.SetTop(rect, bottomBaseY + cell.y * smallCell + 1); canvas.Children.Add(rect); }
+                foreach (var s in rules.Ships2)
+                {
+                    if (s.X >= 0 && s.Y >= 0 && s.Hits < s.Size) // Nur nicht-versenkte Schiffe
+                    {
+                        DrawWarship(canvas, s, bottomBaseX, bottomBaseY, smallCell, s.IsHorizontal);
+                    }
+                }
             }
             // draw hits on player2 ships
             foreach (var s in rules.Ships2)
@@ -495,38 +646,128 @@ namespace OOPGames
                 }
             }
 
-            // draw sunk ships for player2 as faded gray (visible even when ships are hidden)
+            // draw sunk ships for player2 with explosion animation
             foreach (var s in rules.Ships2)
             {
                 if (s.Hits == s.Size)
                 {
-                    for (int i = 0; i < s.Size; i++)
+                    double animTime = rules.SunkShipAnimationTime.ContainsKey(s.Id) ? rules.SunkShipAnimationTime[s.Id] : 999;
+                    
+                    // Phase 1 (0-1.5s): Feuerbälle auf getroffenen Feldern
+                    if (animTime < 1.5)
                     {
-                        int sx = s.IsHorizontal ? s.X + i : s.X;
-                        int sy = s.IsHorizontal ? s.Y : s.Y + i;
-                        if (!f2.IsValidPosition(sx, sy)) continue;
-                        var faded = new Rectangle { Width = smallCell - 1, Height = smallCell - 1, Fill = new SolidColorBrush(Color.FromArgb(140, 180, 180, 180)), Stroke = Brushes.DarkGray, StrokeThickness = 0.5 };
-                        Canvas.SetLeft(faded, bottomBaseX + sx * smallCell + 1);
-                        Canvas.SetTop(faded, bottomBaseY + sy * smallCell + 1);
-                        canvas.Children.Add(faded);
+                        for (int i = 0; i < s.Size; i++)
+                        {
+                            int sx = s.IsHorizontal ? s.X + i : s.X;
+                            int sy = s.IsHorizontal ? s.Y : s.Y + i;
+                            
+                            // Feuerball-Animation mit mehreren Schichten
+                            double explosionPhase = (animTime * 2) % 1.0; // Pulsiert
+                            double baseSize = smallCell * 0.8;
+                            double pulseSize = baseSize * (1.0 + explosionPhase * 0.3);
+                            
+                            // Äußerer Feuerring (Orange)
+                            var outerFire = new Ellipse 
+                            { 
+                                Width = pulseSize, 
+                                Height = pulseSize,
+                                Fill = new RadialGradientBrush(
+                                    Color.FromArgb((byte)(200 - explosionPhase * 100), 255, 100, 0),
+                                    Color.FromArgb((byte)(100 - explosionPhase * 60), 255, 50, 0))
+                            };
+                            Canvas.SetLeft(outerFire, bottomBaseX + sx * smallCell + smallCell / 2 - pulseSize / 2);
+                            Canvas.SetTop(outerFire, bottomBaseY + sy * smallCell + smallCell / 2 - pulseSize / 2);
+                            Canvas.SetZIndex(outerFire, 95);
+                            canvas.Children.Add(outerFire);
+                            
+                            // Innerer Kern (Gelb-Weiß)
+                            var innerCore = new Ellipse 
+                            { 
+                                Width = pulseSize * 0.5, 
+                                Height = pulseSize * 0.5,
+                                Fill = new RadialGradientBrush(
+                                    Color.FromArgb(255, 255, 255, 200),
+                                    Color.FromArgb((byte)(220 - explosionPhase * 100), 255, 200, 0))
+                            };
+                            Canvas.SetLeft(innerCore, bottomBaseX + sx * smallCell + smallCell / 2 - pulseSize * 0.25);
+                            Canvas.SetTop(innerCore, bottomBaseY + sy * smallCell + smallCell / 2 - pulseSize * 0.25);
+                            Canvas.SetZIndex(innerCore, 96);
+                            canvas.Children.Add(innerCore);
+                            
+                            // Rauch-Partikel
+                            var smoke = new Ellipse 
+                            { 
+                                Width = smallCell * 0.6, 
+                                Height = smallCell * 0.6,
+                                Fill = new RadialGradientBrush(
+                                    Color.FromArgb((byte)(60 + explosionPhase * 40), 50, 50, 50),
+                                    Color.FromArgb(0, 30, 30, 30))
+                            };
+                            Canvas.SetLeft(smoke, bottomBaseX + sx * smallCell + smallCell / 2 - smallCell * 0.3);
+                            Canvas.SetTop(smoke, bottomBaseY + sy * smallCell + smallCell / 2 - smallCell * 0.3 - animTime * 5);
+                            Canvas.SetZIndex(smoke, 94);
+                            canvas.Children.Add(smoke);
+                        }
+                    }
+                    // Phase 2 (1.5s+): Zeige Kriegsschiff mit Fade-In
+                    else if (animTime >= 1.5 && animTime < 2.5)
+                    {
+                        // Fade-In des Schiffes
+                        double fadeAlpha = (animTime - 1.5) / 1.0; // 0 bis 1
+                        fadeAlpha = System.Math.Min(1.0, fadeAlpha);
+                        
+                        DrawWarship(canvas, s, bottomBaseX, bottomBaseY, smallCell, s.IsHorizontal);
+                        
+                        // Weißer Fade-Overlay
+                        if (fadeAlpha < 1.0)
+                        {
+                            for (int i = 0; i < s.Size; i++)
+                            {
+                                int sx = s.IsHorizontal ? s.X + i : s.X;
+                                int sy = s.IsHorizontal ? s.Y : s.Y + i;
+                                var fadeOverlay = new Rectangle 
+                                { 
+                                    Width = smallCell - 1, 
+                                    Height = smallCell - 1, 
+                                    Fill = new SolidColorBrush(Color.FromArgb((byte)((1.0 - fadeAlpha) * 180), 255, 255, 255))
+                                };
+                                Canvas.SetLeft(fadeOverlay, bottomBaseX + sx * smallCell + 1);
+                                Canvas.SetTop(fadeOverlay, bottomBaseY + sy * smallCell + 1);
+                                Canvas.SetZIndex(fadeOverlay, 98);
+                                canvas.Children.Add(fadeOverlay);
+                            }
+                        }
+                    }
+                    // Phase 3 (2.5s+): Schiff vollständig sichtbar
+                    else
+                    {
+                        DrawWarship(canvas, s, bottomBaseX, bottomBaseY, smallCell, s.IsHorizontal);
                     }
                 }
             }
 
-            var info = new TextBlock { Text = "Playing: click opponent field to shoot", FontSize = 14, Foreground = Brushes.Black };
+            var info = new TextBlock { Text = "Spielphase: Klicke auf das gegnerische Feld zum Schießen", FontSize = 13, Foreground = Brushes.Black };
             Canvas.SetLeft(info, OFFSET_X);
             Canvas.SetTop(info, bottomBaseY + f2.Height * smallCell + 10);
             canvas.Children.Add(info);
 
-            // Show/Hide Ships toggle button
-            double shipsButtonX = topBaseX + f1.Width * smallCell + 20;
-            double shipsButtonY = topBaseY;
-            double shipsButtonW = 120;
-            double shipsButtonH = 28;
-            var btnRect = new Rectangle { Width = shipsButtonW, Height = shipsButtonH, Fill = new SolidColorBrush(Color.FromRgb(50, 50, 50)), Stroke = Brushes.Black, StrokeThickness = 1, RadiusX = 4, RadiusY = 4 };
-            Canvas.SetLeft(btnRect, shipsButtonX); Canvas.SetTop(btnRect, shipsButtonY); canvas.Children.Add(btnRect);
-            var btnText = new TextBlock { Text = rules.ShowShipsPhase3 ? "Hide Ships" : "Show Ships", FontSize = 12, Foreground = Brushes.White, FontWeight = System.Windows.FontWeights.Bold };
-            Canvas.SetLeft(btnText, shipsButtonX + 12); Canvas.SetTop(btnText, shipsButtonY + 6); canvas.Children.Add(btnText);
+            // Button für Player 1 Schiffe
+            double btn1X = topBaseX + f1.Width * smallCell + 20;
+            double btn1Y = topBaseY;
+            double btnW = 120;
+            double btnH = 28;
+            var btn1Rect = new Rectangle { Width = btnW, Height = btnH, Fill = new SolidColorBrush(Color.FromRgb(50, 100, 150)), Stroke = Brushes.Black, StrokeThickness = 1, RadiusX = 4, RadiusY = 4 };
+            Canvas.SetLeft(btn1Rect, btn1X); Canvas.SetTop(btn1Rect, btn1Y); canvas.Children.Add(btn1Rect);
+            var btn1Text = new TextBlock { Text = rules.ShowShipsPlayer1 ? "Feld 1 Verbergen" : "Feld 1 Anzeigen", FontSize = 10, Foreground = Brushes.White, FontWeight = System.Windows.FontWeights.Bold };
+            Canvas.SetLeft(btn1Text, btn1X + 8); Canvas.SetTop(btn1Text, btn1Y + 6); canvas.Children.Add(btn1Text);
+
+            // Button für Player 2 Schiffe
+            double btn2X = bottomBaseX + f2.Width * smallCell + 20;
+            double btn2Y = bottomBaseY;
+            var btn2Rect = new Rectangle { Width = btnW, Height = btnH, Fill = new SolidColorBrush(Color.FromRgb(150, 50, 50)), Stroke = Brushes.Black, StrokeThickness = 1, RadiusX = 4, RadiusY = 4 };
+            Canvas.SetLeft(btn2Rect, btn2X); Canvas.SetTop(btn2Rect, btn2Y); canvas.Children.Add(btn2Rect);
+            var btn2Text = new TextBlock { Text = rules.ShowShipsPlayer2 ? "Feld 2 Verbergen" : "Feld 2 Anzeigen", FontSize = 10, Foreground = Brushes.White, FontWeight = System.Windows.FontWeights.Bold };
+            Canvas.SetLeft(btn2Text, btn2X + 8); Canvas.SetTop(btn2Text, btn2Y + 6); canvas.Children.Add(btn2Text);
         }
 
         private void DrawWarship(Canvas canvas, A3_LEA_Ship ship, double baseX, double baseY, double cellSize, bool horizontal)
@@ -1782,7 +2023,7 @@ namespace OOPGames
         public void OnMouseMoved(System.Windows.Input.MouseEventArgs e)
         {
             var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_SchiffeRules;
-            if (rules != null && rules.IsSetupPhase && rules.SelectedShip != null)
+            if (rules != null && rules.IsSetupPhase)
             {
                 var mousePos = e.GetPosition(null);
                 int gridX = (int)((mousePos.X - 30) / 40);
@@ -1791,10 +2032,11 @@ namespace OOPGames
                 rules.MouseY = gridY;
             }
 
-            // Mausrad-Rotation
-            if (e is System.Windows.Input.MouseWheelEventArgs wheelEvent && rules?.IsSetupPhase == true && rules?.SelectedShip != null)
+            // Mausrad-Rotation für das aktuelle Schiff
+            if (e is System.Windows.Input.MouseWheelEventArgs wheelEvent && rules?.IsSetupPhase == true)
             {
-                var ship = rules.SelectedShip;
+                var shipsList = rules.CurrentSetupPlayer == 1 ? rules.Ships : rules.Ships2;
+                var ship = rules.GetCurrentShip(shipsList);
                 if (ship != null)
                 {
                     ship.IsHorizontal = !ship.IsHorizontal;
@@ -1821,7 +2063,7 @@ namespace OOPGames
                     var activePlayer = rules.CurrentSetupPlayer;
                     var shipsList = activePlayer == 1 ? rules.Ships : rules.Ships2;
 
-                    // Start/Next button region
+                    // Start/Next button region - PRÜFE ZUERST
                     bool canProceed = (rules.Phase == 1 && rules.AllShipsPlaced1) || (rules.Phase == 2 && rules.AllShipsPlaced2);
                     if (canProceed)
                     {
@@ -1829,46 +2071,64 @@ namespace OOPGames
                         double buttonY = shipPreviewY - 5;
                         double buttonWidth = 120;
                         double buttonHeight = 40;
-                        if (click.XClickPos >= buttonX && click.XClickPos <= buttonX + buttonWidth && click.YClickPos >= buttonY && click.YClickPos <= buttonY + buttonHeight)
+                        // Großzügige Toleranz für Button
+                        if (click.XClickPos >= buttonX - 5 && click.XClickPos <= buttonX + buttonWidth + 5 && 
+                            click.YClickPos >= buttonY - 5 && click.YClickPos <= buttonY + buttonHeight + 5)
                         {
                             // advance phase
                             if (rules.Phase == 1) rules.Phase = 2;
                             else if (rules.Phase == 2) rules.Phase = 3;
-                            // clear selection
-                            rules.SelectedShip = null;
                             return null;
                         }
                     }
 
-                    // Click on selection bar (under field)
-                    if (click.YClickPos > shipPreviewY - 5 && click.YClickPos < shipPreviewY + 30)
+                    // Click on selection bar: Manuelles Auswählen eines Schiffs
+                    // Nur wenn Klick eindeutig im Schiffsleisten-Bereich ist
+                    if (click.YClickPos >= shipPreviewY - 10 && click.YClickPos <= shipPreviewY + 40)
                     {
                         double shipPreviewX = baseOffset;
-                        int shipClicked = (int)((click.XClickPos - shipPreviewX) / shipStep);
-                        if (shipClicked >= 0 && shipClicked < shipsList.Count)
+                        double clickOffsetX = click.XClickPos - shipPreviewX;
+                        
+                        // Prüfe ob Klick im horizontalen Bereich der Schiffsleiste ist
+                        if (clickOffsetX >= 0 && clickOffsetX < shipsList.Count * shipStep)
                         {
-                            var ship = shipsList[shipClicked];
-                            if (ship.X == 0 && ship.Y == 0)
+                            // Berechne welches Schiff angeklickt wurde
+                            int shipClicked = (int)(clickOffsetX / shipStep);
+                            
+                            if (shipClicked >= 0 && shipClicked < shipsList.Count)
                             {
-                                rules.SelectedShip = ship;
+                                var ship = shipsList[shipClicked];
+                                // Nur unplatzierte Schiffe können ausgewählt werden
+                                if (ship.X < 0 && ship.Y < 0)
+                                {
+                                    rules.ManuallySelectedShip = ship;
+                                    return null; // Schiff wurde ausgewählt, keine weitere Aktion
+                                }
                             }
                         }
-                        return null;
                     }
 
                     // Click on field to place: allow placement for the active setup player
-                    int gridX = (int)((click.XClickPos - baseOffset) / cellSize);
-                    int gridY = (int)((click.YClickPos - baseOffset) / cellSize);
-                    if (rules.Phase == 1 || rules.Phase == 2)
+                    // Prüfe ob Klick im Spielfeld-Bereich ist (ohne oberen Rand zu beschneiden)
+                    double fieldRight = baseOffset + field.Width * cellSize;
+                    double fieldBottom = baseOffset + field.Height * cellSize;
+                    
+                    if (click.XClickPos >= baseOffset && click.XClickPos <= fieldRight &&
+                        click.YClickPos >= baseOffset && click.YClickPos <= fieldBottom)
                     {
-                        var targetField = activePlayer == 1 ? rules.SchiffeField : rules.SchiffeField2;
-                        if (targetField.IsValidPosition(gridX, gridY))
+                        int gridX = (int)((click.XClickPos - baseOffset) / cellSize);
+                        int gridY = (int)((click.YClickPos - baseOffset) / cellSize);
+                        
+                        if (rules.Phase == 1 || rules.Phase == 2)
                         {
-                            // Return a move that targets the active setup player (player who should receive the placement)
-                            return new A3_LEA_SchiffeMove(gridX, gridY, activePlayer);
+                            var targetField = activePlayer == 1 ? rules.SchiffeField : rules.SchiffeField2;
+                            if (targetField.IsValidPosition(gridX, gridY))
+                            {
+                                // Return a move that targets the active setup player (player who should receive the placement)
+                                return new A3_LEA_SchiffeMove(gridX, gridY, activePlayer);
+                            }
                         }
                     }
-                    return null;
                 }
 
                 // Playing phase: clicks are shots on opponent's field (fields are stacked vertically)
@@ -1877,20 +2137,36 @@ namespace OOPGames
                     double smallCell = 24;
                     double topBaseY = 20;
                     double bottomBaseY = 20 + field.Height * smallCell + 40;
-                    // Toggle button for showing/hiding ships in Phase3
-                    double shipsButtonX = baseOffset + field.Width * smallCell + 20;
-                    double shipsButtonY = topBaseY;
-                    double shipsButtonW = 120;
-                    double shipsButtonH = 28;
-                    if (click.XClickPos >= shipsButtonX && click.XClickPos <= shipsButtonX + shipsButtonW && click.YClickPos >= shipsButtonY && click.YClickPos <= shipsButtonY + shipsButtonH)
+                    
+                    // Button für Player 1 Schiffe (mit 10px Toleranz)
+                    double btn1X = baseOffset + field.Width * smallCell + 20;
+                    double btn1Y = topBaseY;
+                    double btnW = 120;
+                    double btnH = 28;
+                    if (click.XClickPos >= btn1X - 10 && click.XClickPos <= btn1X + btnW + 10 && 
+                        click.YClickPos >= btn1Y - 10 && click.YClickPos <= btn1Y + btnH + 10)
                     {
-                        rules.ShowShipsPhase3 = !rules.ShowShipsPhase3;
+                        rules.ShowShipsPlayer1 = !rules.ShowShipsPlayer1;
+                        return null;
+                    }
+                    
+                    // Button für Player 2 Schiffe (mit 10px Toleranz)
+                    double btn2X = baseOffset + field.Width * smallCell + 20;
+                    double btn2Y = bottomBaseY;
+                    if (click.XClickPos >= btn2X - 10 && click.XClickPos <= btn2X + btnW + 10 && 
+                        click.YClickPos >= btn2Y - 10 && click.YClickPos <= btn2Y + btnH + 10)
+                    {
+                        rules.ShowShipsPlayer2 = !rules.ShowShipsPlayer2;
                         return null;
                     }
                     // Player 1 shoots on bottom (player2 field), Player2 shoots on top (player1 field)
                     if (_playerNumber == 1)
                     {
-                        if (click.YClickPos >= bottomBaseY && click.YClickPos < bottomBaseY + field.Height * smallCell)
+                        double fieldRight = baseOffset + field.Width * smallCell;
+                        double fieldBottom = bottomBaseY + field.Height * smallCell;
+                        
+                        if (click.XClickPos >= baseOffset && click.XClickPos <= fieldRight &&
+                            click.YClickPos >= bottomBaseY && click.YClickPos <= fieldBottom)
                         {
                             int gx = (int)((click.XClickPos - baseOffset) / smallCell);
                             int gy = (int)((click.YClickPos - bottomBaseY) / smallCell);
@@ -1904,7 +2180,11 @@ namespace OOPGames
                     }
                     else // player 2
                     {
-                        if (click.YClickPos >= topBaseY && click.YClickPos < topBaseY + field.Height * smallCell)
+                        double fieldRight = baseOffset + field.Width * smallCell;
+                        double fieldTop = topBaseY + field.Height * smallCell;
+                        
+                        if (click.XClickPos >= baseOffset && click.XClickPos <= fieldRight &&
+                            click.YClickPos >= topBaseY && click.YClickPos <= fieldTop)
                         {
                             int gx = (int)((click.XClickPos - baseOffset) / smallCell);
                             int gy = (int)((click.YClickPos - topBaseY) / smallCell);
@@ -1915,17 +2195,21 @@ namespace OOPGames
                             }
                         }
                     }
-                    return null;
                 }
             }
             else if (selection is IKeySelection keySelection)
             {
-                if (rules != null && rules.IsSetupPhase && rules.SelectedShip != null)
+                if (rules != null && rules.IsSetupPhase)
                 {
-                    // R-Key: Rotation
+                    // R-Key: Rotation des nächsten unplatzierten Schiffs
                     if (keySelection.Key == System.Windows.Input.Key.R)
                     {
-                        rules.SelectedShip.IsHorizontal = !rules.SelectedShip.IsHorizontal;
+                        var shipsList = rules.CurrentSetupPlayer == 1 ? rules.Ships : rules.Ships2;
+                        var currentShip = rules.GetCurrentShip(shipsList);
+                        if (currentShip != null)
+                        {
+                            currentShip.IsHorizontal = !currentShip.IsHorizontal;
+                        }
                     }
                 }
             }
