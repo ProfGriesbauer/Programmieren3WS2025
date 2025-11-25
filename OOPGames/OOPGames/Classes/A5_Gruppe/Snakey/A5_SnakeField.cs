@@ -65,8 +65,6 @@ namespace OOPGames
 
         private void InitializeGame()
         {
-            // Reset score when game initializes
-            A5_Score.Reset();
             double startX = _config.FieldWidth / 2.0 - 16;
             double startY = _config.FieldHeight / 2.0 - 16;
 
@@ -231,6 +229,8 @@ namespace OOPGames
 
         public void StartGame()
         {
+            // Reset score when starting a new game
+            A5_Score.Reset();
             _timerManager.StartCountdown(_config.CountdownSeconds);
         }
     }
