@@ -1,0 +1,271 @@
+@startuml OOPGames Framework Core
+
+' Styling
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam backgroundColor #FEFEFE
+skinparam class {
+    BackgroundColor<<interface>> LightYellow
+    BorderColor<<interface>> Orange
+    BackgroundColor<<manager>> LightGreen
+    BorderColor<<manager>> DarkGreen
+}
+
+title OOPGames Framework - Essential Interfaces for Creating Games
+
+' ===== CORE INTERFACES =====
+
+package "Core Game Interfaces" {
+    
+    interface IGameField <<interface>> {
+        + CanBePaintedBy(painter: IPaintGame): bool
+        --
+        Represents the game board/field state.
+        IMPLEMENT THIS to define your game's
+        specific field structure (grid, cards, etc.)
+    }
+    
+    interface IGameRules <<interface>> {
+        + Name: string {get}
+        + CurrentField: IGameField {get}
+        + MovesPossible: bool {get}
+        + DoMove(move: IPlayMove): void
+        + ClearField(): void
+        + CheckIfPLayerWon(): int
+        --
+        Defines game logic and rules.
+        IMPLEMENT THIS to manage game state,
+        validate moves, and check win conditions.
+    }
+    
+    interface IGameRules2 <<interface>> {
+        + StartedGameCall(): void
+        + TickGameCall(): void
+        --
+        OPTIONAL: For real-time/animated games.
+        Provides hooks for game initialization
+        and periodic updates (every 40ms).
+    }
+    
+    interface IPaintGame <<interface>> {
+        + Name: string {get}
+        + PaintGameField(canvas: Canvas, field: IGameField): void
+        --
+        Handles visual rendering of the game.
+        IMPLEMENT THIS to draw your game
+        on a WPF Canvas.
+    }
+    
+    interface IPaintGame2 <<interface>> {
+        + TickPaintGameField(canvas: Canvas, field: IGameField): void
+        --
+        OPTIONAL: For animations.
+        Called every 40ms for smooth animations
+        and real-time visual updates.
+    }
+    
+    interface IGamePlayer <<interface>> {
+        + Name: string {get}
+        + PlayerNumber: int {get}
+        + SetPlayerNumber(playerNumber: int): void
+        + CanBeRuledBy(rules: IGameRules): bool
+        + Clone(): IGamePlayer
+        --
+        Base interface for all players.
+        Defines player identity, number assignment,
+        and compatibility with game rules.
+    }
+    
+    interface IHumanGamePlayer <<interface>> {
+        + GetMove(selection: IMoveSelection, field: IGameField): IPlayMove
+        --
+        IMPLEMENT THIS for human players.
+        Converts keyboard/mouse input into
+        valid game moves.
+    }
+    
+    interface IComputerGamePlayer <<interface>> {
+        + GetMove(field: IGameField): IPlayMove
+        --
+        IMPLEMENT THIS for AI players.
+        Generates valid moves automatically
+        based on current game state.
+    }
+}
+
+' ===== MOVE SYSTEM =====
+
+package "Move System" {
+    
+    interface IPlayMove <<interface>> {
+        + PlayerNumber: int {get}
+        --
+        IMPLEMENT THIS for your game moves.
+        Base interface - identifies which
+        player made the move.
+    }
+    
+    interface IRowMove <<interface>> {
+        + Row: int {get}
+        --
+        OPTIONAL: Extend this for grid-based games
+        requiring row selection.
+    }
+    
+    interface IColumnMove <<interface>> {
+        + Column: int {get}
+        --
+        OPTIONAL: Extend this for grid-based games
+        requiring column selection.
+    }
+    
+    interface IMoveSelection <<interface>> {
+        + MoveType: MoveType {get}
+        --
+        Input selection from user.
+        Framework provides implementations
+        (ClickSelection, KeySelection).
+    }
+    
+    interface IClickSelection <<interface>> {
+        + XClickPos: int {get}
+        + YClickPos: int {get}
+        + ChangedButton: int {get}
+        --
+        Mouse click input.
+        Provided by framework.
+    }
+    
+    interface IKeySelection <<interface>> {
+        + Key: Key {get}
+        --
+        Keyboard input.
+        Provided by framework.
+    }
+    
+    enum MoveType {
+        click
+        key
+    }
+}
+
+' ===== MANAGER CLASS =====
+
+package "Framework Manager" {
+    
+    class OOPGamesManager <<manager>> {
+        + {static} Singleton: OOPGamesManager {get}
+        + Painters: IEnumerable<IPaintGame> {get}
+        + Players: IEnumerable<IGamePlayer> {get}
+        + Rules: IEnumerable<IGameRules> {get}
+        --
+        + RegisterPainter(painter: IPaintGame): void
+        + RegisterPlayer(player: IGamePlayer): void
+        + RegisterRules(rules: IGameRules): void
+        --
+        CENTRAL GAME REGISTRY (Singleton)
+        REGISTER your game components here:
+        OOPGamesManager.Singleton.RegisterPainter(...)
+        OOPGamesManager.Singleton.RegisterRules(...)
+        OOPGamesManager.Singleton.RegisterPlayer(...)
+    }
+    
+    class ClickSelection {
+        + ClickSelection(clickX: int, clickY: int, changedButton: int)
+        + XClickPos: int {get}
+        + YClickPos: int {get}
+        --
+        Framework-provided implementation.
+        Created automatically on mouse clicks.
+    }
+    
+    class KeySelection {
+        + KeySelection(key: Key)
+        + Key: Key {get}
+        --
+        Framework-provided implementation.
+        Created automatically on key press.
+    }
+}
+
+' ===== INHERITANCE RELATIONSHIPS =====
+
+' Interface inheritance
+IGameRules2 --|> IGameRules : extends
+IPaintGame2 --|> IPaintGame : extends
+IHumanGamePlayer --|> IGamePlayer : extends
+IComputerGamePlayer --|> IGamePlayer : extends
+IRowMove --|> IPlayMove : extends
+IColumnMove --|> IPlayMove : extends
+IClickSelection --|> IMoveSelection : extends
+IKeySelection --|> IMoveSelection : extends
+
+' Implementation relationships
+ClickSelection ..|> IClickSelection : implements
+KeySelection ..|> IKeySelection : implements
+
+' ===== ASSOCIATIONS =====
+
+' Manager relationships
+OOPGamesManager "1" o-- "*" IPaintGame : manages >
+OOPGamesManager "1" o-- "*" IGamePlayer : manages >
+OOPGamesManager "1" o-- "*" IGameRules : manages >
+
+' Core relationships
+IGameRules "1" --> "1" IGameField : owns >
+IGameRules "1" ..> IPlayMove : validates >
+IPaintGame "1" ..> IGameField : renders >
+IHumanGamePlayer "1" ..> IMoveSelection : receives >
+IHumanGamePlayer "1" ..> IPlayMove : creates >
+IComputerGamePlayer "1" ..> IPlayMove : creates >
+IGamePlayer "1" ..> IGameRules : checks compatibility >
+
+' Move system
+IMoveSelection --> MoveType : has type >
+
+' ===== NOTES =====
+
+note top of IGameField
+    **STEP 1: Create Your Game Field**
+    Implement IGameField to represent your game board
+    Example: 3x3 grid, deck of cards, game pieces, etc.
+end note
+
+note top of IGameRules
+    **STEP 2: Create Your Game Rules**
+    Implement IGameRules to define game logic
+    - How moves are validated
+    - How to check for winners
+    - When game is over
+end note
+
+note top of IPaintGame
+    **STEP 3: Create Your Painter**
+    Implement IPaintGame to draw your game
+    Use WPF Canvas methods to render visuals
+end note
+
+note top of IGamePlayer
+    **STEP 4: Create Your Players**
+    Implement IHumanGamePlayer and/or IComputerGamePlayer
+    - Human: convert input to moves
+    - Computer: AI logic to generate moves
+end note
+
+note right of OOPGamesManager
+    **STEP 5: Register Everything**
+    In MainWindow.xaml.cs constructor:
+    
+    OOPGamesManager.Singleton.RegisterPainter(new YourPainter());
+    OOPGamesManager.Singleton.RegisterRules(new YourRules());
+    OOPGamesManager.Singleton.RegisterPlayer(new YourHumanPlayer());
+    OOPGamesManager.Singleton.RegisterPlayer(new YourComputerPlayer());
+end note
+
+note bottom of IPlayMove
+    **Create Your Move Class**
+    Implement IPlayMove (and optionally IRowMove/IColumnMove)
+    to represent a single move in your game
+end note
+
+@enduml
