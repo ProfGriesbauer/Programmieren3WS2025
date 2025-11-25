@@ -39,6 +39,9 @@ namespace OOPGames
         private List<A3_LEA_Ship> _ships2 = new List<A3_LEA_Ship>();
         private List<(int x, int y)> _shots = new List<(int x, int y)>();
         private List<(int x, int y)> _shots2 = new List<(int x, int y)>();
+        // Expose shots so painter and player input can check for misses/duplicates
+        public List<(int x, int y)> Shots => _shots;
+        public List<(int x, int y)> Shots2 => _shots2;
 
         // Phase: 1 = Player1 setup, 2 = Player2 setup, 3 = Playing
         private int _phase = 1;
@@ -62,11 +65,15 @@ namespace OOPGames
         {
             // Spieler 1
             _ships.Add(new A3_LEA_Ship(1, 4));
+            // add 5-cell ship
+            _ships.Add(new A3_LEA_Ship(5, 5));
             _ships.Add(new A3_LEA_Ship(2, 3));
             _ships.Add(new A3_LEA_Ship(3, 3));
             _ships.Add(new A3_LEA_Ship(4, 2));
             // Spieler 2 (eigene Objekte)
             _ships2.Add(new A3_LEA_Ship(1, 4));
+            // add 5-cell ship for player 2
+            _ships2.Add(new A3_LEA_Ship(5, 5));
             _ships2.Add(new A3_LEA_Ship(2, 3));
             _ships2.Add(new A3_LEA_Ship(3, 3));
             _ships2.Add(new A3_LEA_Ship(4, 2));
@@ -321,9 +328,10 @@ namespace OOPGames
                 Canvas.SetLeft(shipLabel, shipPreviewX);
                 Canvas.SetTop(shipLabel, shipPreviewY - 25);
                 canvas.Children.Add(shipLabel);
-                foreach (var s in shipsList)
+                for (int idx = 0; idx < shipsList.Count; idx++)
                 {
-                    double x = shipPreviewX + (s.Id - 1) * shipStep;
+                    var s = shipsList[idx];
+                    double x = shipPreviewX + idx * shipStep;
                     bool isSelected = rules.SelectedShip != null && rules.SelectedShip == s;
                     bool isPlaced = s.X > 0 || s.Y > 0;
                     if (isSelected)
@@ -334,14 +342,20 @@ namespace OOPGames
                         canvas.Children.Add(border);
                     }
                     var shipBrush = new SolidColorBrush(isPlaced ? Colors.DarkGray : Colors.LightGray);
-                    for (int i = 0; i < s.Size; i++) { var rect = new Rectangle { Width = shipCellSize - 1, Height = shipCellSize - 1, Fill = shipBrush, Stroke = Brushes.Black, StrokeThickness = 0.5 }; Canvas.SetLeft(rect, x + i * shipCellSize); Canvas.SetTop(rect, shipPreviewY); canvas.Children.Add(rect); }
+                    for (int i = 0; i < s.Size; i++)
+                    {
+                        var rect = new Rectangle { Width = shipCellSize - 1, Height = shipCellSize - 1, Fill = shipBrush, Stroke = Brushes.Black, StrokeThickness = 0.5 };
+                        Canvas.SetLeft(rect, x + i * shipCellSize);
+                        Canvas.SetTop(rect, shipPreviewY);
+                        canvas.Children.Add(rect);
+                    }
                 }
 
                 // Start-Button for progression
                 bool showButton = (rules.Phase == 1 && rules.AllShipsPlaced1) || (rules.Phase == 2 && rules.AllShipsPlaced2);
                 if (showButton)
                 {
-                    double buttonX = shipPreviewX + 4 * shipStep + 20;
+                    double buttonX = shipPreviewX + shipsList.Count * shipStep + 20;
                     double buttonY = shipPreviewY - 5;
                     double buttonWidth = 120;
                     double buttonHeight = 40;
@@ -371,7 +385,30 @@ namespace OOPGames
             for (int y = 0; y <= f1.Height; y++) canvas.Children.Add(new Line { X1 = topBaseX, Y1 = topBaseY + y * smallCell, X2 = topBaseX + f1.Width * smallCell, Y2 = topBaseY + y * smallCell, Stroke = Brushes.Black, StrokeThickness = 1 });
             var title1 = new TextBlock { Text = "Player 1 Field", FontWeight = System.Windows.FontWeights.Bold }; Canvas.SetLeft(title1, topBaseX); Canvas.SetTop(title1, topBaseY - 18); canvas.Children.Add(title1);
             foreach (var cell in f1.GetOccupiedCells()) { var rect = new Rectangle { Width = smallCell - 1, Height = smallCell - 1, Fill = Brushes.Gray, Stroke = Brushes.Black, StrokeThickness = 1 }; Canvas.SetLeft(rect, topBaseX + cell.x * smallCell + 1); Canvas.SetTop(rect, topBaseY + cell.y * smallCell + 1); canvas.Children.Add(rect); }
-            foreach (var s in rules.Ships) for (int i = 0; i < s.Size; i++) if (s.HitCells[i]) { int sx = s.IsHorizontal ? s.X + i : s.X; int sy = s.IsHorizontal ? s.Y : s.Y + i; var e = new Ellipse { Width = 6, Height = 6, Fill = Brushes.Red }; Canvas.SetLeft(e, topBaseX + sx * smallCell + smallCell / 2 - 3); Canvas.SetTop(e, topBaseY + sy * smallCell + smallCell / 2 - 3); canvas.Children.Add(e); }
+            // draw hits on player1 ships
+            foreach (var s in rules.Ships)
+                for (int i = 0; i < s.Size; i++)
+                    if (s.HitCells[i])
+                    {
+                        int sx = s.IsHorizontal ? s.X + i : s.X;
+                        int sy = s.IsHorizontal ? s.Y : s.Y + i;
+                        var e = new Ellipse { Width = 6, Height = 6, Fill = Brushes.Red };
+                        Canvas.SetLeft(e, topBaseX + sx * smallCell + smallCell / 2 - 3);
+                        Canvas.SetTop(e, topBaseY + sy * smallCell + smallCell / 2 - 3);
+                        canvas.Children.Add(e);
+                    }
+            // draw misses on player1 field
+            foreach (var miss in rules.Shots)
+            {
+                // if miss (no ship at that cell)
+                if (f1.IsValidPosition(miss.x, miss.y) && f1[miss.x, miss.y] == 0)
+                {
+                    var m = new Ellipse { Width = 6, Height = 6, Stroke = Brushes.Blue, Fill = Brushes.Transparent, StrokeThickness = 1 };
+                    Canvas.SetLeft(m, topBaseX + miss.x * smallCell + smallCell / 2 - 3);
+                    Canvas.SetTop(m, topBaseY + miss.y * smallCell + smallCell / 2 - 3);
+                    canvas.Children.Add(m);
+                }
+            }
 
             // draw bottom (Player2)
             var f2 = rules.SchiffeField2;
@@ -379,7 +416,29 @@ namespace OOPGames
             for (int y = 0; y <= f2.Height; y++) canvas.Children.Add(new Line { X1 = bottomBaseX, Y1 = bottomBaseY + y * smallCell, X2 = bottomBaseX + f2.Width * smallCell, Y2 = bottomBaseY + y * smallCell, Stroke = Brushes.Black, StrokeThickness = 1 });
             var title2 = new TextBlock { Text = "Player 2 Field", FontWeight = System.Windows.FontWeights.Bold }; Canvas.SetLeft(title2, bottomBaseX); Canvas.SetTop(title2, bottomBaseY - 18); canvas.Children.Add(title2);
             foreach (var cell in f2.GetOccupiedCells()) { var rect = new Rectangle { Width = smallCell - 1, Height = smallCell - 1, Fill = Brushes.Gray, Stroke = Brushes.Black, StrokeThickness = 1 }; Canvas.SetLeft(rect, bottomBaseX + cell.x * smallCell + 1); Canvas.SetTop(rect, bottomBaseY + cell.y * smallCell + 1); canvas.Children.Add(rect); }
-            foreach (var s in rules.Ships2) for (int i = 0; i < s.Size; i++) if (s.HitCells[i]) { int sx = s.IsHorizontal ? s.X + i : s.X; int sy = s.IsHorizontal ? s.Y : s.Y + i; var e = new Ellipse { Width = 6, Height = 6, Fill = Brushes.Red }; Canvas.SetLeft(e, bottomBaseX + sx * smallCell + smallCell / 2 - 3); Canvas.SetTop(e, bottomBaseY + sy * smallCell + smallCell / 2 - 3); canvas.Children.Add(e); }
+            // draw hits on player2 ships
+            foreach (var s in rules.Ships2)
+                for (int i = 0; i < s.Size; i++)
+                    if (s.HitCells[i])
+                    {
+                        int sx = s.IsHorizontal ? s.X + i : s.X;
+                        int sy = s.IsHorizontal ? s.Y : s.Y + i;
+                        var e = new Ellipse { Width = 6, Height = 6, Fill = Brushes.Red };
+                        Canvas.SetLeft(e, bottomBaseX + sx * smallCell + smallCell / 2 - 3);
+                        Canvas.SetTop(e, bottomBaseY + sy * smallCell + smallCell / 2 - 3);
+                        canvas.Children.Add(e);
+                    }
+            // draw misses on player2 field
+            foreach (var miss in rules.Shots2)
+            {
+                if (f2.IsValidPosition(miss.x, miss.y) && f2[miss.x, miss.y] == 0)
+                {
+                    var m = new Ellipse { Width = 6, Height = 6, Stroke = Brushes.Blue, Fill = Brushes.Transparent, StrokeThickness = 1 };
+                    Canvas.SetLeft(m, bottomBaseX + miss.x * smallCell + smallCell / 2 - 3);
+                    Canvas.SetTop(m, bottomBaseY + miss.y * smallCell + smallCell / 2 - 3);
+                    canvas.Children.Add(m);
+                }
+            }
 
             var info = new TextBlock { Text = "Playing: click opponent field to shoot", FontSize = 14, Foreground = Brushes.Black };
             Canvas.SetLeft(info, OFFSET_X);
@@ -443,7 +502,7 @@ namespace OOPGames
                     bool canProceed = (rules.Phase == 1 && rules.AllShipsPlaced1) || (rules.Phase == 2 && rules.AllShipsPlaced2);
                     if (canProceed)
                     {
-                        double buttonX = baseOffset + 4 * shipStep + 20;
+                        double buttonX = baseOffset + shipsList.Count * shipStep + 20;
                         double buttonY = shipPreviewY - 5;
                         double buttonWidth = 120;
                         double buttonHeight = 40;
@@ -502,7 +561,12 @@ namespace OOPGames
                         {
                             int gx = (int)((click.XClickPos - baseOffset) / smallCell);
                             int gy = (int)((click.YClickPos - bottomBaseY) / smallCell);
-                            if (rules.SchiffeField2.IsValidPosition(gx, gy)) return new A3_LEA_SchiffeMove(gx, gy, _playerNumber);
+                            if (rules.SchiffeField2.IsValidPosition(gx, gy))
+                            {
+                                // don't allow shooting the same cell twice
+                                if (rules.Shots2.Contains((gx, gy))) return null;
+                                return new A3_LEA_SchiffeMove(gx, gy, _playerNumber);
+                            }
                         }
                     }
                     else // player 2
@@ -511,7 +575,11 @@ namespace OOPGames
                         {
                             int gx = (int)((click.XClickPos - baseOffset) / smallCell);
                             int gy = (int)((click.YClickPos - topBaseY) / smallCell);
-                            if (rules.SchiffeField.IsValidPosition(gx, gy)) return new A3_LEA_SchiffeMove(gx, gy, _playerNumber);
+                            if (rules.SchiffeField.IsValidPosition(gx, gy))
+                            {
+                                if (rules.Shots.Contains((gx, gy))) return null;
+                                return new A3_LEA_SchiffeMove(gx, gy, _playerNumber);
+                            }
                         }
                     }
                     return null;

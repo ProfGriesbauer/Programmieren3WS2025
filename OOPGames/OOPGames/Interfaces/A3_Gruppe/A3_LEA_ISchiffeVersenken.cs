@@ -1,25 +1,7 @@
 using System.Collections.Generic;
-using System.Linq;
+
 namespace OOPGames
 {
-    // Schiff-Klasse
-    public class A3_LEA_Ship
-    {
-        public int Id { get; set; }
-        public int Size { get; set; }
-        public int X { get; set; }
-        public int Y { get; set; }
-        public bool IsHorizontal { get; set; }
-        public bool[] HitCells { get; set; }
-        public int Hits { get { return HitCells.Count(h => h); } }
-        public A3_LEA_Ship(int id, int size) 
-        { 
-            Id = id; 
-            Size = size; 
-            HitCells = new bool[size];
-        }
-    }
-
     // Interface für das Schiffeversenken-Spielfeld
     public interface IA3_LEA_SchiffeField : IGameField
     {
