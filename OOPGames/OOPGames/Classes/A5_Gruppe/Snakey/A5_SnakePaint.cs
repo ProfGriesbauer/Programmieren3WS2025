@@ -204,9 +204,10 @@ namespace OOPGames
             try
             {
                 string scoreText = "Score: " + A5_Score.Score1;
+                string highScoreText = "Highscore: " + A5_Score.HighScore1;
                 double padding = 8;
-                double boxWidth = 140;
-                double boxHeight = 30;
+                double boxWidth = 160;
+                double boxHeight = 55;
                 double left = context.OffsetX + (context.FieldWidth * context.Scale) - boxWidth - padding;
                 double top = context.OffsetY + padding;
 
@@ -222,18 +223,31 @@ namespace OOPGames
                 Canvas.SetTop(box, top);
                 context.Canvas.Children.Add(box);
 
-                var textBlock = new TextBlock
+                var textBlockScore = new TextBlock
                 {
                     Text = scoreText,
-                    FontSize = 16,
+                    FontSize = 14,
                     FontWeight = FontWeights.Bold,
                     Foreground = Brushes.White,
                     Width = boxWidth,
                     TextAlignment = TextAlignment.Center
                 };
-                Canvas.SetLeft(textBlock, left);
-                Canvas.SetTop(textBlock, top + (boxHeight / 2) - 12);
-                context.Canvas.Children.Add(textBlock);
+                Canvas.SetLeft(textBlockScore, left);
+                Canvas.SetTop(textBlockScore, top + 4);
+                context.Canvas.Children.Add(textBlockScore);
+
+                var textBlockHighScore = new TextBlock
+                {
+                    Text = highScoreText,
+                    FontSize = 12,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = Brushes.Yellow,
+                    Width = boxWidth,
+                    TextAlignment = TextAlignment.Center
+                };
+                Canvas.SetLeft(textBlockHighScore, left);
+                Canvas.SetTop(textBlockHighScore, top + 25);
+                context.Canvas.Children.Add(textBlockHighScore);
             }
             catch
             {
@@ -246,9 +260,10 @@ namespace OOPGames
             try
             {
                 string scoreText = "P1 Score: " + A5_Score.Score1;
+                string highScoreText = "HS: " + A5_Score.HighScore1;
                 double padding = 8;
                 double boxWidth = 160;
-                double boxHeight = 30;
+                double boxHeight = 55;
                 double left = context.OffsetX + padding;
                 double top = context.OffsetY + padding;
 
@@ -264,18 +279,31 @@ namespace OOPGames
                 Canvas.SetTop(box, top);
                 context.Canvas.Children.Add(box);
 
-                var textBlock = new TextBlock
+                var textBlockScore = new TextBlock
                 {
                     Text = scoreText,
-                    FontSize = 16,
+                    FontSize = 14,
                     FontWeight = FontWeights.Bold,
                     Foreground = Brushes.White,
                     Width = boxWidth,
                     TextAlignment = TextAlignment.Center
                 };
-                Canvas.SetLeft(textBlock, left);
-                Canvas.SetTop(textBlock, top + (boxHeight / 2) - 12);
-                context.Canvas.Children.Add(textBlock);
+                Canvas.SetLeft(textBlockScore, left);
+                Canvas.SetTop(textBlockScore, top + 4);
+                context.Canvas.Children.Add(textBlockScore);
+
+                var textBlockHighScore = new TextBlock
+                {
+                    Text = highScoreText,
+                    FontSize = 12,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = Brushes.Yellow,
+                    Width = boxWidth,
+                    TextAlignment = TextAlignment.Center
+                };
+                Canvas.SetLeft(textBlockHighScore, left);
+                Canvas.SetTop(textBlockHighScore, top + 25);
+                context.Canvas.Children.Add(textBlockHighScore);
             }
             catch
             {
@@ -288,9 +316,10 @@ namespace OOPGames
             try
             {
                 string scoreText = "P2 Score: " + A5_Score.Score2;
+                string highScoreText = "HS: " + A5_Score.HighScore2;
                 double padding = 8;
                 double boxWidth = 160;
-                double boxHeight = 30;
+                double boxHeight = 55;
                 double left = context.OffsetX + (context.FieldWidth * context.Scale) - boxWidth - padding;
                 double top = context.OffsetY + padding;
 
@@ -306,18 +335,31 @@ namespace OOPGames
                 Canvas.SetTop(box, top);
                 context.Canvas.Children.Add(box);
 
-                var textBlock = new TextBlock
+                var textBlockScore = new TextBlock
                 {
                     Text = scoreText,
-                    FontSize = 16,
+                    FontSize = 14,
                     FontWeight = FontWeights.Bold,
                     Foreground = Brushes.White,
                     Width = boxWidth,
                     TextAlignment = TextAlignment.Center
                 };
-                Canvas.SetLeft(textBlock, left);
-                Canvas.SetTop(textBlock, top + (boxHeight / 2) - 12);
-                context.Canvas.Children.Add(textBlock);
+                Canvas.SetLeft(textBlockScore, left);
+                Canvas.SetTop(textBlockScore, top + 4);
+                context.Canvas.Children.Add(textBlockScore);
+
+                var textBlockHighScore = new TextBlock
+                {
+                    Text = highScoreText,
+                    FontSize = 12,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = Brushes.Yellow,
+                    Width = boxWidth,
+                    TextAlignment = TextAlignment.Center
+                };
+                Canvas.SetLeft(textBlockHighScore, left);
+                Canvas.SetTop(textBlockHighScore, top + 25);
+                context.Canvas.Children.Add(textBlockHighScore);
             }
             catch
             {
