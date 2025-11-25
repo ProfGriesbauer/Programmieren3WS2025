@@ -110,16 +110,7 @@ namespace OOPGames
             if (++_spawnCounter >= SPAWN_INTERVAL)
             {
                 _spawnCounter = 0;
-                double roll = _rng.NextDouble();
-                Fish f = roll switch
-                {
-                    <= 0.30 => new Barsch(_rng, _lastW, _lastH),
-                    <= 0.60 => new Hecht(_rng, _lastW, _lastH),
-                    <= 0.75 => new Saibling(_rng, _lastW, _lastH),
-                    <= 0.90 => new Zander(_rng, _lastW, _lastH),
-                    _ => new Wels(_rng, _lastW, _lastH)
-                };
-                _fishes.Add(f);
+                _fishes.Add(FishFactory.Create(_rng, _lastW, _lastH)); // Factory Pattern
             }
 
             foreach (var f in _fishes) f.Update();
@@ -138,7 +129,6 @@ namespace OOPGames
                     _score += f.Points;
                     caught.Add(f);
                     _popups.Add(new PopupScore($"+{f.Points}", f.Center));
-
                     AudioEngine.PlaySplash();
                 }
             }
@@ -200,7 +190,21 @@ namespace OOPGames
         }
     }
 
-    // ---------------- Fische ----------------
+    public static class FishFactory
+    {
+        public static Fish Create(Random rng, double w, double h)
+        {
+            double roll = rng.NextDouble();
+            return roll switch
+            {
+                <= 0.30 => new Barsch(rng, w, h),
+                <= 0.60 => new Hecht(rng, w, h),
+                <= 0.75 => new Saibling(rng, w, h),
+                <= 0.90 => new Zander(rng, w, h),
+                _ => new Wels(rng, w, h)
+            };
+        }
+    }
 
     public abstract class Fish
     {
@@ -306,11 +310,9 @@ namespace OOPGames
         public Wels(Random r, double cw, double ch) : base(r, Assets.Wels, 2.2, cw, ch) { }
         public override int Points => 20;
         public override double BonusSeconds => 5.0;
-        protected override double HeadOffset => 28.0;
+        protected override double HeadOffset => 34.0;
         protected override double HeadRadius => 11.0;
     }
-
-    // ---------------- Hook ----------------
 
     public class Hook
     {
@@ -372,8 +374,6 @@ namespace OOPGames
         public Rect GetHitbox() => new Rect(_x, Y, _spriteWidth, _spriteHeight);
     }
 
-    // ---------------- Popup ----------------
-
     public class PopupScore
     {
         public Point Position;
@@ -406,13 +406,10 @@ namespace OOPGames
         }
     }
 
-    // ---------------- Assets ----------------
-
     public static class Assets
     {
         private static bool _loaded = false;
-        private static string Dir =>
-            System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "FishingGame");
+        private static string Dir => System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "FishingGame");
 
         public static ImageSource Background { get; private set; }
         public static ImageSource Hook { get; private set; }
@@ -425,14 +422,21 @@ namespace OOPGames
         public static void EnsureLoaded()
         {
             if (_loaded) return;
-            Background = Load("background.png");
-            Hook = Load("hook.png");
-            Hecht = Load("hecht.png");
-            Barsch = Load("barsch.png");
-            Saibling = Load("saibling.png");
-            Zander = Load("zander.png");
-            Wels = Load("wels.png");
-            _loaded = true;
+            try
+            {
+                Background = Load("background.png");
+                Hook = Load("hook.png");
+                Hecht = Load("hecht.png");
+                Barsch = Load("barsch.png");
+                Saibling = Load("saibling.png");
+                Zander = Load("zander.png");
+                Wels = Load("wels.png");
+                _loaded = true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Assets] Fehler beim Laden der Ressourcen: {ex.Message}"); // Exception Handling
+            }
         }
 
         private static ImageSource Load(string file)
@@ -440,7 +444,11 @@ namespace OOPGames
             try
             {
                 string p = System.IO.Path.Combine(Dir, file);
-                if (!System.IO.File.Exists(p)) return null;
+                if (!System.IO.File.Exists(p))
+                {
+                    Console.WriteLine($"[Assets] Datei nicht gefunden: {file}"); // Exception Handling
+                    return null;
+                }
                 var bmp = new BitmapImage();
                 bmp.BeginInit();
                 bmp.CacheOption = BitmapCacheOption.OnLoad;
@@ -449,16 +457,17 @@ namespace OOPGames
                 bmp.Freeze();
                 return bmp;
             }
-            catch { return null; }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Assets] Fehler beim Laden von {file}: {ex.Message}"); // Exception Handling
+                return null;
+            }
         }
     }
 
-    // ---------------- AUDIO ENGINE ----------------
-
     public static class AudioEngine
     {
-        private static string Dir =>
-            System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "FishingGame", "Audio");
+        private static string Dir => System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "FishingGame", "Audio");
 
         private static MediaPlayer _music = new MediaPlayer();
         private static MediaPlayer _start = new MediaPlayer();
@@ -524,3 +533,4 @@ namespace OOPGames
         }
     }
 }
+
