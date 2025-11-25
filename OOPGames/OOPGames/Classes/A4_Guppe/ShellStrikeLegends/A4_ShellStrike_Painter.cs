@@ -6,7 +6,7 @@ using System.Windows;
 
 namespace OOPGames
 {
-    public class A4_ShellStrike_Painter : IPaintGame
+    public class A4_ShellStrike_Painter : IPaintGame, IPaintGame2
     {
         public string Name => "A4 ShellStrikeLegends Painter";
 
@@ -22,43 +22,105 @@ namespace OOPGames
             if (w <= 0) w = 800; // fallback
             if (h <= 0) h = 400; // fallback
 
-            // Shared terrain color (Peru) for both floor and hill
-            var terrainBrush = new SolidColorBrush(Color.FromRgb(205, 133, 63));
+            // Shared terrain color
+            var terrainBrush = new SolidColorBrush(Color.FromRgb(205, 133, 63)); // Peru
 
-            // Floor (slimmer than before: 1/5 of total height)
-            double floorH = h / 5.0;
-            var floor = new Rectangle
+            // Draw tanks & projectiles if field has them (null-safe)
+            if (currentField is A4_ShellStrike_Field field)
             {
-                Width = w,
-                Height = floorH,
-                Fill = terrainBrush
-            };
-            Canvas.SetLeft(floor, 0);
-            Canvas.SetTop(floor, h - floorH);
-
-            // Hill as a diamond (rhombus) centered horizontally
-            double hillWidth = w / 3.0;      // wide, flat look
-            double hillHeight = h / 10.0;    // lower height for flatter shape
-            double hw = hillWidth / 2.0;
-            double hh = hillHeight / 2.0;
-            double cx = w / 2.0;             // center x
-            double floorTop = h - floorH;    // y where the floor starts
-            double cy = floorTop;            // place the diamond's horizontal line on the floor
-
-            var diamond = new Polygon
-            {
-                Fill = terrainBrush,
-                Points = new PointCollection
+                // Ensure terrain exists and matches canvas width
+                int wi = (int)Math.Max(1, Math.Round(w));
+                int hi = (int)Math.Max(1, Math.Round(h));
+                if (field.Terrain == null || field.Terrain.Heights.Length != wi || field.Terrain.CanvasHeight != hi)
                 {
-                    new Point(cx - hw, cy),     // left on floor line
-                    new Point(cx, cy - hh),     // top above floor
-                    new Point(cx + hw, cy),     // right on floor line
-                    new Point(cx, cy + hh)      // bottom below floor (will be covered by floor)
+                    field.Terrain = new A4_ShellStrike_Terrain();
+                    field.Terrain.Generate(wi, hi);
                 }
+
+                // Draw terrain as vertical 1px columns (pixel-by-pixel)
+                for (int x = 0; x < field.Terrain.Heights.Length; x++)
+                {
+                    int yTop = field.Terrain.Heights[x];
+                    var col = new Rectangle { Width = 1, Height = Math.Max(0, hi - yTop), Fill = terrainBrush };
+                    Canvas.SetLeft(col, x);
+                    Canvas.SetTop(col, yTop);
+                    canvas.Children.Add(col);
+                }
+
+                // Draw tanks aligned to terrain
+                if (field.Tank1 != null)
+                {
+                    double t1cx = field.Tank1.X + field.Tank1.Width / 2.0;
+                    double t1Ground = field.Terrain.GroundYAt(t1cx);
+                    double t1BaseY = t1Ground - field.Tank1.Height;
+                    DrawTank(canvas, field.Tank1, t1BaseY);
+                }
+                if (field.Tank2 != null)
+                {
+                    double t2cx = field.Tank2.X + field.Tank2.Width / 2.0;
+                    double t2Ground = field.Terrain.GroundYAt(t2cx);
+                    double t2BaseY = t2Ground - field.Tank2.Height;
+                    DrawTank(canvas, field.Tank2, t2BaseY);
+                }
+
+                // Draw projectiles
+                if (field.Projectiles != null)
+                {
+                    foreach (var proj in field.Projectiles)
+                    {
+                        proj?.Draw(canvas);
+                    }
+                }
+            }
+        }
+
+        private void DrawTank(Canvas canvas, A4_ShellStrike_Tank tank, double baseY)
+        {
+            if (tank == null) return;
+            // body
+            Rectangle body = new Rectangle
+            {
+                Width = tank.Width,
+                Height = tank.Height,
+                Fill = tank.PlayerNumber == 1 ? Brushes.DarkGreen : Brushes.DarkRed
             };
-            // Draw hill first so the floor covers its bottom half -> looks like a hill protruding
-            canvas.Children.Add(diamond);
-            canvas.Children.Add(floor);
+            Canvas.SetLeft(body, tank.X);
+            Canvas.SetTop(body, baseY);
+            canvas.Children.Add(body);
+
+            // turret line
+            double cx = tank.X + tank.Width / 2.0;
+            double cy = baseY;
+            double rad = tank.TurretAngleDeg * Math.PI / 180.0;
+            double tx = cx + tank.TurretLength * Math.Cos(rad) * (tank.PlayerNumber == 1 ? 1 : -1);
+            double ty = cy - tank.TurretLength * Math.Sin(rad);
+            Line turret = new Line
+            {
+                X1 = cx,
+                Y1 = cy,
+                X2 = tx,
+                Y2 = ty,
+                Stroke = Brushes.Black,
+                StrokeThickness = 3
+            };
+            canvas.Children.Add(turret);
+
+            // health text
+            TextBlock hp = new TextBlock
+            {
+                Text = $"HP:{tank.Health}",
+                Foreground = Brushes.Black,
+                FontSize = 12
+            };
+            Canvas.SetLeft(hp, tank.X);
+            Canvas.SetTop(hp, baseY - 18);
+            canvas.Children.Add(hp);
+        }
+
+        // Continuous repaint support for timer-based animation
+        public void TickPaintGameField(Canvas canvas, IGameField currentField)
+        {
+            PaintGameField(canvas, currentField);
         }
     }
 }
