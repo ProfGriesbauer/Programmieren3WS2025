@@ -1,3 +1,5 @@
+using System.Linq;
+
 namespace OOPGames{
 
     public enum BoostType
@@ -15,7 +17,7 @@ namespace OOPGames{
     {
         public static void ApplyOngoing(Game game, Player player)
         {
-            foreach (var tile in game.Board.AllTiles()
+            foreach (var tile in game.Field.AllTiles()
                         .Where(t => t.OwnerID == player.Id))
             {
                 IBoostEffect effect = ToEffect(tile.BoostOnTile);
@@ -33,7 +35,7 @@ namespace OOPGames{
         {
             return type switch
             {
-                BoostType.ExtraCapacity => new ExtraCapacityBoost(),
+                
                 // BoostType.ExtraAP => neue Klasse ExtraApBoost usw.
                 _ => null
             };
@@ -41,19 +43,5 @@ namespace OOPGames{
     }
 
     //ab hier kommen die einzielen Boost-Effekt-Klassen
-    public class ExtraCapacityBoost : IBoostEffect
-    {
-        public void ApplyOngoing(Game game, Player owner, Tile tile)
-        {
-            // z.B. +1 auf CapacityMax pro Feld
-            owner.SetCapacityBasePlusBoost(baseCap: 2,
-                boost: game.Board.AllTiles()
-                    .Count(t => t.OwnerID == owner.Id && t.BoostOnTile == BoostType.ExtraCapacity));
-        }
-
-        public void OnCaptured(Game game, Player owner, Tile tile)
-        {
-            // keine einmalige Aktion nötig
-        }
-    }
+    
 }

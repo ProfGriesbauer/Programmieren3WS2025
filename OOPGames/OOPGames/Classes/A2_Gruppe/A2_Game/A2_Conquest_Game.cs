@@ -6,7 +6,7 @@ namespace OOPGames
 {
     public class Game
     {
-        public Field Board { get; }
+        public Field Field { get; }
         public Player[] Players { get; }
 
         public int CurrentPlayerId { get; private set; } = 0;
@@ -14,7 +14,7 @@ namespace OOPGames
 
         public Game(int width, int height)
         {
-            Board = new Field(width, height);
+            Field = new Field(width, height);
             Players = new[]
             {
                 new Player(0),
@@ -29,25 +29,25 @@ namespace OOPGames
         private void SetupDefaultLayout()
         {
             // Startbasis links
-            var baseTile = Board.GetTile(0, Board.Height / 2);
+            var baseTile = Field.GetTile(0, Field.Height / 2);
             baseTile.OwnerID = 0;
             baseTile.IsBase = true;
             baseTile.ResourceYield = 2;
 
             // Objective rechts
-            var objTile = Board.GetTile(Board.Width - 1, Board.Height / 2);
+            var objTile = Field.GetTile(Field.Width - 1, Field.Height / 2);
             objTile.OwnerID = 1;
             objTile.IsObjective = true;
             objTile.DefenseLevel = 20;
             objTile.ResourceYield = 2;
 
             // ein paar Boost-Felder als Beispiel
-            if (Board.Width > 4 && Board.Height > 2)
+            if (Field.Width > 4 && Field.Height > 2)
             {
-                Board.GetTile(2, 1).BoostOnTile = BoostType.ExtraCapacity;
-                Board.GetTile(3, 3).BoostOnTile = BoostType.FasterCapture;
-                Board.GetTile(1, 3).BoostOnTile = BoostType.ExtraAP;
-                Board.GetTile(4, 1).BoostOnTile = BoostType.AreaJammer;
+                Field.GetTile(2, 1).BoostOnTile = BoostType.ExtraCapacity;
+                Field.GetTile(3, 3).BoostOnTile = BoostType.FasterCapture;
+                Field.GetTile(1, 3).BoostOnTile = BoostType.ExtraAP;
+                Field.GetTile(4, 1).BoostOnTile = BoostType.AreaJammer;
             }
         }
 
@@ -83,7 +83,7 @@ namespace OOPGames
 
         private void ApplyIncome(Player p)
         {
-            int income = Board.AllTiles()
+            int income = Field.AllTiles()
                 .Where(t => t.OwnerID == p.Id)
                 .Sum(t => t.ResourceYield);
 
@@ -93,7 +93,7 @@ namespace OOPGames
         private void ApplyCapacityBoosts(Player p)
         {
             int baseCap = 2;
-            int boost = Board.AllTiles()
+            int boost = Field.AllTiles()
                 .Count(t => t.OwnerID == p.Id &&
                             t.BoostOnTile == BoostType.ExtraCapacity);
 
@@ -102,7 +102,7 @@ namespace OOPGames
 
         private void ApplyTempBoosts(Player p)
         {
-            bool ownsAPBoost = Board.AllTiles()
+            bool ownsAPBoost = Field.AllTiles()
                 .Any(t => t.OwnerID == p.Id &&
                           t.BoostOnTile == BoostType.ExtraAP);
 
@@ -116,10 +116,10 @@ namespace OOPGames
 
         public bool TryStartCapture(int x, int y, int cost = 5)
         {
-            var tile = Board.GetTile(x, y);
+            var tile = Field.GetTile(x, y);
             var p = CurrentPlayer;
 
-            if (!tile.CanBeCapturedBy(p, Board)) return false;
+            if (!tile.CanBeCapturedBy(p, Field)) return false;
             if (!p.TrySpendResources(cost)) return false;
             if (!p.TryReserveCaptureSlot()) return false;
 
@@ -130,12 +130,12 @@ namespace OOPGames
 
         public void ResolveCaptures()
         {
-            foreach (var tile in Board.AllTiles().Where(t => t.IsBeingContested))
+            foreach (var tile in Field.AllTiles().Where(t => t.IsBeingContested))
             {
                 var attacker = Players[tile.CapturingPlayerID];
                 int ownerBefore = tile.OwnerID;
 
-                tile.AdvanceCapture(attacker, Board);
+                tile.AdvanceCapture(attacker, Field);
 
                 if (!tile.IsBeingContested && tile.OwnerID == attacker.Id)
                 {
@@ -147,7 +147,7 @@ namespace OOPGames
 
         public bool CheckWin(out int winnerId)
         {
-            foreach (var t in Board.AllTiles().Where(t => t.IsObjective))
+            foreach (var t in Field.AllTiles().Where(t => t.IsObjective))
             {
                 if (t.OwnerID != -1)
                 {
@@ -164,11 +164,11 @@ namespace OOPGames
         public string RenderAscii()
         {
             var sb = new StringBuilder();
-            for (int y = 0; y < Board.Height; y++)
+            for (int y = 0; y < Field.Height; y++)
             {
-                for (int x = 0; x < Board.Width; x++)
+                for (int x = 0; x < Field.Width; x++)
                 {
-                    var t = Board.GetTile(x, y);
+                    var t = Field.GetTile(x, y);
                     char c = t.OwnerID switch
                     {
                         -1 => '.',

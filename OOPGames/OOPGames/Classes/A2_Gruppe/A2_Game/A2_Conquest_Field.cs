@@ -2,14 +2,14 @@ using System.Collections.Generic;
 
 namespace OOPGames
 {
-    public class Board
+    public class Field
     {
         private readonly Tile[,] _tiles;
 
         public int Width  => _tiles.GetLength(0);
         public int Height => _tiles.GetLength(1);
 
-        public Board(int width, int height)
+        public Field(int width, int height)
         {
             _tiles = new Tile[width, height];
             for (int x = 0; x < width; x++)

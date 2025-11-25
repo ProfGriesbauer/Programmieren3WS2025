@@ -1,6 +1,6 @@
 using System;
 
-namespace OOpGames
+namespace OOPGames
 {
     public class Player
     {

@@ -1,4 +1,7 @@
 
+using System.Linq;
+using System;
+
 namespace OOPGames{
     public class Tile
     {
@@ -32,18 +35,18 @@ namespace OOPGames{
 
 
 
-        public bool CanBeCapturedBy(Player player, Board board)
+        public bool CanBeCapturedBy(Player player, Field field)
         {
             if (OwnerID == player.Id) return false;
             if (IsBase && OwnerID != -1) return false; // optional: Base direkt sperren?
 
-            bool isAdjacent = board.GetNeighbours4(this).Any(n => n.OwnerID == player.Id);
+            bool isAdjacent = field.GetNeighbours4(this).Any(n => n.OwnerID == player.Id);
             return isAdjacent;
         }
 
-        public int ComputeCaptureRate(Player attacker, Board board)
+        public int ComputeCaptureRate(Player attacker, Field field)
         {
-            int ownedNeighbours = board
+            int ownedNeighbours = field
                 .GetNeighbours4(this)
                 .Count(n => n.OwnerID == attacker.Id);
 
@@ -51,13 +54,13 @@ namespace OOPGames{
                     ownedNeighbours * attacker.AdjacencyBonusPerNeighbour;
 
             // Boosts/Jammer
-            bool hasFastBoost = board.GetNeighbours4(this)
+            bool hasFastBoost = field.GetNeighbours4(this)
                 .Any(n => n.OwnerID == attacker.Id &&
                         n.BoostOnTile == BoostType.FasterCapture);
 
             if (hasFastBoost) rate += 10;
 
-            bool hasEnemyJammer = board.GetNeighbours4(this)
+            bool hasEnemyJammer = field.GetNeighbours4(this)
                 .Any(n => n.OwnerID != -1 &&
                         n.OwnerID != attacker.Id &&
                         n.BoostOnTile == BoostType.AreaJammer);
@@ -68,9 +71,9 @@ namespace OOPGames{
             return rate;
         }
 
-        public void AdvanceCapture(Player attacker, Board board)
+        public void AdvanceCapture(Player attacker, Field field)
         {
-            int rate = ComputeCaptureRate(attacker, board);
+            int rate = ComputeCaptureRate(attacker, field);
             CaptureProgress += rate;
 
             if (CaptureProgress >= CaptureTarget)
