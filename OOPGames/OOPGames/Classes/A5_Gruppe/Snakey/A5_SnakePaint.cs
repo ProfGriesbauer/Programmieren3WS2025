@@ -81,14 +81,14 @@ namespace OOPGames
 
         private Brush GetSegmentBrush(int index, int totalCount, int playerNumber)
         {
-            // Player 2: Nutze andere Farben für visuelle Unterscheidung
+            // Player 2: Nutze eigene Bilder für visuelle Unterscheidung
             if (playerNumber == 2)
             {
                 if (index == 0)
-                    return Brushes.Blue; // Kopf von Snake 2
+                    return _assetLoader.Snake2HeadBrush != null ? (Brush)_assetLoader.Snake2HeadBrush : Brushes.Blue;
                 if (index == totalCount - 1)
-                    return Brushes.Cyan; // Rassel von Snake 2
-                return Brushes.DarkBlue; // Körper von Snake 2
+                    return _assetLoader.Snake2RattleBrush != null ? (Brush)_assetLoader.Snake2RattleBrush : Brushes.Cyan;
+                return _assetLoader.Snake2BodyBrush != null ? (Brush)_assetLoader.Snake2BodyBrush : Brushes.DarkBlue;
             }
             
             // Player 1: Original-Assets
