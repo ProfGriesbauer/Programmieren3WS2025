@@ -427,32 +427,65 @@ namespace OOPGames
                 if (_CurrentRules.MovesPossible &&
                     _CurrentPlayer is IHumanGamePlayer)
                 {
-                    IPlayMove pm = ((IHumanGamePlayer)_CurrentPlayer).GetMove(new KeySelection(e.Key), _CurrentRules.CurrentField);
-                    if (pm != null)
+                    // Snake 2-Player: Handle both players simultaneously
+                    if (IsSnakeGame())
                     {
-                        _CurrentRules.DoMove(pm);
-
-                        bool keepTurn = false;
-                        if (_CurrentRules is OOPGames.B1_Gruppe.MenschAergereDichNicht.B1_MAN_Rules manRules)
+                        // Try Player 1 (WASD)
+                        if (_CurrentPlayer1 is IHumanGamePlayer humanPlayer1)
                         {
-                            keepTurn = manRules.LastMoveGivesExtraTurn;
-                        }
-
-                        if (!keepTurn && !IsFlappyBird())
-                        {
-                            // Check if player should keep turn (e.g., B2 Maze dual player)
-                            if (!(_CurrentPlayer is B2_MazeDualPlayer))
+                            IPlayMove pm1 = humanPlayer1.GetMove(new KeySelection(e.Key), _CurrentRules.CurrentField);
+                            if (pm1 != null)
                             {
-                                _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
+                                _CurrentRules.DoMove(pm1);
                             }
                         }
-
-                        Status.Text = "Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
+                        
+                        // Try Player 2 (Arrow Keys)
+                        if (_CurrentPlayer2 is IHumanGamePlayer humanPlayer2)
+                        {
+                            IPlayMove pm2 = humanPlayer2.GetMove(new KeySelection(e.Key), _CurrentRules.CurrentField);
+                            if (pm2 != null)
+                            {
+                                _CurrentRules.DoMove(pm2);
+                            }
+                        }
                         
                         // Verhindere Pfeiltasten-Navigation in UI
-                        if (e.Key == Key.Left || e.Key == Key.Right || e.Key == Key.Up || e.Key == Key.Down)
+                        if (e.Key == Key.Left || e.Key == Key.Right || e.Key == Key.Up || e.Key == Key.Down || 
+                            e.Key == Key.W || e.Key == Key.A || e.Key == Key.S || e.Key == Key.D)
                         {
                             e.Handled = true;
+                        }
+                    }
+                    else
+                    {
+                        IPlayMove pm = ((IHumanGamePlayer)_CurrentPlayer).GetMove(new KeySelection(e.Key), _CurrentRules.CurrentField);
+                        if (pm != null)
+                        {
+                            _CurrentRules.DoMove(pm);
+
+                            bool keepTurn = false;
+                            if (_CurrentRules is OOPGames.B1_Gruppe.MenschAergereDichNicht.B1_MAN_Rules manRules)
+                            {
+                                keepTurn = manRules.LastMoveGivesExtraTurn;
+                            }
+
+                            if (!keepTurn && !IsFlappyBird())
+                            {
+                                // Check if player should keep turn (e.g., B2 Maze dual player)
+                                if (!(_CurrentPlayer is B2_MazeDualPlayer))
+                                {
+                                    _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
+                                }
+                            }
+
+                            Status.Text = "Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
+                            
+                            // Verhindere Pfeiltasten-Navigation in UI
+                            if (e.Key == Key.Left || e.Key == Key.Right || e.Key == Key.Up || e.Key == Key.Down)
+                            {
+                                e.Handled = true;
+                            }
                         }
                     }
                     //Restart Logic for Gruppe A4 :)
@@ -511,11 +544,17 @@ namespace OOPGames
                 Status.Text = "Game restarted!";
             }
         }
+
         private bool IsFlappyBird()
         {
             return _CurrentRules != null &&
                 _CurrentRules.GetType().Name.Contains("FlappyBird");
         }
-    }
 
+        private bool IsSnakeGame()
+        {
+            return _CurrentRules != null &&
+                _CurrentRules.GetType().Name.Contains("A5_SnakeRules");
+        }
+    }
 }
