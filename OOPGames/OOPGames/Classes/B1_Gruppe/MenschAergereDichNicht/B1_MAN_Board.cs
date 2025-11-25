@@ -61,8 +61,19 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
         // Very small helper: get absolute start index on track for a player (where pieces enter the track)
         public int EntryIndexForPlayer(int playerNumber)
         {
-            // Typical mapping: player1->0, player2->10, player3->20, player4->30
-            return ((playerNumber - 1) * 10) % TrackLength;
+            // Mapping based on actual track layout (im Uhrzeigersinn):
+            // Player 1 (Rot):     Index 30 -> Feld (4,10)
+            // Player 2 (Schwarz): Index 20 -> Feld (10,6)  
+            // Player 3 (Gelb):    Index 10 -> Feld (6,0)
+            // Player 4 (Grün):    Index 0  -> Feld (0,4)
+            switch (playerNumber)
+            {
+                case 1: return 30; // Rot starts at (4,10)
+                case 2: return 20; // Schwarz starts at (10,6)
+                case 3: return 10; // Gelb starts at (6,0)
+                case 4: return 0;  // Grün starts at (0,4)
+                default: return 0;
+            }
         }
 
         // Determine whether a track cell is free (or occupier is opponent -> can be captured)

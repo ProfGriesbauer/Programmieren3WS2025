@@ -1,0 +1,331 @@
+@startuml B5_Shellshock_Game_Architecture
+
+' === Core Game Classes ===
+
+class B5_Shellshock_Field {
+    - _tank1: B5_Shellshock_Tank
+    - _tank2: B5_Shellshock_Tank
+    - _terrain: B5_Shellshock_Terrain
+    - _projectile: B5_Shellshock_Projectile
+    - _healthPack: B5_Shellshock_HealthPack
+    - _wind: double
+    - _movementsRemaining: int
+    - _maxMovesPerTurn: int
+    - _activeTankNumber: int
+    - _lastTrajectoryP1: List<B5_Shellshock_Point>
+    - _lastTrajectoryP2: List<B5_Shellshock_Point>
+    - _gamePhase: B5_Shellshock_GamePhase
+    + Tank1: B5_Shellshock_Tank {get}
+    + Tank2: B5_Shellshock_Tank {get}
+    + Terrain: B5_Shellshock_Terrain {get}
+    + Projectile: B5_Shellshock_Projectile {get; set}
+    + HealthPack: B5_Shellshock_HealthPack {get; set}
+    + Wind: double {get; set}
+    + MovementsRemaining: int {get; set}
+    + MaxMovesPerTurn: int {get; set}
+    + ActiveTankNumber: int {get; set}
+    + ProjectileInFlight: bool {get}
+    + Reset(): void
+    + UpdateTankPositions(): void
+    + GetTankByPlayer(int): B5_Shellshock_Tank
+    + GetOpponentTank(int): B5_Shellshock_Tank
+}
+
+class B5_Shellshock_Rules {
+    - _field: B5_Shellshock_Field
+    - _gamePhase: B5_Shellshock_GamePhase
+    - _gravity: double
+    - _activeTankNumber: int
+    - _movementsRemaining: int
+    - _pendingTurnSwitch: bool
+    + Name: string {get}
+    + CurrentField: IGameField {get}
+    + MovesPossible: bool {get}
+    + DoMove(IPlayMove): void
+    + ClearField(): void
+    + CheckIfPLayerWon(): int
+    + StartedGameCall(): void
+    + TickGameCall(): void
+    - CheckTankCollision(tank, proj): bool
+}
+
+class B5_Shellshock_Tank {
+    - _x: double
+    - _y: double
+    - _angle: double
+    - _power: double
+    - _health: int
+    - _color: B5_Shellshock_TankColor
+    + {static} CollisionWidth: double = 28
+    + {static} CollisionHeight: double = 0.03
+    + X: double {get; set}
+    + Y: double {get; set}
+    + Angle: double {get; set}
+    + Power: double {get; set}
+    + Health: int {get; set}
+    + Color: B5_Shellshock_TankColor {get}
+    + IsAlive: bool {get}
+    + TakeDamage(int): void
+    + Fire(int): B5_Shellshock_Projectile
+    + MoveLeft(double): void
+    + MoveRight(double): void
+    + AdjustAngle(double): void
+    + AdjustPower(double): void
+    + CollidesWith(B5_Shellshock_Projectile): bool
+}
+
+class B5_Shellshock_Projectile {
+    - _x: double
+    - _y: double
+    - _velocityX: double
+    - _velocityY: double
+    - _isActive: bool
+    - _playerNumber: int
+    - _powerNorm: double
+    - {static} BaseGravityFactor: double = 0.025
+    - {static} PowerExponent: double = 1.6
+    - {static} LaunchSpeed: double = 300.0
+    + X: double {get; set}
+    + Y: double {get; set}
+    + VelocityX: double {get; set}
+    + VelocityY: double {get; set}
+    + IsActive: bool {get; set}
+    + PlayerNumber: int {get}
+    + UpdatePosition(gravity, wind, deltaTime): void
+}
+
+class B5_Shellshock_Terrain {
+    - _heightMap: double[]
+    - _width: int
+    - _terrainType: B5_Shellshock_TerrainType
+    + HeightMap: double[] {get}
+    + Width: int {get}
+    + TerrainType: B5_Shellshock_TerrainType {get}
+    - GenerateTerrain(): void
+    - SmoothTerrain(int): void
+    + GetHeightAt(double): double
+    + IsCollision(x, y): bool
+    + DestroyTerrain(x, radius): void
+}
+
+class B5_Shellshock_HealthPack {
+    - _x: double
+    - _y: double
+    - _isActive: bool
+    + {static} PackSize: double = 30
+    + {static} HealAmount: int = 40
+    + X: double {get; set}
+    + Y: double {get; set}
+    + IsActive: bool {get; set}
+    + CollidesWith(B5_Shellshock_Projectile): bool
+}
+
+class B5_Shellshock_Painter {
+    + Name: string {get}
+    + PaintGameField(Canvas, IGameField): void
+    + TickPaintGameField(Canvas, IGameField): void
+    - DrawTerrain(Canvas, terrain, scaleX, scaleY): void
+    - DrawTank(Canvas, tank, scaleX, scaleY): void
+    - DrawActiveTankDot(Canvas, tank, scaleX, scaleY): void
+    - DrawProjectile(Canvas, projectile, scaleX, scaleY): void
+    - DrawHealthPack(Canvas, healthPack, scaleX, scaleY): void
+    - DrawTrajectory(Canvas, points, scaleX, scaleY, color): void
+    - DrawUI(Canvas, field, width, height): void
+    - DrawTankInfo(Canvas, tank, playerNum, x, y, alignRight): void
+    - DrawHealthBar(Canvas, tank, x, y, alignRight): void
+    - DrawPowerBar(Canvas, tank, x, y, alignRight): void
+    - DrawWindAndMovesIndicator(Canvas, wind, moves, maxMoves, centerX, top): void
+    - DrawOverlay(Canvas, field, width, height): void
+}
+
+class B5_Shellshock_HumanPlayer {
+    + Name: string {get}
+    + DoMove(IGameField): IPlayMove
+    + PaintField(Canvas, IGameField): void
+}
+
+class B5_Shellshock_ComputerPlayer {
+    - _playerNumber: int
+    - _difficulty: B5_Shellshock_AIDifficulty
+    + Name: string {get}
+    + DoMove(IGameField): IPlayMove
+}
+
+class B5_Shellshock_Move {
+    - _playerNumber: int
+    - _actionType: B5_Shellshock_ActionType
+    - _value: double
+    + PlayerNumber: int {get}
+    + ActionType: B5_Shellshock_ActionType {get}
+    + Value: double {get}
+}
+
+class B5_Shellshock_Point {
+    + X: double {get; set}
+    + Y: double {get; set}
+}
+
+' === Enums ===
+
+enum B5_Shellshock_TankColor {
+    Red
+    Blue
+}
+
+enum B5_Shellshock_TerrainType {
+    Flat
+    Hill
+    Valley
+    Curvy
+}
+
+enum B5_Shellshock_ActionType {
+    MoveLeft
+    MoveRight
+    IncreaseAngle
+    DecreaseAngle
+    IncreasePower
+    DecreasePower
+    Shoot
+    StartGame
+}
+
+enum B5_Shellshock_GamePhase {
+    Setup
+    PlayerTurn
+    ProjectileInFlight
+    GameOver
+}
+
+enum B5_Shellshock_AIDifficulty {
+    Easy
+    Medium
+    Hard
+}
+
+' === Framework Interfaces ===
+
+interface IGameField {
+}
+
+interface IGameRules {
+    + Name: string {get}
+    + DoMove(IPlayMove): void
+    + ClearField(): void
+    + CheckIfPLayerWon(): int
+}
+
+interface IGameRules2 {
+    + CurrentField: IGameField {get}
+    + MovesPossible: bool {get}
+    + StartedGameCall(): void
+    + TickGameCall(): void
+}
+
+interface IPaintGame2 {
+    + Name: string {get}
+    + PaintGameField(Canvas, IGameField): void
+    + TickPaintGameField(Canvas, IGameField): void
+}
+
+interface IPlayer {
+    + Name: string {get}
+    + DoMove(IGameField): IPlayMove
+}
+
+interface IPlayMove {
+}
+
+' === Relationships ===
+
+' Field contains game objects
+B5_Shellshock_Field o-- "2" B5_Shellshock_Tank : contains
+B5_Shellshock_Field o-- "1" B5_Shellshock_Terrain : contains
+B5_Shellshock_Field o-- "0..1" B5_Shellshock_Projectile : contains
+B5_Shellshock_Field o-- "0..1" B5_Shellshock_HealthPack : contains
+B5_Shellshock_Field o-- "2" B5_Shellshock_Point : trajectories
+
+' Rules manages field
+B5_Shellshock_Rules o-- "1" B5_Shellshock_Field : manages
+
+' Tank creates projectiles
+B5_Shellshock_Tank ..> B5_Shellshock_Projectile : creates
+
+' Collision detection
+B5_Shellshock_Tank ..> B5_Shellshock_Projectile : collides with
+B5_Shellshock_HealthPack ..> B5_Shellshock_Projectile : collides with
+B5_Shellshock_Terrain ..> B5_Shellshock_Projectile : collides with
+
+' Tank uses color enum
+B5_Shellshock_Tank --> B5_Shellshock_TankColor : uses
+
+' Terrain uses type enum
+B5_Shellshock_Terrain --> B5_Shellshock_TerrainType : uses
+
+' Field uses phase enum
+B5_Shellshock_Field --> B5_Shellshock_GamePhase : uses
+B5_Shellshock_Rules --> B5_Shellshock_GamePhase : uses
+
+' Move uses action enum
+B5_Shellshock_Move --> B5_Shellshock_ActionType : uses
+
+' Computer player uses difficulty enum
+B5_Shellshock_ComputerPlayer --> B5_Shellshock_AIDifficulty : uses
+
+' Players create moves
+B5_Shellshock_HumanPlayer ..> B5_Shellshock_Move : creates
+B5_Shellshock_ComputerPlayer ..> B5_Shellshock_Move : creates
+
+' Painter renders field
+B5_Shellshock_Painter ..> B5_Shellshock_Field : renders
+
+' Interface implementations
+B5_Shellshock_Field ..|> IGameField
+B5_Shellshock_Rules ..|> IGameRules
+B5_Shellshock_Rules ..|> IGameRules2
+B5_Shellshock_Painter ..|> IPaintGame2
+B5_Shellshock_HumanPlayer ..|> IPlayer
+B5_Shellshock_ComputerPlayer ..|> IPlayer
+B5_Shellshock_Move ..|> IPlayMove
+
+' Notes
+note right of B5_Shellshock_Rules
+  Core game logic:
+  - Turn management
+  - Physics simulation
+  - Collision detection
+  - Win condition checking
+end note
+
+note right of B5_Shellshock_Tank
+  Combat unit:
+  - Position & aiming
+  - Health management
+  - Firing projectiles
+  - Collision detection
+end note
+
+note right of B5_Shellshock_Projectile
+  Ballistic physics:
+  - Constant launch speed
+  - Power-scaled gravity
+  - Wind effects
+  - Trajectory recording
+end note
+
+note right of B5_Shellshock_Terrain
+  Procedural generation:
+  - Flat, Hill, Curvy types
+  - Smooth algorithms
+  - Destructible (craters)
+  - Collision detection
+end note
+
+note right of B5_Shellshock_HealthPack
+  Power-up system:
+  - Spawns after shots
+  - Heals 40 HP
+  - Collected by shooting
+end note
+
+@enduml

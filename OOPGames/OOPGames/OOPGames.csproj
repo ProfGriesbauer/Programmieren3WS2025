@@ -13,6 +13,10 @@
     <None Include="Assets\**\*.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+
+  <None Include="Assets\**\*.mp3">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </None>
 </ItemGroup>
   
   <ItemGroup>

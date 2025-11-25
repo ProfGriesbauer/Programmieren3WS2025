@@ -16,8 +16,15 @@ namespace OOPGames
         public IGameField CurrentField => _field;
         public string Name => "B3_Fishermans_Friend_Aaron_Mika";
         public bool MovesPossible => true;
+
         public void TickGameCall() => _field.Update();
-        public void StartedGameCall() => _field.Reset();
+
+        public void StartedGameCall()
+        {
+            _field.Reset();
+            AudioEngine.Init();
+        }
+
         public void ClearField() => _field.Reset();
         public int CheckIfPLayerWon() => 0;
         public void DoMove(IPlayMove move) { }
@@ -25,7 +32,6 @@ namespace OOPGames
         public void TickPaintGameField(Canvas canvas, IGameField field) => _field.Draw(canvas);
     }
 
-    //   Spiellogik alles was im Feld passiert 
     public class FishingField : IGameField
     {
         private readonly List<Fish> _fishes = new();
@@ -34,10 +40,10 @@ namespace OOPGames
         private Hook _hook = new();
 
         private int _spawnCounter = 0;
-        private const int SPAWN_INTERVAL = 60; // spawn intervall hier änderbar danach neu compilen
+        private const int SPAWN_INTERVAL = 60;
 
         private bool _gameStarted = false, _showStartText = true, _gameOver = false;
-        private double _remainingTime = 35.0;  //hier game time einstellbar beide updaten
+        private double _remainingTime = 35.0;
         private DateTime _lastUpdateTime = DateTime.UtcNow;
         private int _score = 0;
 
@@ -48,13 +54,17 @@ namespace OOPGames
 
         public void Reset()
         {
-            _fishes.Clear(); _popups.Clear();
+            AudioEngine.StopMusic();
+            AudioEngine.StopHook();
+
+            _fishes.Clear();
+            _popups.Clear();
             _hook = new Hook();
             _spawnCounter = 0;
             _gameStarted = false;
             _showStartText = true;
             _gameOver = false;
-            _remainingTime = 35.0;  //hier game time einstellbar muss beide updaten
+            _remainingTime = 35.0;
             _score = 0;
             _lastUpdateTime = DateTime.UtcNow;
         }
@@ -64,21 +74,23 @@ namespace OOPGames
             double deltaTime = (DateTime.UtcNow - _lastUpdateTime).TotalSeconds;
             _lastUpdateTime = DateTime.UtcNow;
 
-            // Spielfeldgröße vom Canvas 
             if (Application.Current?.MainWindow is Window win)
                 if (LogicalTreeHelper.FindLogicalNode(win, "GameCanvas") is Canvas canvas)
                 { _lastW = canvas.ActualWidth; _lastH = canvas.ActualHeight; }
 
-            // Restart bei TAB
             if (_gameOver && Keyboard.IsKeyDown(Key.Tab)) { Reset(); return; }
             if (_gameOver) return;
 
-            // Start durch Pfeiltasten
             if (!_gameStarted)
             {
                 if (Keyboard.IsKeyDown(Key.Up) || Keyboard.IsKeyDown(Key.Down))
                 {
-                    _gameStarted = true; _showStartText = false; _lastUpdateTime = DateTime.UtcNow;
+                    _gameStarted = true;
+                    _showStartText = false;
+                    _lastUpdateTime = DateTime.UtcNow;
+
+                    AudioEngine.PlayStart();
+                    AudioEngine.PlayMusic();
                 }
                 return;
             }
@@ -86,28 +98,24 @@ namespace OOPGames
             _hook.Update();
 
             _remainingTime -= deltaTime;
-            if (_remainingTime <= 0) { _remainingTime = 0; _gameOver = true; return; }
+            if (_remainingTime <= 0)
+            {
+                _remainingTime = 0;
+                _gameOver = true;
+                AudioEngine.StopMusic();
+                AudioEngine.StopHook();
+                return;
+            }
 
-            // Spawns (seltenheits verteilung )
             if (++_spawnCounter >= SPAWN_INTERVAL)
             {
                 _spawnCounter = 0;
-                double roll = _rng.NextDouble();
-                Fish f = roll switch
-                {
-                    <= 0.30 => new Barsch(_rng, _lastW, _lastH),
-                    <= 0.60 => new Hecht(_rng, _lastW, _lastH),
-                    <= 0.75 => new Saibling(_rng, _lastW, _lastH),
-                    <= 0.90 => new Zander(_rng, _lastW, _lastH),
-                    _ => new Wels(_rng, _lastW, _lastH)
-                };
-                _fishes.Add(f);
+                _fishes.Add(FishFactory.Create(_rng, _lastW, _lastH)); // Factory Pattern
             }
 
             foreach (var f in _fishes) f.Update();
             foreach (var p in _popups) p.Update(deltaTime);
 
-            // Kollisionszentrum + Radius  (+4 px X-Offset, 0.75*H)
             Rect hookBox = _hook.GetHitbox();
             Point hookCenter = new Point(hookBox.X + hookBox.Width / 2 + 4, hookBox.Y + hookBox.Height * 0.75);
             double hookRadius = _hook.SpriteWidth * 0.25;
@@ -121,6 +129,7 @@ namespace OOPGames
                     _score += f.Points;
                     caught.Add(f);
                     _popups.Add(new PopupScore($"+{f.Points}", f.Center));
+                    AudioEngine.PlaySplash();
                 }
             }
 
@@ -135,11 +144,11 @@ namespace OOPGames
             if (w <= 0 || h <= 0) return;
             _lastW = w; _lastH = h;
 
-            // Hintergrund 1:1
             if (Assets.Background != null)
                 canvas.Children.Add(new Rectangle
                 {
-                    Width = w, Height = h,
+                    Width = w,
+                    Height = h,
                     Fill = new ImageBrush(Assets.Background) { Stretch = Stretch.UniformToFill }
                 });
 
@@ -149,9 +158,7 @@ namespace OOPGames
             foreach (var f in _fishes) f.Draw(canvas);
             _hook.Draw(canvas);
 
-            // Timer
             AddText(canvas, $"⏱ {(int)Math.Ceiling(_remainingTime)} s", w - 140, 10, 24, Brushes.White, FontWeights.Bold);
-            // Score
             AddText(canvas, $"🎣 {_score} pts", w - 140, 40, 22, Brushes.Gold, FontWeights.Bold);
 
             foreach (var p in _popups) p.Draw(canvas);
@@ -183,7 +190,22 @@ namespace OOPGames
         }
     }
 
-    //Fische allgemeiner bauplan
+    public static class FishFactory
+    {
+        public static Fish Create(Random rng, double w, double h)
+        {
+            double roll = rng.NextDouble();
+            return roll switch
+            {
+                <= 0.30 => new Barsch(rng, w, h),
+                <= 0.60 => new Hecht(rng, w, h),
+                <= 0.75 => new Saibling(rng, w, h),
+                <= 0.90 => new Zander(rng, w, h),
+                _ => new Wels(rng, w, h)
+            };
+        }
+    }
+
     public abstract class Fish
     {
         protected double X, Y, Width, Height, SpeedX;
@@ -191,17 +213,16 @@ namespace OOPGames
         protected bool FacingLeft;
         protected double CanvasW, CanvasH;
 
-        public abstract int Points { get; }              //  individuelle pukte Zahl Fisch
-        public abstract double BonusSeconds { get; }      // individuelle bonuszeit
-        protected abstract double HeadOffset { get; }     // hitbox um x pixel versetzt Richtung Kopf
-        protected abstract double HeadRadius { get; }     // individuelle radien der Hitbox
+        public abstract int Points { get; }
+        public abstract double BonusSeconds { get; }
+        protected abstract double HeadOffset { get; }
+        protected abstract double HeadRadius { get; }
 
         protected Fish(Random rng, ImageSource sprite, double baseScale, double canvasW, double canvasH)
         {
             Sprite = sprite;
             CanvasW = canvasW; CanvasH = canvasH;
 
-            // scale = baseScale * 1.15; Größe 125x60
             double scale = baseScale * 1.15;
             Width = 125 * scale;
             Height = 60 * scale;
@@ -210,11 +231,10 @@ namespace OOPGames
             FacingLeft = !fromLeft;
 
             if (fromLeft) { X = -Width * 0.25; SpeedX = rng.Next(3, 6); }
-            else { X = CanvasW * 0.78 + Width * 0.25; SpeedX = -rng.Next(3, 6); }
+            else { X = canvasW * 0.78 + Width * 0.25; SpeedX = -rng.Next(3, 6); }
 
-            // Spawnzone von Wasseroberfläche bis Grund
             double uiZoneHeight = 100;
-            double spawnTop = uiZoneHeight + 35;
+            double spawnTop = uiZoneHeight + 30;
             double spawnBottom = CanvasH - Height * 1.2;
             Y = rng.NextDouble() * (spawnBottom - spawnTop) + spawnTop;
         }
@@ -233,9 +253,9 @@ namespace OOPGames
         {
             double centerX = X + Width / 2 + (FacingLeft ? -HeadOffset : HeadOffset);
             double centerY = Y + Height / 2;
-            double dx = hookCenter.X - centerX, dy = hookCenter.Y - centerY;
-            double dist = Math.Sqrt(dx * dx + dy * dy);
-            return dist < (hookRadius + HeadRadius);
+            double dx = hookCenter.X - centerX;
+            double dy = hookCenter.Y - centerY;
+            return Math.Sqrt(dx * dx + dy * dy) < (hookRadius + HeadRadius);
         }
 
         public void Draw(Canvas canvas)
@@ -243,7 +263,8 @@ namespace OOPGames
             if (Sprite == null) return;
             var img = new Image { Source = Sprite, Width = Width, Height = Height, Stretch = Stretch.Uniform };
             if (FacingLeft) img.LayoutTransform = new ScaleTransform(-1, 1);
-            Canvas.SetLeft(img, X); Canvas.SetTop(img, Y);
+            Canvas.SetLeft(img, X);
+            Canvas.SetTop(img, Y);
             canvas.Children.Add(img);
         }
     }
@@ -289,14 +310,14 @@ namespace OOPGames
         public Wels(Random r, double cw, double ch) : base(r, Assets.Wels, 2.2, cw, ch) { }
         public override int Points => 20;
         public override double BonusSeconds => 5.0;
-        protected override double HeadOffset => 28.0; 
-        protected override double HeadRadius => 11.0; // spezieller größerer Kopf-Radius
+        protected override double HeadOffset => 34.0;
+        protected override double HeadRadius => 11.0;
     }
 
-    // Hook 
     public class Hook
     {
-        private double _x; public double Y = 200;
+        private double _x;
+        public double Y = 200;
         private const double Speed = 5;
         private double _canvasWidth = 800, _canvasHeight = 600;
         private ImageSource _sprite;
@@ -305,18 +326,34 @@ namespace OOPGames
 
         public void SetCanvasSize(double w, double h, ImageSource sprite)
         {
-            _canvasWidth = w; _canvasHeight = h;
+            _canvasWidth = w;
+            _canvasHeight = h;
             if (sprite != null) _sprite = sprite;
             _x = (_canvasWidth - _spriteWidth) / 2.0;
             Y = Math.Clamp(Y, 60, _canvasHeight - _spriteHeight);
         }
 
-        public void SetSprite(ImageSource sprite) { if (sprite != null) _sprite = sprite; }
+        public void SetSprite(ImageSource sprite) => _sprite = sprite ?? _sprite;
 
         public void Update()
         {
-            if (Keyboard.IsKeyDown(Key.Up)) Y = Math.Max(60, Y - Speed);
-            if (Keyboard.IsKeyDown(Key.Down)) Y = Math.Min(_canvasHeight - _spriteHeight, Y + Speed);
+            bool moved = false;
+
+            if (Keyboard.IsKeyDown(Key.Up))
+            {
+                Y = Math.Max(60, Y - Speed);
+                moved = true;
+            }
+            else if (Keyboard.IsKeyDown(Key.Down))
+            {
+                Y = Math.Min(_canvasHeight - _spriteHeight, Y + Speed);
+                moved = true;
+            }
+
+            if (moved)
+                AudioEngine.StartHook();
+            else
+                AudioEngine.StopHook();
         }
 
         public void Draw(Canvas canvas)
@@ -324,17 +361,19 @@ namespace OOPGames
             var line = new Line
             { X1 = _x + _spriteWidth / 2, Y1 = 0, X2 = _x + _spriteWidth / 2, Y2 = Y + 4, Stroke = Brushes.Black, StrokeThickness = 2 };
             canvas.Children.Add(line);
+
             if (_sprite != null)
             {
                 var img = new Image { Source = _sprite, Width = _spriteWidth, Height = _spriteHeight, Stretch = Stretch.Uniform };
-                Canvas.SetLeft(img, _x); Canvas.SetTop(img, Y); canvas.Children.Add(img);
+                Canvas.SetLeft(img, _x);
+                Canvas.SetTop(img, Y);
+                canvas.Children.Add(img);
             }
         }
 
         public Rect GetHitbox() => new Rect(_x, Y, _spriteWidth, _spriteHeight);
     }
 
-    // Popup points
     public class PopupScore
     {
         public Point Position;
@@ -367,12 +406,10 @@ namespace OOPGames
         }
     }
 
-    // Assets 
     public static class Assets
     {
         private static bool _loaded = false;
         private static string Dir => System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "FishingGame");
-
 
         public static ImageSource Background { get; private set; }
         public static ImageSource Hook { get; private set; }
@@ -385,14 +422,21 @@ namespace OOPGames
         public static void EnsureLoaded()
         {
             if (_loaded) return;
-            Background = Load("background.png");
-            Hook = Load("hook.png");
-            Hecht = Load("hecht.png");
-            Barsch = Load("barsch.png");
-            Saibling = Load("saibling.png");
-            Zander = Load("zander.png");
-            Wels = Load("wels.png");
-            _loaded = true;
+            try
+            {
+                Background = Load("background.png");
+                Hook = Load("hook.png");
+                Hecht = Load("hecht.png");
+                Barsch = Load("barsch.png");
+                Saibling = Load("saibling.png");
+                Zander = Load("zander.png");
+                Wels = Load("wels.png");
+                _loaded = true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Assets] Fehler beim Laden der Ressourcen: {ex.Message}"); // Exception Handling
+            }
         }
 
         private static ImageSource Load(string file)
@@ -400,12 +444,93 @@ namespace OOPGames
             try
             {
                 string p = System.IO.Path.Combine(Dir, file);
-                if (!System.IO.File.Exists(p)) return null;
+                if (!System.IO.File.Exists(p))
+                {
+                    Console.WriteLine($"[Assets] Datei nicht gefunden: {file}"); // Exception Handling
+                    return null;
+                }
                 var bmp = new BitmapImage();
-                bmp.BeginInit(); bmp.CacheOption = BitmapCacheOption.OnLoad; bmp.UriSource = new Uri(p, UriKind.Absolute); bmp.EndInit(); bmp.Freeze();
+                bmp.BeginInit();
+                bmp.CacheOption = BitmapCacheOption.OnLoad;
+                bmp.UriSource = new Uri(p, UriKind.Absolute);
+                bmp.EndInit();
+                bmp.Freeze();
                 return bmp;
             }
-            catch { return null; }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Assets] Fehler beim Laden von {file}: {ex.Message}"); // Exception Handling
+                return null;
+            }
+        }
+    }
+
+    public static class AudioEngine
+    {
+        private static string Dir => System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", "FishingGame", "Audio");
+
+        private static MediaPlayer _music = new MediaPlayer();
+        private static MediaPlayer _start = new MediaPlayer();
+        private static MediaPlayer _hook = new MediaPlayer();
+        private static bool _hookActive = false;
+
+        public static void Init()
+        {
+            _music.Open(new Uri(System.IO.Path.Combine(Dir, "background.mp3")));
+            _music.Volume = 0.4;
+            _music.MediaEnded += (s, e) =>
+            {
+                _music.Position = TimeSpan.Zero;
+                _music.Play();
+            };
+
+            _start.Open(new Uri(System.IO.Path.Combine(Dir, "start.mp3")));
+            _start.Volume = 0.3;
+
+            _hook.Open(new Uri(System.IO.Path.Combine(Dir, "hook.mp3")));
+            _hook.Volume = 0.7;
+            _hook.MediaEnded += (s, e) =>
+            {
+                if (_hookActive)
+                {
+                    _hook.Position = TimeSpan.Zero;
+                    _hook.Play();
+                }
+            };
+        }
+
+        public static void PlayMusic() => _music.Play();
+        public static void StopMusic() => _music.Stop();
+
+        public static void PlayStart()
+        {
+            _start.Position = TimeSpan.Zero;
+            _start.Play();
+        }
+
+        public static void StartHook()
+        {
+            if (_hookActive) return;
+            _hookActive = true;
+            _hook.Position = TimeSpan.Zero;
+            _hook.Play();
+        }
+
+        public static void StopHook()
+        {
+            _hookActive = false;
+            _hook.Stop();
+        }
+
+        public static void PlaySplash()
+        {
+            var p = new MediaPlayer();
+            p.Open(new Uri(System.IO.Path.Combine(Dir, "splash.mp3")));
+            p.Volume = 0.3;
+
+            p.Play();
+            p.MediaEnded += (s, e) => p.Close();
         }
     }
 }
+

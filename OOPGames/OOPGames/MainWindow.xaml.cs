@@ -272,7 +272,20 @@ namespace OOPGames
                             keepTurn = manRules.LastMoveGivesExtraTurn;
                         }
 
-                        if (!keepTurn)
+                        if (!keepTurn && !IsFlappyBird())
+                        {
+                            // Check if player should keep turn (e.g., B2 Maze dual player)
+                            if (!(_CurrentPlayer is B2_MazeDualPlayer))
+                            {
+                                _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
+                            }
+                        }
+                        else if (IsFlappyBird())
+                        {
+                            // In Flappy Bird, switch active player after each move
+                            FlappyBirdRules.ActivePlayer = (FlappyBirdRules.ActivePlayer == 1) ? 2 : 1;
+                            _CurrentPlayer = (_CurrentPlayer.PlayerNumber == 1) ? _CurrentPlayer2 : _CurrentPlayer1;
+                        }
                         {
                             _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
                         }
@@ -341,7 +354,7 @@ namespace OOPGames
                             keepTurn = manRules.LastMoveGivesExtraTurn;
                         }
 
-                        if (!keepTurn)
+                        if (!keepTurn && !IsFlappyBird())
                         {
                             _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
                         }
@@ -427,7 +440,7 @@ namespace OOPGames
                             keepTurn = manRules.LastMoveGivesExtraTurn;
                         }
 
-                        if (!keepTurn)
+                        if (!keepTurn && !IsFlappyBird())
                         {
                             // Check if player should keep turn (e.g., B2 Maze dual player)
                             if (!(_CurrentPlayer is B2_MazeDualPlayer))
@@ -500,5 +513,11 @@ namespace OOPGames
                 Status.Text = "Game restarted!";
             }
         }
+        private bool IsFlappyBird()
+        {
+            return _CurrentRules != null &&
+                _CurrentRules.GetType().Name.Contains("FlappyBird");
+        }
     }
+
 }
