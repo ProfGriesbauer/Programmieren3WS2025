@@ -26,7 +26,13 @@ namespace OOPGames
             var renderContext = new RenderContext(canvas, A5_SnakeField.FIELD_WIDTH, A5_SnakeField.FIELD_HEIGHT);
 
             DrawBackground(renderContext);
-            DrawSnake(field, renderContext);
+            DrawSnake(field, renderContext, 1); // Snake 1
+            
+            if (field.IsTwoPlayerMode && field.Snake2.Count > 0)
+            {
+                DrawSnake(field, renderContext, 2); // Snake 2
+            }
+            
             DrawFood(field, renderContext);
 
             if (field.IsCountingDown)
@@ -51,12 +57,14 @@ namespace OOPGames
             context.Canvas.Children.Add(bg);
         }
 
-        private void DrawSnake(A5_SnakeField field, RenderContext context)
+        private void DrawSnake(A5_SnakeField field, RenderContext context, int playerNumber)
         {
-            for (int i = 0; i < field.Snake.Count; i++)
+            var snake = playerNumber == 1 ? field.Snake : field.Snake2;
+            
+            for (int i = 0; i < snake.Count; i++)
             {
-                var segment = field.Snake[i];
-                Brush fill = GetSegmentBrush(i, field.Snake.Count);
+                var segment = snake[i];
+                Brush fill = GetSegmentBrush(i, snake.Count, playerNumber);
 
                 var snakeSegment = context.CreateRectangle(
                     A5_SnakeField.SNAKE_SIZE * context.Scale,
@@ -71,8 +79,19 @@ namespace OOPGames
             }
         }
 
-        private Brush GetSegmentBrush(int index, int totalCount)
+        private Brush GetSegmentBrush(int index, int totalCount, int playerNumber)
         {
+            // Player 2: Nutze eigene Bilder für visuelle Unterscheidung
+            if (playerNumber == 2)
+            {
+                if (index == 0)
+                    return _assetLoader.Snake2HeadBrush != null ? (Brush)_assetLoader.Snake2HeadBrush : Brushes.Blue;
+                if (index == totalCount - 1)
+                    return _assetLoader.Snake2RattleBrush != null ? (Brush)_assetLoader.Snake2RattleBrush : Brushes.Cyan;
+                return _assetLoader.Snake2BodyBrush != null ? (Brush)_assetLoader.Snake2BodyBrush : Brushes.DarkBlue;
+            }
+            
+            // Player 1: Original-Assets
             if (index == 0)
                 return _assetLoader.SnakeHeadBrush != null ? (Brush)_assetLoader.SnakeHeadBrush : Brushes.Red;
 

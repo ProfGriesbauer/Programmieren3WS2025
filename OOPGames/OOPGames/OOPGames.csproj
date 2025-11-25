@@ -17,7 +17,7 @@
   <None Include="Assets\**\*.mp3">
     <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
   </None>
-</ItemGroup>
+  </ItemGroup>
   
   <ItemGroup>
     <Content Include="Assets\Snake\grass_new.png">
@@ -33,6 +33,15 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Assets\Snake\strawberry.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Snake\snake2_head.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Snake\snake2_body.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Snake\snake2_rattle.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
