@@ -99,6 +99,7 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterPainter(new A3_LEA_SchiffePaint());
             OOPGamesManager.Singleton.RegisterRules(new A3_LEA_SchiffeRules());
             OOPGamesManager.Singleton.RegisterPlayer(new A3_LEA_HumanSchiffePlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new A3_LEA_ComputerSchiffePlayer());
             
             
             // B3 Jarde_Roeder
