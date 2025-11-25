@@ -3,29 +3,40 @@ using System.Linq;
 
 namespace OOPGames
 {
-    // Manages game logic: Turn-based tank control, Projectile physics simulation, 
-    // Collision detection, Win condition: returns 1 or 2 if tank destroyed, -1 otherwise
+    /// <summary>
+    /// Core game logic controller for Shellshock artillery game.
+    /// Implements turn-based tank combat with ballistic physics simulation.
+    /// Manages game state, collision detection, terrain destruction, and win conditions.
+    /// 
+    /// Game Flow:
+    /// 1. Setup: Display start screen
+    /// 2. PlayerTurn: Active player moves and aims, then shoots
+    /// 3. ProjectileInFlight: Physics simulation until collision
+    /// 4. Turn switch and repeat, or GameOver if tank destroyed
+    /// </summary>
     public class B5_Shellshock_Rules : IGameRules, IGameRules2
     {
         private B5_Shellshock_Field _field;
         private B5_Shellshock_GamePhase _gamePhase;
         private double _gravity;
-        private int _activeTankNumber; // Which tank (1 or 2) is currently taking its turn
-        private int _movementsRemaining; // Remaining position moves for current tank
-        private const int MAX_MOVES = 5;
-        private bool _pendingTurnSwitch; // Set after a shot, processed after projectile collision
+        private int _activeTankNumber;      // Which tank (1 or 2) is currently active
+        private int _movementsRemaining;    // Remaining movement actions for current turn
+        private bool _pendingTurnSwitch;    // Delayed turn switch after projectile impact
 
         public string Name => "B5_Shellshock_Rules";
 
         public IGameField CurrentField => _field;
 
+        /// <summary>
+        /// Returns true while game is ongoing (at least one tank alive).
+        /// Used by framework to determine if game should continue.
+        /// </summary>
         public bool MovesPossible
         {
             get
             {
-                // Always return true if game is not over
+                // Game ends when either tank is destroyed
                 if (!_field.Tank1.IsAlive || !_field.Tank2.IsAlive) return false;
-                
                 return true;
             }
         }
@@ -33,15 +44,24 @@ namespace OOPGames
         public B5_Shellshock_Rules()
         {
             _field = new B5_Shellshock_Field();
-            _gamePhase = B5_Shellshock_GamePhase.PlayerTurn;
-            _gravity = 9.8;
+            _gamePhase = B5_Shellshock_GamePhase.Setup;
+            _gravity = 9.8; // Standard Earth gravity (m/s²)
             _activeTankNumber = 1; // Tank 1 starts
-            _movementsRemaining = MAX_MOVES;
+            _movementsRemaining = _field.MaxMovesPerTurn;
             _pendingTurnSwitch = false;
             _field.MovementsRemaining = _movementsRemaining;
             _field.ActiveTankNumber = _activeTankNumber;
+            _field.GamePhase = _gamePhase;
         }
 
+        #region Move Handling
+
+        /// <summary>
+        /// Processes player actions. 
+        /// StartGame: Transitions from Setup to gameplay or restarts after GameOver.
+        /// Shoot: Creates projectile and initiates physics simulation.
+        /// Note: Movement and aiming handled directly in HumanPlayer for immediate feedback.
+        /// </summary>
         public void DoMove(IPlayMove move)
         {
             if (move is not B5_Shellshock_Move shellMove) return;
@@ -49,38 +69,72 @@ namespace OOPGames
             if (_field.ProjectileInFlight) return; // Block input during flight
 
             // Only handle Shoot via rules; movement/angle/power handled directly in HumanPlayer
-            if (shellMove.ActionType == B5_Shellshock_ActionType.Shoot && (_field.Projectile == null || !_field.Projectile.IsActive))
+            if (shellMove.ActionType == B5_Shellshock_ActionType.StartGame && _gamePhase == B5_Shellshock_GamePhase.Setup)
+            {
+                _gamePhase = B5_Shellshock_GamePhase.PlayerTurn;
+                _field.GamePhase = _gamePhase;
+                return;
+            }
+            if (shellMove.ActionType == B5_Shellshock_ActionType.StartGame && _gamePhase == B5_Shellshock_GamePhase.GameOver)
+            {
+                ClearField();
+                _gamePhase = B5_Shellshock_GamePhase.PlayerTurn;
+                _field.GamePhase = _gamePhase;
+                return;
+            }
+            if (shellMove.ActionType == B5_Shellshock_ActionType.Shoot && (_field.Projectile == null || !_field.Projectile.IsActive) && _gamePhase == B5_Shellshock_GamePhase.PlayerTurn)
             {
                 B5_Shellshock_Tank currentTank = _activeTankNumber == 1 ? _field.Tank1 : _field.Tank2;
-                // Barrel length in normalized coordinates (terrain is 0-1 scale, width is 800)
-                double barrelLengthNormalized = 0.02; // About 15-20 pixels when scaled
+                
+                // Calculate barrel end position for projectile spawn point
+                // Barrel extends from tank center based on firing angle
+                double barrelLengthNormalized = 0.02; // Approximately 15-20 pixels when scaled to screen
                 double angleRad = currentTank.Angle * Math.PI / 180.0;
                 double barrelEndX = currentTank.X + (barrelLengthNormalized * _field.Terrain.Width) * Math.Cos(angleRad);
                 double barrelEndY = currentTank.Y - barrelLengthNormalized * Math.Sin(angleRad);
 
-                _field.Projectile = new B5_Shellshock_Projectile(
-                    barrelEndX,
-                    barrelEndY,
-                    currentTank.Angle,
-                    currentTank.Power,
-                    shellMove.PlayerNumber
-                );
+                // Use tank's Fire method to create projectile
+                _field.Projectile = currentTank.Fire(shellMove.PlayerNumber);
+                // Override position to barrel end (Fire uses tank center by default)
+                _field.Projectile.X = barrelEndX;
+                _field.Projectile.Y = barrelEndY;
+                
+                // Clear previous trajectory and start recording new one
+                if (shellMove.PlayerNumber == 1) 
+                    _field.LastTrajectoryP1.Clear();
+                else 
+                    _field.LastTrajectoryP2.Clear();
+                    
+                // Transition to flight phase and mark turn switch as pending
                 _gamePhase = B5_Shellshock_GamePhase.ProjectileInFlight;
-                _pendingTurnSwitch = true; // Delay tank switch until collision
+                _pendingTurnSwitch = true; // Switch after projectile collision
+                _field.GamePhase = _gamePhase;
             }
         }
+
+        #endregion
+
+        #region Game State Management
 
         public void ClearField()
         {
             _field.Reset();
-            _gamePhase = B5_Shellshock_GamePhase.PlayerTurn;
+            _gamePhase = B5_Shellshock_GamePhase.Setup;
             _activeTankNumber = 1;
-            _movementsRemaining = MAX_MOVES;
+            _movementsRemaining = _field.MaxMovesPerTurn;
             _pendingTurnSwitch = false;
             _field.MovementsRemaining = _movementsRemaining;
             _field.ActiveTankNumber = _activeTankNumber;
+            _field.GamePhase = _gamePhase;
         }
 
+        /// <summary>
+        /// Checks win condition.
+        /// Returns 1 if Player 1 wins (Tank2 destroyed).
+        /// Returns 2 if Player 2 wins (Tank1 destroyed).
+        /// Returns -1 if game continues.
+        /// Never returns 0 (would trigger unwanted draw/reset).
+        /// </summary>
         public int CheckIfPLayerWon()
         {
             // Only check for winner, don't return draw
@@ -96,10 +150,19 @@ namespace OOPGames
 
         public void StartedGameCall()
         {
-            // Initialize game when started
+            // Initialize game when framework starts
             ClearField();
         }
 
+        #endregion
+
+        #region Physics Simulation
+
+        /// <summary>
+        /// Called every ~40ms by framework for physics simulation.
+        /// Updates projectile position, checks collisions, handles terrain destruction,
+        /// manages turn switching, and randomizes wind after each shot.
+        /// </summary>
         public void TickGameCall()
         {
             if (_field.ProjectileInFlight && _field.Projectile != null)
@@ -108,39 +171,108 @@ namespace OOPGames
                 if (proj.IsActive)
                 {
                     proj.UpdatePosition(_gravity, _field.Wind, 0.04);
+                    // Record trajectory point for visualization
+                    var pt = new B5_Shellshock_Point(proj.X, proj.Y);
+                    if (proj.PlayerNumber == 1) 
+                        _field.LastTrajectoryP1.Add(pt); 
+                    else 
+                        _field.LastTrajectoryP2.Add(pt);
+                        
+                    // Collision detection
                     bool collision = false;
-                    if (_field.Terrain.IsCollision(proj.X, proj.Y)) collision = true;
-                    if (CheckTankCollision(_field.Tank1, proj)) { collision = true; _field.Tank1.TakeDamage(50); }
-                    if (CheckTankCollision(_field.Tank2, proj)) { collision = true; _field.Tank2.TakeDamage(50); }
-                    if (proj.X < 0 || proj.X > _field.Terrain.Width || proj.Y > 1.0) collision = true;
+                    bool terrainHit = false;
+                    
+                    // Check terrain collision
+                    if (_field.Terrain.IsCollision(proj.X, proj.Y)) 
+                    { 
+                        collision = true; 
+                        terrainHit = true; 
+                    }
+                    
+                    // Check tank collisions (applies damage)
+                    if (CheckTankCollision(_field.Tank1, proj)) 
+                    { 
+                        collision = true; 
+                        _field.Tank1.TakeDamage(20); 
+                    }
+                    if (CheckTankCollision(_field.Tank2, proj)) 
+                    { 
+                        collision = true; 
+                        _field.Tank2.TakeDamage(20); 
+                    }
+                    
+                    // Check health pack collision (applies healing)
+                    if (_field.HealthPack != null && _field.HealthPack.IsActive && _field.HealthPack.CollidesWith(proj))
+                    {
+                        // Heal the shooting player's tank
+                        B5_Shellshock_Tank shootingTank = proj.PlayerNumber == 1 ? _field.Tank1 : _field.Tank2;
+                        shootingTank.Health = Math.Min(100, shootingTank.Health + B5_Shellshock_HealthPack.HealAmount);
+                        _field.HealthPack.IsActive = false;
+                        _field.HealthPack = null; // Remove health pack
+                    }
+                    
+                    // Check out of bounds
+                    if (proj.X < 0 || proj.X > _field.Terrain.Width || proj.Y > 1.0) 
+                        collision = true;
+                        
                     if (collision)
                     {
+                        // Destroy terrain at impact point if hit ground
+                        if (terrainHit)
+                        {
+                            _field.Terrain.DestroyTerrain(proj.X, 30); // 30 pixel radius crater
+                            // Update tank positions to rest on modified terrain
+                            _field.UpdateTankPositions();
+                        }
+                        
+                        // Deactivate projectile
                         proj.IsActive = false;
                         _field.Projectile = null;
+                        
+                        // Execute delayed turn switch
                         if (_pendingTurnSwitch)
                         {
                             _activeTankNumber = _activeTankNumber == 1 ? 2 : 1;
-                            _movementsRemaining = MAX_MOVES;
+                            _movementsRemaining = _field.MaxMovesPerTurn;
                             _field.MovementsRemaining = _movementsRemaining;
                             _field.ActiveTankNumber = _activeTankNumber;
                             _pendingTurnSwitch = false;
                         }
+                        
+                        // Randomize wind for next shot
+                        Random rnd = new Random();
+                        _field.Wind = rnd.NextDouble() * 10 - 5; // Range: -5 to +5
+                        
+                        // Spawn health pack randomly (50% chance) after shot lands
+                        // Spawn anywhere horizontally, but below GUI panels (Y > 110px, normalized ~0.18)
+                        if (rnd.NextDouble() > 0.5)
+                        {
+                            double packX = rnd.NextDouble() * _field.Terrain.Width; // Any X position
+                            double packY = 0.18 + rnd.NextDouble() * 0.52; // Between GUI bottom (0.18) and terrain (0.7)
+                            _field.HealthPack = new B5_Shellshock_HealthPack(packX, packY);
+                        }
+                        
+                        // Check for game over or continue
                         _gamePhase = CheckIfPLayerWon() != -1 ? B5_Shellshock_GamePhase.GameOver : B5_Shellshock_GamePhase.PlayerTurn;
+                        _field.GamePhase = _gamePhase;
                     }
                 }
             }
         }
 
+        #endregion
+
+        #region Collision Detection
+
+        /// <summary>
+        /// Checks collision between a tank and projectile using the tank's collision method.
+        /// Encapsulates collision logic within the Tank class following OOP principles.
+        /// </summary>
         private bool CheckTankCollision(B5_Shellshock_Tank tank, B5_Shellshock_Projectile proj)
         {
-            // Simple bounding box collision (normalized coordinates)
-            double tankWidthNormalized = 20; // Pixel width in terrain space
-            double tankHeightNormalized = 0.02; // Height in 0-1 space
-
-            return proj.X >= tank.X - tankWidthNormalized / 2 &&
-                   proj.X <= tank.X + tankWidthNormalized / 2 &&
-                   proj.Y >= tank.Y - tankHeightNormalized &&
-                   proj.Y <= tank.Y;
+            return tank.CollidesWith(proj);
         }
+
+        #endregion
     }
 }

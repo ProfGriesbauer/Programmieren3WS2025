@@ -14,7 +14,8 @@ namespace OOPGames
     {
         Flat,
         Hill,
-        Valley
+        Valley,
+        Curvy
     }
 
     // Different actions a player can perform
@@ -26,7 +27,8 @@ namespace OOPGames
         DecreaseAngle,
         IncreasePower,
         DecreasePower,
-        Shoot
+        Shoot,
+        StartGame
     }
 
     // Current state of the game

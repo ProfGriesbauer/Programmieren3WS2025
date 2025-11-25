@@ -38,6 +38,82 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
             canvas.Children.Add(field);
         }
 
+        private void DrawFieldWithLabel(Canvas canvas, double x, double y, Brush fill, Brush stroke, double size, string label)
+        {
+            Ellipse field = new Ellipse
+            {
+                Width = size,
+                Height = size,
+                Fill = fill,
+                Stroke = stroke,
+                StrokeThickness = 1
+            };
+            Canvas.SetLeft(field, x - size/2);
+            Canvas.SetTop(field, y - size/2);
+            canvas.Children.Add(field);
+
+            // Bestimme Textfarbe: Schwarz für helle Farben (Rot, Gelb, Grün), Weiß für dunkle (Schwarz)
+            Brush textColor = Brushes.White;
+            if (fill == Brushes.Red || fill == Brushes.Yellow || fill == Brushes.Green)
+            {
+                textColor = Brushes.Black;
+            }
+
+            // Zeichne Label zentriert
+            TextBlock labelText = new TextBlock
+            {
+                Text = label,
+                FontSize = size * 0.6,
+                FontWeight = FontWeights.Bold,
+                Foreground = textColor,
+                TextAlignment = TextAlignment.Center
+            };
+            
+            labelText.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            Canvas.SetLeft(labelText, x - labelText.DesiredSize.Width / 2);
+            Canvas.SetTop(labelText, y - labelText.DesiredSize.Height / 2);
+            canvas.Children.Add(labelText);
+        }
+
+        private void DrawPiece(Canvas canvas, double x, double y, Brush color, double size, int pieceNumber)
+        {
+            // Zeichne Kreis
+            Ellipse piece = new Ellipse
+            {
+                Width = size,
+                Height = size,
+                Fill = color,
+                Stroke = Brushes.Black,
+                StrokeThickness = 1
+            };
+            Canvas.SetLeft(piece, x - size/2);
+            Canvas.SetTop(piece, y - size/2);
+            canvas.Children.Add(piece);
+
+            // Bestimme Textfarbe: Schwarz für helle Farben (Rot, Gelb, Grün), Weiß für dunkle (Schwarz)
+            Brush textColor = Brushes.White;
+            if (color == Brushes.Red || color == Brushes.Yellow || color == Brushes.Green)
+            {
+                textColor = Brushes.Black;
+            }
+
+            // Zeichne Nummer zentriert
+            TextBlock number = new TextBlock
+            {
+                Text = pieceNumber.ToString(),
+                FontSize = size * 0.6,
+                FontWeight = FontWeights.Bold,
+                Foreground = textColor,
+                TextAlignment = TextAlignment.Center
+            };
+            
+            // Measure the text size for proper centering
+            number.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            Canvas.SetLeft(number, x - number.DesiredSize.Width / 2);
+            Canvas.SetTop(number, y - number.DesiredSize.Height / 2);
+            canvas.Children.Add(number);
+        }
+
         // Zeichne 2x2 Startfelder, ausgerichtet an Grid-Zentren (gridSize übergeben)
         private void DrawStartFields(Canvas canvas, double x, double y, double gridSize, Brush color, double fieldSize)
         {
@@ -113,10 +189,10 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
             canvas.Children.Add(boardRect);
 
             // Startfelder (2x2) in den Ecken mit Padding
-            DrawStartFields(canvas, boardLeft + CORNER_PADDING, boardTop + CORNER_PADDING, gridSize, PlayerColors[2], fieldSize);                           // Gelb oben links
-            DrawStartFields(canvas, boardLeft + size - CORNER_PADDING - 2*gridSize, boardTop + CORNER_PADDING, gridSize, PlayerColors[3], fieldSize);      // Grün oben rechts
-            DrawStartFields(canvas, boardLeft + CORNER_PADDING, boardTop + size - CORNER_PADDING - 2*gridSize, gridSize, PlayerColors[1], fieldSize);      // Schwarz unten links
-            DrawStartFields(canvas, boardLeft + size - CORNER_PADDING - 2*gridSize, boardTop + size - CORNER_PADDING - 2*gridSize, gridSize, PlayerColors[0], fieldSize); // Rot unten rechts
+            DrawStartFields(canvas, boardLeft + CORNER_PADDING, boardTop + CORNER_PADDING, gridSize, PlayerColors[3], fieldSize);                           // Grün oben links
+            DrawStartFields(canvas, boardLeft + size - CORNER_PADDING - gridSize, boardTop + CORNER_PADDING, gridSize, PlayerColors[2], fieldSize);      // gelb oben rechts
+            DrawStartFields(canvas, boardLeft + CORNER_PADDING, boardTop + size - CORNER_PADDING - gridSize, gridSize, PlayerColors[0], fieldSize);      // rot unten links
+            DrawStartFields(canvas, boardLeft + size - CORNER_PADDING - gridSize, boardTop + size - CORNER_PADDING - gridSize, gridSize, PlayerColors[1], fieldSize); // Schwarz unten rechts
 
             // Laufstrecke: 40 Felder die ein Kreuz-Muster bilden
             // Korrigiert nach Pfeilen: rechte Seite muss auf x=6 sein, nicht x=10
@@ -178,55 +254,57 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
             track.Add((5, 10)); track.Add((4, 10));  // 21-22
             
             // Linker unterer Arm (x=4)
-            track.Add((4, 9)); track.Add((4, 8)); track.Add((4, 7)); track.Add((4, 6));  // 23-26
+            track.Add((4, 9)); track.Add((4, 8)); track.Add((4, 7)); track.Add((4, 6));  // 32-35
             
             // Untere Mitte (y=6)
-            track.Add((3, 6)); track.Add((2, 6)); track.Add((1, 6)); track.Add((0, 6));  // 27-30
-            
-            // Zurück zum Start (x=0)
-            track.Add((0, 5));  // 31
+            track.Add((3, 6)); track.Add((2, 6)); track.Add((1, 6)); track.Add((0, 6));  // 36-39
             
             // Immer noch nur 32... Die Pfeile zeigen auch Felder an den äußeren Ecken
             // Analysiere nochmal: es müssen noch 8 Felder sein auf y=10 und x=10
             
             track.Clear();
             
-            // FINALE Version mit allen 40 Feldern:
-            // Linker Arm (y=4)
+            // FINALE Version mit allen 40 Feldern - KORRIGIERTE REIHENFOLGE:
+            // Start bei Grün (0,4) und dann im Uhrzeigersinn rum
+            
+            // Grün startet hier: (0,4) - Index 0
             track.Add((0, 4)); track.Add((1, 4)); track.Add((2, 4)); track.Add((3, 4)); track.Add((4, 4));  // 0-4
             
-            // Oberer linker Arm (x=4)
+            // Nach oben (x=4)
             track.Add((4, 3)); track.Add((4, 2)); track.Add((4, 1)); track.Add((4, 0));  // 5-8
             
-            // Obere Mitte (y=0)
-            track.Add((5, 0)); track.Add((6, 0));  // 9-10
+            // Nach rechts oben (y=0) - Gelb startet bei Index 10: (6,0)
+            track.Add((5, 0)); track.Add((6, 0));  // 9-10 (Gelb Start bei 10)
             
-            // Oberer rechter Bereich (x=6) - eingeklappt!
+            // Nach unten (x=6)
             track.Add((6, 1)); track.Add((6, 2)); track.Add((6, 3)); track.Add((6, 4)); track.Add((6, 5));  // 11-15
-            
-            // Rechter Arm (x=6)
             track.Add((6, 6)); track.Add((6, 7)); track.Add((6, 8)); track.Add((6, 9)); track.Add((6, 10)); // 16-20
             
-            // Zusätzliche Felder bei y=4 (horizontal)
-            track.Add((7, 4)); track.Add((8, 4)); track.Add((9, 4)); // 21-23
+            // Nach rechts unten (y=10)
+            track.Add((7, 10)); track.Add((8, 10)); track.Add((9, 10)); track.Add((10, 10)); // 21-24
             
-            // Untere rechte Ecke - blau markierte Felder GELÖSCHT
-            // ENTFERNT: track.Add((7, 10)); track.Add((8, 10)); track.Add((9, 10)); track.Add((10, 10));
+            // Nach oben rechts (x=10) - Schwarz startet bei Index 25: (10,6) aber sollte bei 24 starten...
+            // Schwarz sollte bei (10,6) starten, nicht bei (10,10)!
+            // Ich muss die Reihenfolge anders machen
             
-            // Rechte Seite nach oben (x=10) - (10,3) GELÖSCHT!
-            track.Add((10, 6)); track.Add((10, 5)); track.Add((10, 4)); // 24-26 (nur noch 3 Felder)
+            track.Clear();
             
-            // Zusätzliche Felder bei y=6 (horizontal)
-            track.Add((9, 6)); track.Add((8, 6)); track.Add((7, 6)); // 27-29
+            // Track mit 40 Feldern im Uhrzeigersinn, passend zum visuellen Kreuz-Layout:
+            // Start bei Grün (0,4) - Index 0
             
-            // Zurück zur Mitte (y=10)
-            track.Add((5, 10)); track.Add((4, 10));  // 30-31
-            
-            // Linker unterer Arm (x=4)
-            track.Add((4, 9)); track.Add((4, 8)); track.Add((4, 7)); track.Add((4, 6));  // 32-35
-            
-            // Untere Mitte (y=6)
-            track.Add((3, 6)); track.Add((2, 6)); track.Add((1, 6)); track.Add((0, 6));  // 36-39
+            track.Add((0, 4));  // 0 - Grün Start (A)
+            track.Add((1, 4)); track.Add((2, 4)); track.Add((3, 4)); track.Add((4, 4));  // 1-4
+            track.Add((4, 3)); track.Add((4, 2)); track.Add((4, 1)); track.Add((4, 0));  // 5-8
+            track.Add((5, 0)); track.Add((6, 0));  // 9-10 (Gelb Start (A) bei 10)
+            track.Add((6, 1)); track.Add((6, 2)); track.Add((6, 3)); track.Add((6, 4));  // 11-14
+            track.Add((7, 4)); track.Add((8, 4)); track.Add((9, 4)); track.Add((10, 4));  // 15-18
+            track.Add((10, 5)); track.Add((10, 6));  // 19-20 (Schwarz Start (A) bei 20)
+            track.Add((9, 6)); track.Add((8, 6)); track.Add((7, 6)); track.Add((6, 6));  // 21-24
+            track.Add((6, 7)); track.Add((6, 8)); track.Add((6, 9)); track.Add((6, 10));  // 25-28
+            track.Add((5, 10)); track.Add((4, 10));  // 29-30 (Rot Start (A) bei 30)
+            track.Add((4, 9)); track.Add((4, 8)); track.Add((4, 7)); track.Add((4, 6));  // 31-34
+            track.Add((3, 6)); track.Add((2, 6)); track.Add((1, 6)); track.Add((0, 6));  // 35-38
+            track.Add((0, 5));  // 39
             
             // WICHTIG: Track muss genau 40 Felder haben, dann wird (0,5) durch Modulo erreicht
             // Aber für die Anzeige müssen wir (0,5) explizit zeichnen!
@@ -237,21 +315,41 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
                 trackPoints[i] = new Point(boardLeft + gridOffset + p.x * gridSize, boardTop + gridOffset + p.y * gridSize);
             }
 
+            // Definiere Startfelder mit ihren Farben und Grid-Koordinaten
+            var startFields = new System.Collections.Generic.Dictionary<(int x, int y), (Brush color, string label)>
+            {
+                { (0, 4), (PlayerColors[3], "A") },   // Grün
+                { (4, 10), (PlayerColors[0], "A") },  // Rot
+                { (10, 6), (PlayerColors[1], "A") },  // Schwarz
+                { (6, 0), (PlayerColors[2], "A") }    // Gelb
+            };
+
             // Zeichne Laufstrecke
             for (int i = 0; i < B1_MAN_Board.TrackLength; i++)
             {
-                DrawField(canvas, trackPoints[i].X, trackPoints[i].Y, Brushes.White, Brushes.Black, fieldSize);
+                var p = track[i];
+                
+                // Prüfe ob dieses Feld ein Startfeld ist
+                if (startFields.ContainsKey(p))
+                {
+                    var (color, label) = startFields[p];
+                    DrawFieldWithLabel(canvas, trackPoints[i].X, trackPoints[i].Y, color, Brushes.Black, fieldSize, label);
+                }
+                else
+                {
+                    DrawField(canvas, trackPoints[i].X, trackPoints[i].Y, Brushes.White, Brushes.Black, fieldSize);
+                }
 
                 // Zeichne Figur wenn vorhanden
                 var piece = board.GetPieceAt(i);
                 if (piece != null)
                 {
-                    DrawField(canvas,
+                    DrawPiece(canvas,
                         trackPoints[i].X,
                         trackPoints[i].Y,
                         PlayerColors[piece.Owner - 1],
-                        Brushes.Black,
-                        pieceSize);
+                        pieceSize,
+                        piece.Id + 1);
                 }
             }
             
@@ -264,11 +362,12 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
 
             // Zielfelder als 4er-Reihen, die ein "+" bilden. Das Zentrum (5,5) bleibt frei.
             // Rot (unten nach oben) -> y = 9,8,7,6
+            string[] labels = { "a", "b", "c", "d" };
             for (int i = 0; i < 4; i++)
             {
                 double x = boardLeft + gridOffset + 5 * gridSize;
                 double y = boardTop + gridOffset + (9 - i) * gridSize;
-                DrawField(canvas, x, y, PlayerColors[0], Brushes.Black, fieldSize);
+                DrawFieldWithLabel(canvas, x, y, PlayerColors[0], Brushes.Black, fieldSize, labels[i]);
             }
 
             // Schwarz (rechts nach links) -> x = 9,8,7,6
@@ -276,7 +375,7 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
             {
                 double x = boardLeft + gridOffset + (9 - i) * gridSize;
                 double y = boardTop + gridOffset + 5 * gridSize;
-                DrawField(canvas, x, y, PlayerColors[1], Brushes.Black, fieldSize);
+                DrawFieldWithLabel(canvas, x, y, PlayerColors[1], Brushes.Black, fieldSize, labels[i]);
             }
 
             // Gelb (oben nach unten) -> y = 1,2,3,4
@@ -284,7 +383,7 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
             {
                 double x = boardLeft + gridOffset + 5 * gridSize;
                 double y = boardTop + gridOffset + (1 + i) * gridSize;
-                DrawField(canvas, x, y, PlayerColors[2], Brushes.Black, fieldSize);
+                DrawFieldWithLabel(canvas, x, y, PlayerColors[2], Brushes.Black, fieldSize, labels[i]);
             }
 
             // Grün (links nach rechts) -> x = 1,2,3,4
@@ -292,13 +391,13 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
             {
                 double x = boardLeft + gridOffset + (1 + i) * gridSize;
                 double y = boardTop + gridOffset + 5 * gridSize;
-                DrawField(canvas, x, y, PlayerColors[3], Brushes.Black, fieldSize);
+                DrawFieldWithLabel(canvas, x, y, PlayerColors[3], Brushes.Black, fieldSize, labels[i]);
             }
 
             // Zeichne Figuren in Zielfeldern und Basis
             foreach (var player in board.Players)
             {
-                // Basis-Figuren (2x2), positioniert an den neuen Start-Anchor-Punkten
+                // Basis-Figuren (2x2), zentriert auf den Startfeldern
                 var basePieces = player.Pieces.Where(p => p.IsInBase).ToList();
                 for (int i = 0; i < basePieces.Count; i++)
                 {
@@ -308,26 +407,26 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
                     double baseAnchorX = 0, baseAnchorY = 0;
                     switch (player.PlayerNumber)
                     {
-                        case 1: // Rot -> unten links (Grid 2,8)
-                            baseAnchorX = boardLeft + gridOffset + 2 * gridSize;
-                            baseAnchorY = boardTop + gridOffset + 8 * gridSize;
+                        case 1: // Rot -> unten links, Start bei CORNER_PADDING
+                            baseAnchorX = boardLeft + CORNER_PADDING;
+                            baseAnchorY = boardTop + size - CORNER_PADDING - gridSize;
                             break;
-                        case 2: // Schwarz -> unten rechts (Grid 8,8)
-                            baseAnchorX = boardLeft + gridOffset + 8 * gridSize;
-                            baseAnchorY = boardTop + gridOffset + 8 * gridSize;
+                        case 2: // Schwarz -> unten rechts
+                            baseAnchorX = boardLeft + size - CORNER_PADDING - gridSize;
+                            baseAnchorY = boardTop + size - CORNER_PADDING - gridSize;
                             break;
-                        case 3: // Gelb -> oben rechts (Grid 8,2)
-                            baseAnchorX = boardLeft + gridOffset + 8 * gridSize;
-                            baseAnchorY = boardTop + gridOffset + 2 * gridSize;
+                        case 3: // Gelb -> oben rechts
+                            baseAnchorX = boardLeft + size - CORNER_PADDING - gridSize;
+                            baseAnchorY = boardTop + CORNER_PADDING;
                             break;
-                        case 4: // Grün -> oben links (Grid 2,2)
-                            baseAnchorX = boardLeft + gridOffset + 2 * gridSize;
-                            baseAnchorY = boardTop + gridOffset + 2 * gridSize;
+                        case 4: // Grün -> oben links
+                            baseAnchorX = boardLeft + CORNER_PADDING;
+                            baseAnchorY = boardTop + CORNER_PADDING;
                             break;
                     }
                     double baseX = baseAnchorX + colIndex * gridSize;
                     double baseY = baseAnchorY + rowIndex * gridSize;
-                    DrawField(canvas, baseX, baseY, PlayerColors[player.PlayerNumber - 1], Brushes.Black, pieceSize);
+                    DrawPiece(canvas, baseX, baseY, PlayerColors[player.PlayerNumber - 1], pieceSize, basePieces[i].Id + 1);
                 }
 
                 // Zielfeld-Figuren
@@ -355,7 +454,7 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
                             homeY = boardTop + gridOffset + 5 * gridSize;
                             break;
                     }
-                    DrawField(canvas, homeX, homeY, PlayerColors[player.PlayerNumber - 1], Brushes.Black, pieceSize);
+                    DrawPiece(canvas, homeX, homeY, PlayerColors[player.PlayerNumber - 1], pieceSize, piece.Id + 1);
                 }
             }
 

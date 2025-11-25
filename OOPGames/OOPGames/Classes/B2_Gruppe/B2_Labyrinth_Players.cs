@@ -11,9 +11,9 @@ namespace OOPGames
 
     #region Abstract Base Classes
 
-    /// <summary>
+    
     /// Abstrakte Basis für menschliche Labyrinth-Spieler
-    /// </summary>
+    
     public abstract class B2_AbstractMazeHumanPlayer : IHumanGamePlayer
     {
         public virtual string Name { get; protected set; }
@@ -32,10 +32,10 @@ namespace OOPGames
 
     #region Concrete Implementations
 
-    /// <summary>
+    
     /// Dual-Controller Player - Steuert BEIDE Spieler gleichzeitig
     /// WASD = Spieler 1 (Blau), Pfeiltasten = Spieler 2 (Rot)
-    /// </summary>
+    
     public class B2_MazeDualPlayer : B2_AbstractMazeHumanPlayer
     {
         public B2_MazeDualPlayer(string name = "B2 - Maze Dual Controller")
@@ -52,7 +52,7 @@ namespace OOPGames
         {
             if (selection is IKeySelection keySelection)
             {
-                B2_MazeDirection? direction = null;
+                B2_MazeDirection direction = null;
                 int targetPlayer = 0;
 
                 // WASD steuert Spieler 1
@@ -94,10 +94,10 @@ namespace OOPGames
                         break;
                 }
 
-                if (direction.HasValue && targetPlayer > 0)
+                if (direction != null && targetPlayer > 0)
                 {
                     // Gebe Move für den korrekten Spieler zurück
-                    return new B2_MazeMove(targetPlayer, direction.Value);
+                    return new B2_MazeMove(targetPlayer, direction);
                 }
             }
 

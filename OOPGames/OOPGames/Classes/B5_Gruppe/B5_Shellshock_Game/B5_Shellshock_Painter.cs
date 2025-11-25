@@ -29,13 +29,13 @@ namespace OOPGames
             // Draw terrain
             DrawTerrain(canvas, field.Terrain, scaleX, scaleY);
 
-            // Highlight active tank similar to B2 visibility emphasis (draw BEFORE tanks as background)
-            B5_Shellshock_Tank activeTank = field.ActiveTankNumber == 1 ? field.Tank1 : field.Tank2;
-            DrawActiveTankHalo(canvas, activeTank, scaleX, scaleY);
-
             // Draw tanks
             DrawTank(canvas, field.Tank1, scaleX, scaleY);
             DrawTank(canvas, field.Tank2, scaleX, scaleY);
+
+            // Draw active tank indicator (small dot) on top of the active tank
+            B5_Shellshock_Tank activeTank = field.ActiveTankNumber == 1 ? field.Tank1 : field.Tank2;
+            DrawActiveTankDot(canvas, activeTank, scaleX, scaleY);
 
             // Draw projectile if active
             if (field.Projectile != null && field.Projectile.IsActive)
@@ -44,8 +44,21 @@ namespace OOPGames
                 DrawProjectile(canvas, field.Projectile, scaleX, scaleY);
             }
 
-            // Draw UI
+            // Draw health pack if active
+            if (field.HealthPack != null && field.HealthPack.IsActive)
+            {
+                DrawHealthPack(canvas, field.HealthPack, scaleX, scaleY);
+            }
+
+            // Draw UI (tank info + wind)
             DrawUI(canvas, field, canvasWidth, canvasHeight);
+
+            // Overlay for start or win
+            DrawOverlay(canvas, field, canvasWidth, canvasHeight);
+
+            // Draw last trajectories as dotted colored lines
+            DrawTrajectory(canvas, field.LastTrajectoryP1, scaleX, scaleY, Brushes.Red);
+            DrawTrajectory(canvas, field.LastTrajectoryP2, scaleX, scaleY, Brushes.Blue);
         }
 
         public void TickPaintGameField(Canvas canvas, IGameField currentField)
@@ -54,23 +67,23 @@ namespace OOPGames
             PaintGameField(canvas, currentField);
         }
 
-        private void DrawActiveTankHalo(Canvas canvas, B5_Shellshock_Tank tank, double scaleX, double scaleY)
+        private void DrawActiveTankDot(Canvas canvas, B5_Shellshock_Tank tank, double scaleX, double scaleY)
         {
             if (!tank.IsAlive) return;
             double x = tank.X * scaleX;
             double y = tank.Y * scaleY;
-            // Halo ellipse behind tank to indicate active turn (inspired by B2 view radius concept)
-            Ellipse halo = new Ellipse
+            // Small dot above the tank body to mark the active tank
+            Ellipse dot = new Ellipse
             {
-                Width = 40,
-                Height = 20,
-                Fill = new SolidColorBrush(Color.FromArgb(60, 255, 255, 0)),
-                Stroke = new SolidColorBrush(Color.FromRgb(255, 215, 0)),
-                StrokeThickness = 2
+                Width = 8,
+                Height = 8,
+                Fill = Brushes.Yellow,
+                Stroke = Brushes.Black,
+                StrokeThickness = 1
             };
-            Canvas.SetLeft(halo, x - halo.Width / 2);
-            Canvas.SetTop(halo, y - halo.Height / 2 - 5);
-            canvas.Children.Add(halo);
+            Canvas.SetLeft(dot, x - 4);
+            Canvas.SetTop(dot, y - 18); // slightly above the tank body
+            canvas.Children.Add(dot);
         }
 
         private void DrawTerrain(Canvas canvas, B5_Shellshock_Terrain terrain, double scaleX, double scaleY)
@@ -110,18 +123,18 @@ namespace OOPGames
             // Tank body
             Rectangle body = new Rectangle
             {
-                Width = 20,
-                Height = 10,
+                Width = 26,
+                Height = 14,
                 Fill = tank.Color == B5_Shellshock_TankColor.Red ? Brushes.Red : Brushes.Blue,
                 Stroke = Brushes.Black,
                 StrokeThickness = 1
             };
-            Canvas.SetLeft(body, x - 10);
-            Canvas.SetTop(body, y - 10);
+            Canvas.SetLeft(body, x - 13);
+            Canvas.SetTop(body, y - 14);
             canvas.Children.Add(body);
 
             // Tank barrel
-            double barrelLength = 15;
+            double barrelLength = 24; // make barrel longer for visibility
             double angleRad = tank.Angle * Math.PI / 180.0;
             double barrelEndX = x + barrelLength * Math.Cos(angleRad);
             double barrelEndY = y - barrelLength * Math.Sin(angleRad);
@@ -133,12 +146,11 @@ namespace OOPGames
                 X2 = barrelEndX,
                 Y2 = barrelEndY,
                 Stroke = Brushes.Black,
-                StrokeThickness = 3
+                StrokeThickness = 4
             };
             canvas.Children.Add(barrel);
 
-            // Angle indicator arc (small arc showing angle)
-            DrawAngleIndicator(canvas, tank, x, y);
+            // Removed angle indicator arc for cleaner look
         }
 
         private void DrawAngleIndicator(Canvas canvas, B5_Shellshock_Tank tank, double x, double y)
@@ -172,78 +184,195 @@ namespace OOPGames
 
             Ellipse shell = new Ellipse
             {
-                Width = 8,
-                Height = 8,
+                Width = 12,
+                Height = 12,
                 Fill = Brushes.Black,
                 Stroke = Brushes.Yellow,
-                StrokeThickness = 1
+                StrokeThickness = 1.5
             };
-            Canvas.SetLeft(shell, x - 4);
-            Canvas.SetTop(shell, y - 4);
+            Canvas.SetLeft(shell, x - 6);
+            Canvas.SetTop(shell, y - 6);
             canvas.Children.Add(shell);
+        }
+
+        /// <summary>
+        /// Draws a health pack as a red box with rounded corners and white cross.
+        /// </summary>
+        private void DrawHealthPack(Canvas canvas, B5_Shellshock_HealthPack healthPack, double scaleX, double scaleY)
+        {
+            double x = healthPack.X * scaleX;
+            double y = healthPack.Y * scaleY;
+            double size = B5_Shellshock_HealthPack.PackSize;
+
+            // Red box with rounded corners
+            Rectangle box = new Rectangle
+            {
+                Width = size,
+                Height = size,
+                Fill = Brushes.Red,
+                Stroke = Brushes.White,
+                StrokeThickness = 2,
+                RadiusX = 4,
+                RadiusY = 4
+            };
+            Canvas.SetLeft(box, x - size / 2);
+            Canvas.SetTop(box, y - size / 2);
+            canvas.Children.Add(box);
+
+            // White cross (vertical line)
+            Rectangle verticalLine = new Rectangle
+            {
+                Width = 3,
+                Height = size * 0.6,
+                Fill = Brushes.White
+            };
+            Canvas.SetLeft(verticalLine, x - 1.5);
+            Canvas.SetTop(verticalLine, y - size * 0.3);
+            canvas.Children.Add(verticalLine);
+
+            // White cross (horizontal line)
+            Rectangle horizontalLine = new Rectangle
+            {
+                Width = size * 0.6,
+                Height = 3,
+                Fill = Brushes.White
+            };
+            Canvas.SetLeft(horizontalLine, x - size * 0.3);
+            Canvas.SetTop(horizontalLine, y - 1.5);
+            canvas.Children.Add(horizontalLine);
+        }
+
+        private void DrawTrajectory(Canvas canvas, System.Collections.Generic.List<B5_Shellshock_Point> points, double scaleX, double scaleY, Brush color)
+        {
+            if (points == null || points.Count < 2) return;
+
+            var polyline = new Polyline
+            {
+                Stroke = color,
+                StrokeThickness = 2,
+                StrokeDashArray = new DoubleCollection { 2, 4 },
+                IsHitTestVisible = false
+            };
+
+            var pc = new PointCollection();
+            int step = 1; // use all points; dashed stroke will create dotted look
+            for (int i = 0; i < points.Count; i += step)
+            {
+                double x = points[i].X * scaleX;
+                double y = points[i].Y * scaleY;
+                pc.Add(new Point(x, y));
+            }
+            polyline.Points = pc;
+            canvas.Children.Add(polyline);
         }
 
         private void DrawUI(Canvas canvas, B5_Shellshock_Field field, double canvasWidth, double canvasHeight)
         {
-            // Draw tank 1 info (left side)
-            DrawTankInfo(canvas, field.Tank1, 1, 10, 10);
+            // Draw tank 1 info (left edge)
+            DrawTankInfo(canvas, field.Tank1, 1, 10, 10, false);
 
-            // Draw tank 2 info (right side)
-            DrawTankInfo(canvas, field.Tank2, 2, canvasWidth - 150, 10);
+            // Draw tank 2 info (right edge) using right alignment
+            DrawTankInfo(canvas, field.Tank2, 2, 10, 10, true);
 
-            // Draw wind indicator (center top)
-            DrawWindIndicator(canvas, field.Wind, canvasWidth / 2, 10);
+            // Combined wind + movements indicator (center top)
+            DrawWindAndMovesIndicator(canvas, field.Wind, field.MovementsRemaining, field.MaxMovesPerTurn, canvasWidth / 2, 10);
 
-            // Draw game status
-            string gameStatus;
-            Brush statusColor;
-            
-            if (!field.Tank1.IsAlive)
-            {
-                gameStatus = "PLAYER 2 WINS!";
-                statusColor = Brushes.Blue;
-            }
-            else if (!field.Tank2.IsAlive)
-            {
-                gameStatus = "PLAYER 1 WINS!";
-                statusColor = Brushes.Red;
-            }
-            else
-            {
-                gameStatus = "SHELLSHOCK";
-                statusColor = Brushes.White;
-            }
-
-            TextBlock statusText = new TextBlock
-            {
-                Text = gameStatus,
-                FontSize = 20,
-                Foreground = statusColor,
-                FontWeight = FontWeights.Bold,
-                Background = new SolidColorBrush(Color.FromArgb(180, 0, 0, 0)),
-                Padding = new Thickness(10, 5, 10, 5)
-            };
-            Canvas.SetLeft(statusText, canvasWidth / 2 - 80);
-            Canvas.SetTop(statusText, 40);
-            canvas.Children.Add(statusText);
-
-            // Draw movements remaining indicator
-            TextBlock movementsText = new TextBlock
-            {
-                Text = $"Movements: {field.MovementsRemaining}/5",
-                FontSize = 16,
-                Foreground = field.MovementsRemaining > 0 ? Brushes.LightGreen : Brushes.Red,
-                FontWeight = FontWeights.Bold,
-                Background = new SolidColorBrush(Color.FromArgb(180, 0, 0, 0)),
-                Padding = new Thickness(10, 5, 10, 5)
-            };
-            Canvas.SetLeft(movementsText, canvasWidth / 2 - 70);
-            Canvas.SetTop(movementsText, 70);
-            canvas.Children.Add(movementsText);
+            // (Movements now integrated with wind indicator panel)
         }
 
-        private void DrawTankInfo(Canvas canvas, B5_Shellshock_Tank tank, int playerNum, double x, double y)
+        private void DrawOverlay(Canvas canvas, B5_Shellshock_Field field, double canvasWidth, double canvasHeight)
         {
+            if (field.GamePhase == B5_Shellshock_GamePhase.PlayerTurn || field.GamePhase == B5_Shellshock_GamePhase.ProjectileInFlight) return;
+
+            string title;
+            string body;
+            Brush borderBrush = Brushes.Gold;
+            Brush titleBrush = Brushes.Yellow;
+            if (field.GamePhase == B5_Shellshock_GamePhase.Setup)
+            {
+                title = "Shellshock Tanks";
+                body = "Controls:\nA/D: Move\nW/S: Angle\nQ/E: Power\nSpace: Fire / Start\nThe Terrain is Randomly Generated";
+            }
+            else // GameOver
+            {
+                if (!field.Tank1.IsAlive)
+                    title = "Player 2 Wins!";
+                else if (!field.Tank2.IsAlive)
+                    title = "Player 1 Wins!";
+                else
+                    title = "Game Over";
+                body = ""; // No restart info displayed per request
+            }
+
+            double boxW = 320;
+            double boxH = 180;
+            double left = (canvasWidth - boxW) / 2;
+            double top = (canvasHeight - boxH) / 2;
+
+            Rectangle bg = new Rectangle
+            {
+                Width = boxW,
+                Height = boxH,
+                Fill = new SolidColorBrush(Color.FromArgb(190, 20, 20, 25)),
+                Stroke = borderBrush,
+                StrokeThickness = 3,
+                RadiusX = 12,
+                RadiusY = 12
+            };
+            Canvas.SetLeft(bg, left);
+            Canvas.SetTop(bg, top);
+            canvas.Children.Add(bg);
+
+            TextBlock titleText = new TextBlock
+            {
+                Text = title,
+                FontSize = 28,
+                FontWeight = FontWeights.Bold,
+                Foreground = titleBrush,
+                TextAlignment = TextAlignment.Center,
+                Width = boxW
+            };
+            Canvas.SetLeft(titleText, left);
+            Canvas.SetTop(titleText, top + 15);
+            canvas.Children.Add(titleText);
+
+            if (!string.IsNullOrEmpty(body))
+            {
+                TextBlock bodyText = new TextBlock
+                {
+                    Text = body,
+                    FontSize = 14,
+                    Foreground = Brushes.White,
+                    TextAlignment = TextAlignment.Left,
+                    Width = boxW - 30,
+                    TextWrapping = TextWrapping.Wrap,
+                    Margin = new Thickness(0)
+                };
+                Canvas.SetLeft(bodyText, left + 15);
+                Canvas.SetTop(bodyText, top + 65);
+                canvas.Children.Add(bodyText);
+            }
+        }
+
+        private void DrawTankInfo(Canvas canvas, B5_Shellshock_Tank tank, int playerNum, double x, double y, bool alignRight)
+        {
+            // Background panel matching wind/moves panel style
+            double panelW = 130;
+            double panelH = 100;
+            Rectangle panel = new Rectangle
+            {
+                Width = panelW,
+                Height = panelH,
+                Fill = new SolidColorBrush(Color.FromArgb(190, 18, 18, 22)),
+                Stroke = Brushes.White,
+                StrokeThickness = 2,
+                RadiusX = 10,
+                RadiusY = 10
+            };
+            if (alignRight) Canvas.SetRight(panel, x); else Canvas.SetLeft(panel, x);
+            Canvas.SetTop(panel, y);
+            canvas.Children.Add(panel);
+
             // Player label
             TextBlock playerLabel = new TextBlock
             {
@@ -252,52 +381,53 @@ namespace OOPGames
                 Foreground = tank.Color == B5_Shellshock_TankColor.Red ? Brushes.Red : Brushes.Blue,
                 FontWeight = FontWeights.Bold
             };
-            Canvas.SetLeft(playerLabel, x);
-            Canvas.SetTop(playerLabel, y);
+            if (alignRight) Canvas.SetRight(playerLabel, x + 10); else Canvas.SetLeft(playerLabel, x + 10);
+            Canvas.SetTop(playerLabel, y + 8);
             canvas.Children.Add(playerLabel);
 
             // Health bar
-            DrawHealthBar(canvas, tank, x, y + 20);
+            DrawHealthBar(canvas, tank, x + 10, y + 28, alignRight);
 
-            // Angle display
+            // Angle display (inverted for player 2 for display consistency)
+            double displayAngle = playerNum == 2 ? 180 - tank.Angle : tank.Angle;
             TextBlock angleText = new TextBlock
             {
-                Text = $"Angle: {tank.Angle:F0}°",
+                Text = $"Angle: {displayAngle:F0}°",
                 FontSize = 12,
                 Foreground = Brushes.White
             };
-            Canvas.SetLeft(angleText, x);
-            Canvas.SetTop(angleText, y + 40);
+            if (alignRight) Canvas.SetRight(angleText, x + 10); else Canvas.SetLeft(angleText, x + 10);
+            Canvas.SetTop(angleText, y + 48);
             canvas.Children.Add(angleText);
 
             // Power display
-            DrawPowerBar(canvas, tank, x, y + 60);
+            DrawPowerBar(canvas, tank, x + 10, y + 68, alignRight);
         }
 
-        private void DrawHealthBar(Canvas canvas, B5_Shellshock_Tank tank, double x, double y)
+        private void DrawHealthBar(Canvas canvas, B5_Shellshock_Tank tank, double x, double y, bool alignRight)
         {
             // Background bar
             Rectangle healthBg = new Rectangle
             {
-                Width = 100,
+                Width = 110,
                 Height = 15,
                 Fill = Brushes.DarkGray,
                 Stroke = Brushes.Black,
                 StrokeThickness = 1
             };
-            Canvas.SetLeft(healthBg, x);
+            if (alignRight) Canvas.SetRight(healthBg, x); else Canvas.SetLeft(healthBg, x);
             Canvas.SetTop(healthBg, y);
             canvas.Children.Add(healthBg);
 
             // Health bar (filled portion)
-            double healthWidth = (tank.Health / 100.0) * 100;
+            double healthWidth = (tank.Health / 100.0) * 110;
             Rectangle healthBar = new Rectangle
             {
                 Width = healthWidth,
                 Height = 15,
                 Fill = tank.Health > 50 ? Brushes.Green : (tank.Health > 25 ? Brushes.Orange : Brushes.Red)
             };
-            Canvas.SetLeft(healthBar, x);
+            if (alignRight) Canvas.SetRight(healthBar, x); else Canvas.SetLeft(healthBar, x);
             Canvas.SetTop(healthBar, y);
             canvas.Children.Add(healthBar);
 
@@ -309,35 +439,35 @@ namespace OOPGames
                 Foreground = Brushes.White,
                 FontWeight = FontWeights.Bold
             };
-            Canvas.SetLeft(healthText, x + 40);
+            if (alignRight) Canvas.SetRight(healthText, x + 40); else Canvas.SetLeft(healthText, x + 40);
             Canvas.SetTop(healthText, y + 2);
             canvas.Children.Add(healthText);
         }
 
-        private void DrawPowerBar(Canvas canvas, B5_Shellshock_Tank tank, double x, double y)
+        private void DrawPowerBar(Canvas canvas, B5_Shellshock_Tank tank, double x, double y, bool alignRight)
         {
             // Background bar
             Rectangle powerBg = new Rectangle
             {
-                Width = 100,
+                Width = 110,
                 Height = 15,
                 Fill = Brushes.DarkGray,
                 Stroke = Brushes.Black,
                 StrokeThickness = 1
             };
-            Canvas.SetLeft(powerBg, x);
+            if (alignRight) Canvas.SetRight(powerBg, x); else Canvas.SetLeft(powerBg, x);
             Canvas.SetTop(powerBg, y);
             canvas.Children.Add(powerBg);
 
             // Power bar (filled portion)
-            double powerWidth = (tank.Power / 100.0) * 100;
+            double powerWidth = (tank.Power / 100.0) * 110;
             Rectangle powerBar = new Rectangle
             {
                 Width = powerWidth,
                 Height = 15,
                 Fill = Brushes.Yellow
             };
-            Canvas.SetLeft(powerBar, x);
+            if (alignRight) Canvas.SetRight(powerBar, x); else Canvas.SetLeft(powerBar, x);
             Canvas.SetTop(powerBar, y);
             canvas.Children.Add(powerBar);
 
@@ -349,54 +479,97 @@ namespace OOPGames
                 Foreground = Brushes.Black,
                 FontWeight = FontWeights.Bold
             };
-            Canvas.SetLeft(powerText, x + 5);
+            if (alignRight) Canvas.SetRight(powerText, x + 5); else Canvas.SetLeft(powerText, x + 5);
             Canvas.SetTop(powerText, y + 2);
             canvas.Children.Add(powerText);
         }
 
-        private void DrawWindIndicator(Canvas canvas, double wind, double x, double y)
+        private void DrawWindAndMovesIndicator(Canvas canvas, double wind, int movesRemaining, int maxMoves, double centerX, double top)
         {
-            TextBlock windText = new TextBlock
-            {
-                Text = $"Wind: {wind:F1}",
-                FontSize = 14,
-                Foreground = Brushes.White,
-                FontWeight = FontWeights.Bold
-            };
-            Canvas.SetLeft(windText, x - 40);
-            Canvas.SetTop(windText, y);
-            canvas.Children.Add(windText);
+            string windText = $"Wind: {wind:F1}";
+            string movesText = $"Moves: {movesRemaining}/{maxMoves}";
 
-            // Wind arrow
-            double arrowLength = Math.Abs(wind) * 3;
-            double arrowX = wind > 0 ? x + 40 : x - 40 - arrowLength;
+            // Fixed compact panel sizing for neat layout with slimmer borders
+            double panelW = 140;
+            double panelH = 66;
+            double left = centerX - panelW / 2;
 
-            Line windArrow = new Line
+            Rectangle panel = new Rectangle
             {
-                X1 = arrowX,
-                Y1 = y + 7,
-                X2 = arrowX + (wind > 0 ? arrowLength : -arrowLength),
-                Y2 = y + 7,
+                Width = panelW,
+                Height = panelH,
+                Fill = new SolidColorBrush(Color.FromArgb(190, 18, 18, 22)),
                 Stroke = Brushes.White,
-                StrokeThickness = 2
+                StrokeThickness = 2,
+                RadiusX = 10,
+                RadiusY = 10
             };
-            canvas.Children.Add(windArrow);
+            Canvas.SetLeft(panel, left);
+            Canvas.SetTop(panel, top);
+            canvas.Children.Add(panel);
 
-            // Arrow head
+            // Wind label centered with contrast
+            TextBlock windLabel = new TextBlock
+            {
+                Text = windText,
+                FontSize = 16,
+                Foreground = Brushes.Cyan,
+                FontWeight = FontWeights.Bold,
+                Width = panelW,
+                TextAlignment = TextAlignment.Center
+            };
+            Canvas.SetLeft(windLabel, left);
+            Canvas.SetTop(windLabel, top + 6);
+            canvas.Children.Add(windLabel);
+
+            // Arrow placed below label - shows direction only, not magnitude
             if (wind != 0)
             {
-                Polygon arrowHead = new Polygon
+                double arrowLength = 50; // fixed length regardless of wind strength
+                double arrowCenterY = top + 32;
+                
+                // Draw solid arrow from center outward in wind direction
+                double arrowStartX = centerX;
+                double arrowEndX = centerX + (wind > 0 ? arrowLength : -arrowLength);
+
+                Line windArrow = new Line
                 {
-                    Fill = Brushes.White,
+                    X1 = arrowStartX,
+                    Y1 = arrowCenterY,
+                    X2 = arrowEndX,
+                    Y2 = arrowCenterY,
+                    Stroke = Brushes.Orange,
+                    StrokeThickness = 3
+                };
+                canvas.Children.Add(windArrow);
+
+                // Arrowhead
+                Polygon head = new Polygon
+                {
+                    Fill = Brushes.Orange,
                     Points = new PointCollection
                     {
-                        new Point(windArrow.X2, windArrow.Y2),
-                        new Point(windArrow.X2 + (wind > 0 ? -5 : 5), windArrow.Y2 - 3),
-                        new Point(windArrow.X2 + (wind > 0 ? -5 : 5), windArrow.Y2 + 3)
+                        new Point(arrowEndX, arrowCenterY),
+                        new Point(arrowEndX + (wind > 0 ? -9 : 9), arrowCenterY - 5),
+                        new Point(arrowEndX + (wind > 0 ? -9 : 9), arrowCenterY + 5)
                     }
                 };
-                canvas.Children.Add(arrowHead);
+                canvas.Children.Add(head);
             }
+
+            // Movements label centered at bottom
+            TextBlock moveLabel = new TextBlock
+            {
+                Text = movesText,
+                FontSize = 16,
+                Foreground = movesRemaining > 0 ? Brushes.LightGreen : Brushes.Red,
+                FontWeight = FontWeights.Bold,
+                Width = panelW,
+                TextAlignment = TextAlignment.Center
+            };
+            Canvas.SetLeft(moveLabel, left);
+            Canvas.SetTop(moveLabel, top + panelH - 24);
+            canvas.Children.Add(moveLabel);
         }
     }
 }
