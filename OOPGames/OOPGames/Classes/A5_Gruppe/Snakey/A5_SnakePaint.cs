@@ -35,13 +35,17 @@ namespace OOPGames
             
             DrawFood(field, renderContext);
 
-            // Draw score top-right (Player 1 in singleplayer, Player 1 in multiplayer)
-            DrawScorePlayer1(renderContext, field);
-
-            // Draw score top-left for Player 2 (only in multiplayer)
+            // Draw scores based on game mode
             if (field.IsTwoPlayerMode)
             {
-                DrawScorePlayer2(renderContext, field);
+                // Multiplayer: P1 left (red), P2 right (blue)
+                DrawScorePlayer1Multiplayer(renderContext, field);
+                DrawScorePlayer2Multiplayer(renderContext, field);
+            }
+            else
+            {
+                // Singleplayer: Score right
+                DrawScoreSingleplayer(renderContext, field);
             }
 
             if (field.IsCountingDown)
@@ -195,7 +199,7 @@ namespace OOPGames
             context.Canvas.Children.Add(textBlock);
         }
 
-        private void DrawScorePlayer1(RenderContext context, A5_SnakeField field)
+        private void DrawScoreSingleplayer(RenderContext context, A5_SnakeField field)
         {
             try
             {
@@ -237,15 +241,57 @@ namespace OOPGames
             }
         }
 
-        private void DrawScorePlayer2(RenderContext context, A5_SnakeField field)
+        private void DrawScorePlayer1Multiplayer(RenderContext context, A5_SnakeField field)
         {
             try
             {
-                string scoreText = "P2: " + A5_Score.Score2;
+                string scoreText = "P1 Score: " + A5_Score.Score1;
                 double padding = 8;
-                double boxWidth = 140;
+                double boxWidth = 160;
                 double boxHeight = 30;
                 double left = context.OffsetX + padding;
+                double top = context.OffsetY + padding;
+
+                var box = new Rectangle
+                {
+                    Width = boxWidth,
+                    Height = boxHeight,
+                    RadiusX = 6,
+                    RadiusY = 6,
+                    Fill = new SolidColorBrush(Color.FromArgb(160, 200, 0, 0))
+                };
+                Canvas.SetLeft(box, left);
+                Canvas.SetTop(box, top);
+                context.Canvas.Children.Add(box);
+
+                var textBlock = new TextBlock
+                {
+                    Text = scoreText,
+                    FontSize = 16,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = Brushes.White,
+                    Width = boxWidth,
+                    TextAlignment = TextAlignment.Center
+                };
+                Canvas.SetLeft(textBlock, left);
+                Canvas.SetTop(textBlock, top + (boxHeight / 2) - 12);
+                context.Canvas.Children.Add(textBlock);
+            }
+            catch
+            {
+                // ignore drawing errors to avoid breaking the entire paint cycle
+            }
+        }
+
+        private void DrawScorePlayer2Multiplayer(RenderContext context, A5_SnakeField field)
+        {
+            try
+            {
+                string scoreText = "P2 Score: " + A5_Score.Score2;
+                double padding = 8;
+                double boxWidth = 160;
+                double boxHeight = 30;
+                double left = context.OffsetX + (context.FieldWidth * context.Scale) - boxWidth - padding;
                 double top = context.OffsetY + padding;
 
                 var box = new Rectangle
