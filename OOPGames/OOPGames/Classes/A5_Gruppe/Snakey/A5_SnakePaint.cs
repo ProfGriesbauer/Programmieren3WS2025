@@ -35,6 +35,9 @@ namespace OOPGames
             
             DrawFood(field, renderContext);
 
+            // Draw score top-right
+            DrawScore(renderContext, field);
+
             if (field.IsCountingDown)
             {
                 DrawCountdown(field, renderContext);
@@ -184,6 +187,48 @@ namespace OOPGames
             Canvas.SetLeft(textBlock, boxLeft);
             Canvas.SetTop(textBlock, boxTop + (boxHeight / 2) - 22);
             context.Canvas.Children.Add(textBlock);
+        }
+
+        private void DrawScore(RenderContext context, A5_SnakeField field)
+        {
+            try
+            {
+                string scoreText = "Score: " + A5_Score.Value;
+                double padding = 8;
+                double boxWidth = 140;
+                double boxHeight = 30;
+                double left = context.OffsetX + (context.FieldWidth * context.Scale) - boxWidth - padding;
+                double top = context.OffsetY + padding;
+
+                var box = new Rectangle
+                {
+                    Width = boxWidth,
+                    Height = boxHeight,
+                    RadiusX = 6,
+                    RadiusY = 6,
+                    Fill = new SolidColorBrush(Color.FromArgb(160, 0, 0, 0))
+                };
+                Canvas.SetLeft(box, left);
+                Canvas.SetTop(box, top);
+                context.Canvas.Children.Add(box);
+
+                var textBlock = new TextBlock
+                {
+                    Text = scoreText,
+                    FontSize = 16,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = Brushes.White,
+                    Width = boxWidth,
+                    TextAlignment = TextAlignment.Center
+                };
+                Canvas.SetLeft(textBlock, left);
+                Canvas.SetTop(textBlock, top + (boxHeight / 2) - 12);
+                context.Canvas.Children.Add(textBlock);
+            }
+            catch
+            {
+                // ignore drawing errors to avoid breaking the entire paint cycle
+            }
         }
 
         public void TickPaintGameField(Canvas canvas, IGameField currentField)

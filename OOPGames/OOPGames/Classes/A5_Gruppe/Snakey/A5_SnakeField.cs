@@ -65,6 +65,8 @@ namespace OOPGames
 
         private void InitializeGame()
         {
+            // Reset score when game initializes
+            A5_Score.Reset();
             double startX = _config.FieldWidth / 2.0 - 16;
             double startY = _config.FieldHeight / 2.0 - 16;
 
@@ -142,6 +144,8 @@ namespace OOPGames
             if (_snake1.IsAlive && _collisionDetector.IsFoodEaten(_snake1.Head, _foodManager.CurrentFood))
             {
                 _snake1.Grow();
+                // increase score when snake eats food
+                A5_Score.Add(1);
                 _foodManager.SpawnFood();
             }
             
@@ -149,6 +153,8 @@ namespace OOPGames
                 _collisionDetector.IsFoodEaten(_snake2.Head, _foodManager.CurrentFood))
             {
                 _snake2.Grow();
+                // increase score when snake2 eats food
+                A5_Score.Add(1);
                 _foodManager.SpawnFood();
             }
         }
