@@ -9,6 +9,10 @@ namespace OOPGames
     public class A4_ShellStrike_Painter : IPaintGame, IPaintGame2
     {
         public string Name => "A4 ShellStrikeLegends Painter";
+        // Cache terrain path to avoid recreating thousands of shapes every frame
+        private Path _cachedTerrainPath;
+        private int _cachedW;
+        private int _cachedH;
 
         public void PaintGameField(Canvas canvas, IGameField currentField)
         {
@@ -37,15 +41,30 @@ namespace OOPGames
                     field.Terrain.Generate(wi, hi);
                 }
 
-                // Draw terrain as vertical 1px columns (pixel-by-pixel)
-                for (int x = 0; x < field.Terrain.Heights.Length; x++)
+                // Rebuild cached terrain path only if size changed or no cache
+                if (_cachedTerrainPath == null || _cachedW != wi || _cachedH != hi)
                 {
-                    int yTop = field.Terrain.Heights[x];
-                    var col = new Rectangle { Width = 1, Height = Math.Max(0, hi - yTop), Fill = terrainBrush };
-                    Canvas.SetLeft(col, x);
-                    Canvas.SetTop(col, yTop);
-                    canvas.Children.Add(col);
+                    _cachedW = wi;
+                    _cachedH = hi;
+                    var geom = new StreamGeometry();
+                    using (var ctx = geom.Open())
+                    {
+                        // Start bottom-left
+                        ctx.BeginFigure(new Point(0, hi), isFilled: true, isClosed: true);
+                        // Go up to first column top
+                        ctx.LineTo(new Point(0, field.Terrain.Heights[0]), true, false);
+                        // Trace terrain silhouette
+                        for (int x = 1; x < field.Terrain.Heights.Length; x++)
+                        {
+                            ctx.LineTo(new Point(x, field.Terrain.Heights[x]), true, false);
+                        }
+                        // Down to bottom-right
+                        ctx.LineTo(new Point(wi - 1, hi), true, false);
+                    }
+                    geom.Freeze();
+                    _cachedTerrainPath = new Path { Data = geom, Fill = terrainBrush, StrokeThickness = 0 };
                 }
+                canvas.Children.Add(_cachedTerrainPath);
 
                 // Draw tanks aligned to terrain
                 if (field.Tank1 != null)
