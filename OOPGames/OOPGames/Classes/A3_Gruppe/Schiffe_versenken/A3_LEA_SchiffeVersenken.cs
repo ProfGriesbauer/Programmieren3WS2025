@@ -409,15 +409,11 @@ namespace OOPGames
             for (int x = 0; x <= f1.Width; x++) canvas.Children.Add(new Line { X1 = topBaseX + x * smallCell, Y1 = topBaseY, X2 = topBaseX + x * smallCell, Y2 = topBaseY + f1.Height * smallCell, Stroke = Brushes.Black, StrokeThickness = 1 });
             for (int y = 0; y <= f1.Height; y++) canvas.Children.Add(new Line { X1 = topBaseX, Y1 = topBaseY + y * smallCell, X2 = topBaseX + f1.Width * smallCell, Y2 = topBaseY + y * smallCell, Stroke = Brushes.Black, StrokeThickness = 1 });
             var title1 = new TextBlock { Text = "Player 1 Field", FontWeight = System.Windows.FontWeights.Bold }; Canvas.SetLeft(title1, topBaseX); Canvas.SetTop(title1, topBaseY - 18); canvas.Children.Add(title1);
-<<<<<<< HEAD
-            foreach (var ship in rules.Ships) { if (ship.X > 0 && ship.Y > 0) DrawWarship(canvas, ship, topBaseX, topBaseY, smallCell, ship.IsHorizontal); }
-=======
             // draw occupied cells only if ships are visible in Phase 3
             if (rules.ShowShipsPhase3)
             {
                 foreach (var cell in f1.GetOccupiedCells()) { var rect = new Rectangle { Width = smallCell - 1, Height = smallCell - 1, Fill = Brushes.Gray, Stroke = Brushes.Black, StrokeThickness = 1 }; Canvas.SetLeft(rect, topBaseX + cell.x * smallCell + 1); Canvas.SetTop(rect, topBaseY + cell.y * smallCell + 1); canvas.Children.Add(rect); }
             }
->>>>>>> 8de51f9345169b7f044c412c15f4bc266172ab09
             // draw hits on player1 ships
             foreach (var s in rules.Ships)
                 for (int i = 0; i < s.Size; i++)
@@ -468,14 +464,10 @@ namespace OOPGames
             for (int x = 0; x <= f2.Width; x++) canvas.Children.Add(new Line { X1 = bottomBaseX + x * smallCell, Y1 = bottomBaseY, X2 = bottomBaseX + x * smallCell, Y2 = bottomBaseY + f2.Height * smallCell, Stroke = Brushes.Black, StrokeThickness = 1 });
             for (int y = 0; y <= f2.Height; y++) canvas.Children.Add(new Line { X1 = bottomBaseX, Y1 = bottomBaseY + y * smallCell, X2 = bottomBaseX + f2.Width * smallCell, Y2 = bottomBaseY + y * smallCell, Stroke = Brushes.Black, StrokeThickness = 1 });
             var title2 = new TextBlock { Text = "Player 2 Field", FontWeight = System.Windows.FontWeights.Bold }; Canvas.SetLeft(title2, bottomBaseX); Canvas.SetTop(title2, bottomBaseY - 18); canvas.Children.Add(title2);
-<<<<<<< HEAD
-            foreach (var ship in rules.Ships2) { if (ship.X > 0 && ship.Y > 0) DrawWarship(canvas, ship, bottomBaseX, bottomBaseY, smallCell, ship.IsHorizontal); }
-=======
             if (rules.ShowShipsPhase3)
             {
                 foreach (var cell in f2.GetOccupiedCells()) { var rect = new Rectangle { Width = smallCell - 1, Height = smallCell - 1, Fill = Brushes.Gray, Stroke = Brushes.Black, StrokeThickness = 1 }; Canvas.SetLeft(rect, bottomBaseX + cell.x * smallCell + 1); Canvas.SetTop(rect, bottomBaseY + cell.y * smallCell + 1); canvas.Children.Add(rect); }
             }
->>>>>>> 8de51f9345169b7f044c412c15f4bc266172ab09
             // draw hits on player2 ships
             foreach (var s in rules.Ships2)
                 for (int i = 0; i < s.Size; i++)
