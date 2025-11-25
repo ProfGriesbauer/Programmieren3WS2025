@@ -73,6 +73,7 @@ namespace OOPGames
             // A4 ShellStrikeLegends registration (painter, rules, and computer player)
             OOPGamesManager.Singleton.RegisterPainter(new A4_ShellStrike_Painter());
             OOPGamesManager.Singleton.RegisterRules(new A4_ShellStrike_Rules());
+            OOPGamesManager.Singleton.RegisterPlayer(new A4_ShellStrike_HumanPlayer());
             OOPGamesManager.Singleton.RegisterPlayer(new A4_ShellStrike_ComputerPlayer());
 
             //A2 Painters
@@ -163,7 +164,8 @@ namespace OOPGames
             RulesList.ItemsSource = OOPGamesManager.Singleton.Rules;
             
             _PaintTimer = new System.Windows.Threading.DispatcherTimer();
-            _PaintTimer.Interval = new TimeSpan(0, 0, 0, 0, 40);
+            // ~60 FPS (16ms). For smoother animation of ShellStrike projectiles & movement
+            _PaintTimer.Interval = new TimeSpan(0, 0, 0, 0, 16);
             _PaintTimer.Tick += _PaintTimer_Tick; 
             _PaintTimer.Start();
         }

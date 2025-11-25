@@ -532,7 +532,7 @@ namespace OOPGames
                 return field.Cells[0, 2] == ai ? 10 : -10;
             }
 
-            return 0;
+            return 0; // Noch keiner gewonnen
         }
 
         private bool HasEmptyCell(A2_TicTacToeField field)
