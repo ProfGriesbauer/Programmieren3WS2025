@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Controls;
@@ -2062,7 +2063,7 @@ namespace OOPGames
                     var activePlayer = rules.CurrentSetupPlayer;
                     var shipsList = activePlayer == 1 ? rules.Ships : rules.Ships2;
 
-                    // Start/Next button region
+                    // Start/Next button region - PRÜFE ZUERST
                     bool canProceed = (rules.Phase == 1 && rules.AllShipsPlaced1) || (rules.Phase == 2 && rules.AllShipsPlaced2);
                     if (canProceed)
                     {
@@ -2070,7 +2071,9 @@ namespace OOPGames
                         double buttonY = shipPreviewY - 5;
                         double buttonWidth = 120;
                         double buttonHeight = 40;
-                        if (click.XClickPos >= buttonX && click.XClickPos <= buttonX + buttonWidth && click.YClickPos >= buttonY && click.YClickPos <= buttonY + buttonHeight)
+                        // Großzügige Toleranz für Button
+                        if (click.XClickPos >= buttonX - 5 && click.XClickPos <= buttonX + buttonWidth + 5 && 
+                            click.YClickPos >= buttonY - 5 && click.YClickPos <= buttonY + buttonHeight + 5)
                         {
                             // advance phase
                             if (rules.Phase == 1) rules.Phase = 2;
@@ -2080,35 +2083,52 @@ namespace OOPGames
                     }
 
                     // Click on selection bar: Manuelles Auswählen eines Schiffs
-                    if (click.YClickPos > shipPreviewY - 5 && click.YClickPos < shipPreviewY + 30)
+                    // Nur wenn Klick eindeutig im Schiffsleisten-Bereich ist
+                    if (click.YClickPos >= shipPreviewY - 10 && click.YClickPos <= shipPreviewY + 40)
                     {
                         double shipPreviewX = baseOffset;
-                        int shipClicked = (int)((click.XClickPos - shipPreviewX) / shipStep);
-                        if (shipClicked >= 0 && shipClicked < shipsList.Count)
+                        double clickOffsetX = click.XClickPos - shipPreviewX;
+                        
+                        // Prüfe ob Klick im horizontalen Bereich der Schiffsleiste ist
+                        if (clickOffsetX >= 0 && clickOffsetX < shipsList.Count * shipStep)
                         {
-                            var ship = shipsList[shipClicked];
-                            // Nur unplatzierte Schiffe können ausgewählt werden
-                            if (ship.X < 0 && ship.Y < 0)
+                            // Berechne welches Schiff angeklickt wurde
+                            int shipClicked = (int)(clickOffsetX / shipStep);
+                            
+                            if (shipClicked >= 0 && shipClicked < shipsList.Count)
                             {
-                                rules.ManuallySelectedShip = ship;
+                                var ship = shipsList[shipClicked];
+                                // Nur unplatzierte Schiffe können ausgewählt werden
+                                if (ship.X < 0 && ship.Y < 0)
+                                {
+                                    rules.ManuallySelectedShip = ship;
+                                    return null; // Schiff wurde ausgewählt, keine weitere Aktion
+                                }
                             }
                         }
-                        return null;
                     }
 
                     // Click on field to place: allow placement for the active setup player
-                    int gridX = (int)((click.XClickPos - baseOffset) / cellSize);
-                    int gridY = (int)((click.YClickPos - baseOffset) / cellSize);
-                    if (rules.Phase == 1 || rules.Phase == 2)
+                    // Prüfe ob Klick im Spielfeld-Bereich ist (ohne oberen Rand zu beschneiden)
+                    double fieldRight = baseOffset + field.Width * cellSize;
+                    double fieldBottom = baseOffset + field.Height * cellSize;
+                    
+                    if (click.XClickPos >= baseOffset && click.XClickPos <= fieldRight &&
+                        click.YClickPos >= baseOffset && click.YClickPos <= fieldBottom)
                     {
-                        var targetField = activePlayer == 1 ? rules.SchiffeField : rules.SchiffeField2;
-                        if (targetField.IsValidPosition(gridX, gridY))
+                        int gridX = (int)((click.XClickPos - baseOffset) / cellSize);
+                        int gridY = (int)((click.YClickPos - baseOffset) / cellSize);
+                        
+                        if (rules.Phase == 1 || rules.Phase == 2)
                         {
-                            // Return a move that targets the active setup player (player who should receive the placement)
-                            return new A3_LEA_SchiffeMove(gridX, gridY, activePlayer);
+                            var targetField = activePlayer == 1 ? rules.SchiffeField : rules.SchiffeField2;
+                            if (targetField.IsValidPosition(gridX, gridY))
+                            {
+                                // Return a move that targets the active setup player (player who should receive the placement)
+                                return new A3_LEA_SchiffeMove(gridX, gridY, activePlayer);
+                            }
                         }
                     }
-                    return null;
                 }
 
                 // Playing phase: clicks are shots on opponent's field (fields are stacked vertically)
@@ -2118,21 +2138,23 @@ namespace OOPGames
                     double topBaseY = 20;
                     double bottomBaseY = 20 + field.Height * smallCell + 40;
                     
-                    // Button für Player 1 Schiffe
+                    // Button für Player 1 Schiffe (mit 10px Toleranz)
                     double btn1X = baseOffset + field.Width * smallCell + 20;
                     double btn1Y = topBaseY;
                     double btnW = 120;
                     double btnH = 28;
-                    if (click.XClickPos >= btn1X && click.XClickPos <= btn1X + btnW && click.YClickPos >= btn1Y && click.YClickPos <= btn1Y + btnH)
+                    if (click.XClickPos >= btn1X - 10 && click.XClickPos <= btn1X + btnW + 10 && 
+                        click.YClickPos >= btn1Y - 10 && click.YClickPos <= btn1Y + btnH + 10)
                     {
                         rules.ShowShipsPlayer1 = !rules.ShowShipsPlayer1;
                         return null;
                     }
                     
-                    // Button für Player 2 Schiffe
+                    // Button für Player 2 Schiffe (mit 10px Toleranz)
                     double btn2X = baseOffset + field.Width * smallCell + 20;
                     double btn2Y = bottomBaseY;
-                    if (click.XClickPos >= btn2X && click.XClickPos <= btn2X + btnW && click.YClickPos >= btn2Y && click.YClickPos <= btn2Y + btnH)
+                    if (click.XClickPos >= btn2X - 10 && click.XClickPos <= btn2X + btnW + 10 && 
+                        click.YClickPos >= btn2Y - 10 && click.YClickPos <= btn2Y + btnH + 10)
                     {
                         rules.ShowShipsPlayer2 = !rules.ShowShipsPlayer2;
                         return null;
@@ -2140,7 +2162,11 @@ namespace OOPGames
                     // Player 1 shoots on bottom (player2 field), Player2 shoots on top (player1 field)
                     if (_playerNumber == 1)
                     {
-                        if (click.YClickPos >= bottomBaseY && click.YClickPos < bottomBaseY + field.Height * smallCell)
+                        double fieldRight = baseOffset + field.Width * smallCell;
+                        double fieldBottom = bottomBaseY + field.Height * smallCell;
+                        
+                        if (click.XClickPos >= baseOffset && click.XClickPos <= fieldRight &&
+                            click.YClickPos >= bottomBaseY && click.YClickPos <= fieldBottom)
                         {
                             int gx = (int)((click.XClickPos - baseOffset) / smallCell);
                             int gy = (int)((click.YClickPos - bottomBaseY) / smallCell);
@@ -2154,7 +2180,11 @@ namespace OOPGames
                     }
                     else // player 2
                     {
-                        if (click.YClickPos >= topBaseY && click.YClickPos < topBaseY + field.Height * smallCell)
+                        double fieldRight = baseOffset + field.Width * smallCell;
+                        double fieldTop = topBaseY + field.Height * smallCell;
+                        
+                        if (click.XClickPos >= baseOffset && click.XClickPos <= fieldRight &&
+                            click.YClickPos >= topBaseY && click.YClickPos <= fieldTop)
                         {
                             int gx = (int)((click.XClickPos - baseOffset) / smallCell);
                             int gy = (int)((click.YClickPos - topBaseY) / smallCell);
@@ -2165,7 +2195,6 @@ namespace OOPGames
                             }
                         }
                     }
-                    return null;
                 }
             }
             else if (selection is IKeySelection keySelection)
