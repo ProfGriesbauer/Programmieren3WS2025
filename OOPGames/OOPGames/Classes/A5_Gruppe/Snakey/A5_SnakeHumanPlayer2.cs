@@ -2,10 +2,13 @@ using System.Windows.Input;
 
 namespace OOPGames
 {
-    public class A5_SnakeHumanPlayer : IHumanGamePlayer
+    /// <summary>
+    /// Zweiter Human Player für Snake - nutzt Pfeiltasten statt WASD
+    /// </summary>
+    public class A5_SnakeHumanPlayer2 : IHumanGamePlayer
     {
-        public string Name => "A5  Player 1 Snake";
-        public int PlayerNumber { get; private set; } = 1;
+        public string Name => "A5 Player 2 Snake";
+        public int PlayerNumber { get; private set; } = 2;
 
         public bool CanBeRuledBy(IGameRules rules)
         {
@@ -14,7 +17,7 @@ namespace OOPGames
 
         public IGamePlayer Clone()
         {
-            return new A5_SnakeHumanPlayer { PlayerNumber = this.PlayerNumber };
+            return new A5_SnakeHumanPlayer2 { PlayerNumber = this.PlayerNumber };
         }
 
         public void SetPlayerNumber(int playerNumber)
@@ -28,10 +31,10 @@ namespace OOPGames
 
             string direction = keySelection.Key switch
             {
-                Key.W => "W",
-                Key.S => "S",
-                Key.A => "A",
-                Key.D => "D",
+                Key.Up => "W",
+                Key.Down => "S",
+                Key.Left => "A",
+                Key.Right => "D",
                 Key.Space => "SPACE",
                 _ => null
             };

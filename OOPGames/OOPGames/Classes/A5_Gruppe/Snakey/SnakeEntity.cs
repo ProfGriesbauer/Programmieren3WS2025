@@ -15,18 +15,23 @@ namespace OOPGames
         public IReadOnlyList<PixelPosition> Segments => _segments;
         public PixelPosition Head => _segments.Count > 0 ? _segments[0] : null;
         public PixelPosition Direction { get; private set; }
+        public int PlayerNumber { get; private set; }
+        public bool IsAlive { get; private set; }
 
-        public SnakeEntity(SnakeGameConfig config)
+        public SnakeEntity(SnakeGameConfig config, int playerNumber = 1)
         {
             _config = config;
             _segments = new List<PixelPosition>();
             _movementHistory = new List<PixelPosition>();
+            PlayerNumber = playerNumber;
+            IsAlive = true;
         }
 
         public void Initialize(double startX, double startY)
         {
             _segments.Clear();
             _movementHistory.Clear();
+            IsAlive = true;
 
             var startPos = new PixelPosition(startX, startY);
             startPos.DirX = 1;
@@ -139,6 +144,11 @@ namespace OOPGames
                 }
             }
             return false;
+        }
+
+        public void Kill()
+        {
+            IsAlive = false;
         }
     }
 }
