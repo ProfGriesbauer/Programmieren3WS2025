@@ -54,6 +54,11 @@ namespace OOPGames
         public bool AllShipsPlaced1 => PlacedShipsCount1 == _ships.Count;
         public bool AllShipsPlaced2 => PlacedShipsCount2 == _ships2.Count;
 
+        // Whether ships are visible in Phase 3 (playing). Default: hidden.
+        public bool ShowShipsPhase3 { get; set; } = false;
+        // Whether the last move grants an extra turn (e.g., hit in Battleship)
+        public bool LastMoveGivesExtraTurn { get; private set; } = false;
+
         // Ausgewähltes Schiff (vom aktiven Spieler)
         public A3_LEA_Ship SelectedShip { get; set; } = null;
 
@@ -96,13 +101,41 @@ namespace OOPGames
             {
                 if (x + size > targetField.Width) return false;
                 for (int i = 0; i < size; i++)
-                    if (targetField[x + i, y] != 0) return false;
+                {
+                    int cx = x + i;
+                    int cy = y;
+                    // cell itself must be free
+                    if (targetField[cx, cy] != 0) return false;
+                    // check surrounding cells to enforce at least one water cell between ships
+                    for (int nx = cx - 1; nx <= cx + 1; nx++)
+                        for (int ny = cy - 1; ny <= cy + 1; ny++)
+                        {
+                            if (!targetField.IsValidPosition(nx, ny)) continue;
+                            // skip the cells that are part of this ship (they are being checked separately)
+                            if (nx >= x && nx < x + size && ny == cy) continue;
+                            if (targetField[nx, ny] != 0) return false;
+                        }
+                }
             }
             else
             {
                 if (y + size > targetField.Height) return false;
                 for (int i = 0; i < size; i++)
-                    if (targetField[x, y + i] != 0) return false;
+                {
+                    int cx = x;
+                    int cy = y + i;
+                    // cell itself must be free
+                    if (targetField[cx, cy] != 0) return false;
+                    // check surrounding cells to enforce spacing
+                    for (int nx = cx - 1; nx <= cx + 1; nx++)
+                        for (int ny = cy - 1; ny <= cy + 1; ny++)
+                        {
+                            if (!targetField.IsValidPosition(nx, ny)) continue;
+                            // skip the cells that are part of this ship
+                            if (ny >= y && ny < y + size && nx == cx) continue;
+                            if (targetField[nx, ny] != 0) return false;
+                        }
+                }
             }
             return true;
         }
@@ -207,6 +240,9 @@ namespace OOPGames
         {
             if (move is IA3_LEA_SchiffeMove m)
             {
+                // reset extra-turn flag by default; rules will set it for hits
+                LastMoveGivesExtraTurn = false;
+
                 if (IsSetupPhase && SelectedShip != null)
                 {
                     // Setup-Phase: Ausgewähltes Schiff platzieren
@@ -222,7 +258,9 @@ namespace OOPGames
                 else
                 {
                     // Playing-Phase: Schießen (auf das gegnerische Feld)
-                    ShootAtForPlayer(m.PlayerNumber, m.X, m.Y);
+                    bool hit = ShootAtForPlayer(m.PlayerNumber, m.X, m.Y);
+                    // grant extra turn on hit
+                    LastMoveGivesExtraTurn = hit;
                 }
             }
         }
@@ -384,7 +422,11 @@ namespace OOPGames
             for (int x = 0; x <= f1.Width; x++) canvas.Children.Add(new Line { X1 = topBaseX + x * smallCell, Y1 = topBaseY, X2 = topBaseX + x * smallCell, Y2 = topBaseY + f1.Height * smallCell, Stroke = Brushes.Black, StrokeThickness = 1 });
             for (int y = 0; y <= f1.Height; y++) canvas.Children.Add(new Line { X1 = topBaseX, Y1 = topBaseY + y * smallCell, X2 = topBaseX + f1.Width * smallCell, Y2 = topBaseY + y * smallCell, Stroke = Brushes.Black, StrokeThickness = 1 });
             var title1 = new TextBlock { Text = "Player 1 Field", FontWeight = System.Windows.FontWeights.Bold }; Canvas.SetLeft(title1, topBaseX); Canvas.SetTop(title1, topBaseY - 18); canvas.Children.Add(title1);
-            foreach (var cell in f1.GetOccupiedCells()) { var rect = new Rectangle { Width = smallCell - 1, Height = smallCell - 1, Fill = Brushes.Gray, Stroke = Brushes.Black, StrokeThickness = 1 }; Canvas.SetLeft(rect, topBaseX + cell.x * smallCell + 1); Canvas.SetTop(rect, topBaseY + cell.y * smallCell + 1); canvas.Children.Add(rect); }
+            // draw occupied cells only if ships are visible in Phase 3
+            if (rules.ShowShipsPhase3)
+            {
+                foreach (var cell in f1.GetOccupiedCells()) { var rect = new Rectangle { Width = smallCell - 1, Height = smallCell - 1, Fill = Brushes.Gray, Stroke = Brushes.Black, StrokeThickness = 1 }; Canvas.SetLeft(rect, topBaseX + cell.x * smallCell + 1); Canvas.SetTop(rect, topBaseY + cell.y * smallCell + 1); canvas.Children.Add(rect); }
+            }
             // draw hits on player1 ships
             foreach (var s in rules.Ships)
                 for (int i = 0; i < s.Size; i++)
@@ -410,12 +452,33 @@ namespace OOPGames
                 }
             }
 
+            // draw sunk ships for player1 as faded gray (visible even when ships are hidden)
+            foreach (var s in rules.Ships)
+            {
+                if (s.Hits == s.Size)
+                {
+                    for (int i = 0; i < s.Size; i++)
+                    {
+                        int sx = s.IsHorizontal ? s.X + i : s.X;
+                        int sy = s.IsHorizontal ? s.Y : s.Y + i;
+                        if (!f1.IsValidPosition(sx, sy)) continue;
+                        var faded = new Rectangle { Width = smallCell - 1, Height = smallCell - 1, Fill = new SolidColorBrush(Color.FromArgb(140, 180, 180, 180)), Stroke = Brushes.DarkGray, StrokeThickness = 0.5 };
+                        Canvas.SetLeft(faded, topBaseX + sx * smallCell + 1);
+                        Canvas.SetTop(faded, topBaseY + sy * smallCell + 1);
+                        canvas.Children.Add(faded);
+                    }
+                }
+            }
+
             // draw bottom (Player2)
             var f2 = rules.SchiffeField2;
             for (int x = 0; x <= f2.Width; x++) canvas.Children.Add(new Line { X1 = bottomBaseX + x * smallCell, Y1 = bottomBaseY, X2 = bottomBaseX + x * smallCell, Y2 = bottomBaseY + f2.Height * smallCell, Stroke = Brushes.Black, StrokeThickness = 1 });
             for (int y = 0; y <= f2.Height; y++) canvas.Children.Add(new Line { X1 = bottomBaseX, Y1 = bottomBaseY + y * smallCell, X2 = bottomBaseX + f2.Width * smallCell, Y2 = bottomBaseY + y * smallCell, Stroke = Brushes.Black, StrokeThickness = 1 });
             var title2 = new TextBlock { Text = "Player 2 Field", FontWeight = System.Windows.FontWeights.Bold }; Canvas.SetLeft(title2, bottomBaseX); Canvas.SetTop(title2, bottomBaseY - 18); canvas.Children.Add(title2);
-            foreach (var cell in f2.GetOccupiedCells()) { var rect = new Rectangle { Width = smallCell - 1, Height = smallCell - 1, Fill = Brushes.Gray, Stroke = Brushes.Black, StrokeThickness = 1 }; Canvas.SetLeft(rect, bottomBaseX + cell.x * smallCell + 1); Canvas.SetTop(rect, bottomBaseY + cell.y * smallCell + 1); canvas.Children.Add(rect); }
+            if (rules.ShowShipsPhase3)
+            {
+                foreach (var cell in f2.GetOccupiedCells()) { var rect = new Rectangle { Width = smallCell - 1, Height = smallCell - 1, Fill = Brushes.Gray, Stroke = Brushes.Black, StrokeThickness = 1 }; Canvas.SetLeft(rect, bottomBaseX + cell.x * smallCell + 1); Canvas.SetTop(rect, bottomBaseY + cell.y * smallCell + 1); canvas.Children.Add(rect); }
+            }
             // draw hits on player2 ships
             foreach (var s in rules.Ships2)
                 for (int i = 0; i < s.Size; i++)
@@ -440,10 +503,38 @@ namespace OOPGames
                 }
             }
 
+            // draw sunk ships for player2 as faded gray (visible even when ships are hidden)
+            foreach (var s in rules.Ships2)
+            {
+                if (s.Hits == s.Size)
+                {
+                    for (int i = 0; i < s.Size; i++)
+                    {
+                        int sx = s.IsHorizontal ? s.X + i : s.X;
+                        int sy = s.IsHorizontal ? s.Y : s.Y + i;
+                        if (!f2.IsValidPosition(sx, sy)) continue;
+                        var faded = new Rectangle { Width = smallCell - 1, Height = smallCell - 1, Fill = new SolidColorBrush(Color.FromArgb(140, 180, 180, 180)), Stroke = Brushes.DarkGray, StrokeThickness = 0.5 };
+                        Canvas.SetLeft(faded, bottomBaseX + sx * smallCell + 1);
+                        Canvas.SetTop(faded, bottomBaseY + sy * smallCell + 1);
+                        canvas.Children.Add(faded);
+                    }
+                }
+            }
+
             var info = new TextBlock { Text = "Playing: click opponent field to shoot", FontSize = 14, Foreground = Brushes.Black };
             Canvas.SetLeft(info, OFFSET_X);
             Canvas.SetTop(info, bottomBaseY + f2.Height * smallCell + 10);
             canvas.Children.Add(info);
+
+            // Show/Hide Ships toggle button
+            double shipsButtonX = topBaseX + f1.Width * smallCell + 20;
+            double shipsButtonY = topBaseY;
+            double shipsButtonW = 120;
+            double shipsButtonH = 28;
+            var btnRect = new Rectangle { Width = shipsButtonW, Height = shipsButtonH, Fill = new SolidColorBrush(Color.FromRgb(50, 50, 50)), Stroke = Brushes.Black, StrokeThickness = 1, RadiusX = 4, RadiusY = 4 };
+            Canvas.SetLeft(btnRect, shipsButtonX); Canvas.SetTop(btnRect, shipsButtonY); canvas.Children.Add(btnRect);
+            var btnText = new TextBlock { Text = rules.ShowShipsPhase3 ? "Hide Ships" : "Show Ships", FontSize = 12, Foreground = Brushes.White, FontWeight = System.Windows.FontWeights.Bold };
+            Canvas.SetLeft(btnText, shipsButtonX + 12); Canvas.SetTop(btnText, shipsButtonY + 6); canvas.Children.Add(btnText);
         }
     }
 
@@ -462,8 +553,8 @@ namespace OOPGames
             if (rules != null && rules.IsSetupPhase && rules.SelectedShip != null)
             {
                 var mousePos = e.GetPosition(null);
-                int gridX = (int)((mousePos.X - 20) / 40);
-                int gridY = (int)((mousePos.Y - 20) / 40);
+                int gridX = (int)((mousePos.X - 30) / 40);
+                int gridY = (int)((mousePos.Y - 30) / 40);
                 rules.MouseX = gridX;
                 rules.MouseY = gridY;
             }
@@ -554,6 +645,16 @@ namespace OOPGames
                     double smallCell = 24;
                     double topBaseY = 20;
                     double bottomBaseY = 20 + field.Height * smallCell + 40;
+                    // Toggle button for showing/hiding ships in Phase3
+                    double shipsButtonX = baseOffset + field.Width * smallCell + 20;
+                    double shipsButtonY = topBaseY;
+                    double shipsButtonW = 120;
+                    double shipsButtonH = 28;
+                    if (click.XClickPos >= shipsButtonX && click.XClickPos <= shipsButtonX + shipsButtonW && click.YClickPos >= shipsButtonY && click.YClickPos <= shipsButtonY + shipsButtonH)
+                    {
+                        rules.ShowShipsPhase3 = !rules.ShowShipsPhase3;
+                        return null;
+                    }
                     // Player 1 shoots on bottom (player2 field), Player2 shoots on top (player1 field)
                     if (_playerNumber == 1)
                     {

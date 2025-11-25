@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -271,6 +271,14 @@ namespace OOPGames
                         {
                             keepTurn = manRules.LastMoveGivesExtraTurn;
                         }
+                        else if (_CurrentRules is A3_LEA_SchiffeRules)
+                        {
+                            keepTurn = ((A3_LEA_SchiffeRules)_CurrentRules).LastMoveGivesExtraTurn;
+                        }
+                        else if (_CurrentRules is A3_LEA_SchiffeRules)
+                        {
+                            keepTurn = ((A3_LEA_SchiffeRules)_CurrentRules).LastMoveGivesExtraTurn;
+                        }
 
                         if (!keepTurn && !IsFlappyBird())
                         {
@@ -286,9 +294,7 @@ namespace OOPGames
                             FlappyBirdRules.ActivePlayer = (FlappyBirdRules.ActivePlayer == 1) ? 2 : 1;
                             _CurrentPlayer = (_CurrentPlayer.PlayerNumber == 1) ? _CurrentPlayer2 : _CurrentPlayer1;
                         }
-                        {
-                            _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
-                        }
+                        // removed unconditional extra toggle here so keepTurn is respected
 
                         Status.Text = "Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
                     }
@@ -353,6 +359,10 @@ namespace OOPGames
                         {
                             keepTurn = manRules.LastMoveGivesExtraTurn;
                         }
+                        else if (_CurrentRules is A3_LEA_SchiffeRules)
+                        {
+                            keepTurn = ((A3_LEA_SchiffeRules)_CurrentRules).LastMoveGivesExtraTurn;
+                        }
 
                         if (!keepTurn && !IsFlappyBird())
                         {
@@ -390,7 +400,22 @@ namespace OOPGames
                 {
                     _CurrentRules.DoMove(pm);
                     _CurrentPainter.PaintGameField(PaintCanvas, _CurrentRules.CurrentField);
-                    _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
+
+                    bool keepTurn = false;
+                    if (_CurrentRules is OOPGames.B1_Gruppe.MenschAergereDichNicht.B1_MAN_Rules manRules)
+                    {
+                        keepTurn = manRules.LastMoveGivesExtraTurn;
+                    }
+                    else if (_CurrentRules is A3_LEA_SchiffeRules)
+                    {
+                        keepTurn = ((A3_LEA_SchiffeRules)_CurrentRules).LastMoveGivesExtraTurn;
+                    }
+
+                    if (!keepTurn)
+                    {
+                        _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
+                    }
+
                     Status.Text = "Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
                     DoComputerMoves();
                 }
