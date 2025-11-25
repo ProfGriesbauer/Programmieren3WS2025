@@ -7,7 +7,7 @@ namespace OOPGames
     /// </summary>
     public class A5_SnakeHumanPlayer2 : IHumanGamePlayer
     {
-        public string Name => "A5 Human Player 2 Snake";
+        public string Name => "A5 Player 2 Snake";
         public int PlayerNumber { get; private set; } = 2;
 
         public bool CanBeRuledBy(IGameRules rules)
