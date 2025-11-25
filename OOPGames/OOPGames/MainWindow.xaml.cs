@@ -76,11 +76,11 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterPlayer(new A4_ShellStrike_HumanPlayer());
             OOPGamesManager.Singleton.RegisterPlayer(new A4_ShellStrike_ComputerPlayer());
 
-            //A2 Painters - AUSKOMMENTIERT WEGEN KOMPILIERUNGSFEHLERN (Player/Field Typen fehlen in A2_Game)
-            //OOPGamesManager.Singleton.RegisterPainter(new A2_Painter());
-            //OOPGamesManager.Singleton.RegisterRules(new A2_Rules());
-            //OOPGamesManager.Singleton.RegisterPlayer(new A2_HumanPlayer());
-            //OOPGamesManager.Singleton.RegisterPlayer(new A2_ComputerPlayer());  
+            //A2 Painters - 
+            OOPGamesManager.Singleton.RegisterPainter(new A2_Painter());
+            OOPGamesManager.Singleton.RegisterRules(new A2_Rules());
+            OOPGamesManager.Singleton.RegisterPlayer(new A2_HumanPlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new A2_ComputerPlayer());  
               
 
             //A3_LEA TicTacToe
@@ -98,7 +98,7 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterPainter(new A3_LEA_SchiffePaint());
             OOPGamesManager.Singleton.RegisterRules(new A3_LEA_SchiffeRules());
             OOPGamesManager.Singleton.RegisterPlayer(new A3_LEA_HumanSchiffePlayer());
-            OOPGamesManager.Singleton.RegisterPlayer(new A3_LEA_ComputerSchiffePlayer());
+            //OOPGamesManager.Singleton.RegisterPlayer(new A3_LEA_ComputerSchiffePlayer());
             
             
             // B3 Jarde_Roeder
