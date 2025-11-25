@@ -18,6 +18,11 @@
     <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
   </None>
   </ItemGroup>
+
+  <!-- Exclude A2_Game files with compilation errors (missing Player/Field types) -->
+  <ItemGroup>
+    <Compile Remove="Classes\A2_Gruppe\A2_Game\**\*.cs" />
+  </ItemGroup>
   
   <ItemGroup>
     <Content Include="Assets\Snake\grass_new.png">
