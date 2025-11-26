@@ -349,6 +349,21 @@ namespace OOPGames
                 var targetField = rules.Phase == 1 ? (IA3_LEA_SchiffeField)rules.SchiffeField : (IA3_LEA_SchiffeField)rules.SchiffeField2;
                 var shipsList = rules.Phase == 1 ? rules.Ships : rules.Ships2;
 
+                // Zeichne realistischen Wasser-Hintergrund für Spielfeld
+                var waterRect = new Rectangle 
+                { 
+                    Width = targetField.Width * cellSize, 
+                    Height = targetField.Height * cellSize,
+                    Fill = new LinearGradientBrush(
+                        Color.FromRgb(65, 105, 225),  // Royal Blue
+                        Color.FromRgb(30, 144, 255),  // Dodger Blue
+                        90)
+                };
+                Canvas.SetLeft(waterRect, baseX);
+                Canvas.SetTop(waterRect, baseY);
+                Canvas.SetZIndex(waterRect, 0);
+                canvas.Children.Add(waterRect);
+
                 // draw grid
                 for (int x = 0; x <= targetField.Width; x++)
                 {
@@ -463,6 +478,131 @@ namespace OOPGames
 
             // draw top (Player1)
             var f1 = rules.SchiffeField;
+            
+            // Wasser-Hintergrund für Player 1 Feld
+            var water1 = new Rectangle 
+            { 
+                Width = f1.Width * smallCell, 
+                Height = f1.Height * smallCell,
+                Fill = new LinearGradientBrush(
+                    Color.FromRgb(65, 105, 225),
+                    Color.FromRgb(30, 144, 255),
+                    90)
+            };
+            Canvas.SetLeft(water1, topBaseX);
+            Canvas.SetTop(water1, topBaseY);
+            Canvas.SetZIndex(water1, 0);
+            canvas.Children.Add(water1);
+            
+            // ULTRA-REALISTISCHES WASSER für Player 1
+            double time1 = System.DateTime.Now.TimeOfDay.TotalSeconds;
+            
+            // Tiefenschichten
+            for (int layer = 0; layer < 2; layer++)
+            {
+                var depth = new Rectangle
+                {
+                    Width = f1.Width * smallCell,
+                    Height = f1.Height * smallCell,
+                    Fill = new LinearGradientBrush(
+                        Color.FromArgb((byte)(20 + layer * 10), 0, 0, 80),
+                        Color.FromArgb((byte)(25 + layer * 12), 0, 40, 120),
+                        45 + layer * 45)
+                };
+                Canvas.SetLeft(depth, topBaseX);
+                Canvas.SetTop(depth, topBaseY);
+                Canvas.SetZIndex(depth, 1 + layer);
+                canvas.Children.Add(depth);
+            }
+            
+            // Wellen-Schattierungen (identisch zu Setup)
+            for (int y = 0; y < f1.Height; y++)
+            {
+                for (int x = 0; x < f1.Width; x++)
+                {
+                    double wavePattern = System.Math.Sin(x * 0.8 + y * 0.6 + time1 * 0.3) * 0.5 + 0.5;
+                    if (wavePattern > 0.6)
+                    {
+                        var waveShade = new Rectangle
+                        {
+                            Width = smallCell,
+                            Height = smallCell,
+                            Fill = new SolidColorBrush(Color.FromArgb((byte)(wavePattern * 15), 0, 50, 100))
+                        };
+                        Canvas.SetLeft(waveShade, topBaseX + x * smallCell);
+                        Canvas.SetTop(waveShade, topBaseY + y * smallCell);
+                        Canvas.SetZIndex(waveShade, 5);
+                        canvas.Children.Add(waveShade);
+                    }
+                }
+            }
+            
+            // Kaustik-Lichtmuster (identisch zu Setup)
+            for (int c = 0; c < 100; c++)
+            {
+                double causticPhase = (time1 * 0.3 + c * 0.3) % 3.0;
+                int cx = c % 10;
+                int cy = c / 10;
+                double offsetX = System.Math.Sin(causticPhase * 2) * smallCell * 0.4;
+                double offsetY = System.Math.Cos(causticPhase * 2) * smallCell * 0.4;
+                
+                var causticPath = new System.Windows.Shapes.Path
+                {
+                    Data = new PathGeometry
+                    {
+                        Figures = new PathFigureCollection
+                        {
+                            new PathFigure
+                            {
+                                StartPoint = new System.Windows.Point(cx * smallCell + offsetX, cy * smallCell + offsetY),
+                                Segments = new PathSegmentCollection
+                                {
+                                    new BezierSegment
+                                    {
+                                        Point1 = new System.Windows.Point(cx * smallCell + smallCell * 0.3 + offsetX, cy * smallCell + smallCell * 0.2 + offsetY),
+                                        Point2 = new System.Windows.Point(cx * smallCell + smallCell * 0.6 + offsetX, cy * smallCell + smallCell * 0.5 + offsetY),
+                                        Point3 = new System.Windows.Point(cx * smallCell + smallCell * 0.8 + offsetX, cy * smallCell + smallCell * 0.3 + offsetY)
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    Stroke = new LinearGradientBrush(
+                        Color.FromArgb(50, 255, 255, 200),
+                        Color.FromArgb(10, 200, 255, 255),
+                        0),
+                    StrokeThickness = 1.5
+                };
+                Canvas.SetLeft(causticPath, topBaseX);
+                Canvas.SetTop(causticPath, topBaseY);
+                Canvas.SetZIndex(causticPath, 8);
+                canvas.Children.Add(causticPath);
+            }
+            
+            // Strömungswirbel (identisch zu Setup - 10x10 Raster)
+            for (int w = 0; w < 100; w++)
+            {
+                double whirlPhase = (time1 * 0.15 + w * 0.1) % 4.0;
+                int wx = w % 10;
+                int wy = w / 10;
+                double whirlRadius = smallCell * (0.8 + System.Math.Sin(whirlPhase) * 0.3);
+                
+                var whirl = new Ellipse
+                {
+                    Width = whirlRadius,
+                    Height = whirlRadius,
+                    Stroke = new SolidColorBrush(Color.FromArgb(20, 100, 180, 255)),
+                    StrokeThickness = 1.5,
+                    Fill = new RadialGradientBrush(
+                        Color.FromArgb(0, 0, 0, 0),
+                        Color.FromArgb(10, 50, 120, 200))
+                };
+                Canvas.SetLeft(whirl, topBaseX + wx * smallCell + smallCell * 0.5 - whirlRadius / 2);
+                Canvas.SetTop(whirl, topBaseY + wy * smallCell + smallCell * 0.5 - whirlRadius / 2);
+                Canvas.SetZIndex(whirl, 6);
+                canvas.Children.Add(whirl);
+            }
+            
             for (int x = 0; x <= f1.Width; x++) canvas.Children.Add(new Line { X1 = topBaseX + x * smallCell, Y1 = topBaseY, X2 = topBaseX + x * smallCell, Y2 = topBaseY + f1.Height * smallCell, Stroke = Brushes.Black, StrokeThickness = 1 });
             for (int y = 0; y <= f1.Height; y++) canvas.Children.Add(new Line { X1 = topBaseX, Y1 = topBaseY + y * smallCell, X2 = topBaseX + f1.Width * smallCell, Y2 = topBaseY + y * smallCell, Stroke = Brushes.Black, StrokeThickness = 1 });
             var title1 = new TextBlock { Text = "Spielfeld Spieler 1", FontWeight = System.Windows.FontWeights.Bold }; Canvas.SetLeft(title1, topBaseX); Canvas.SetTop(title1, topBaseY - 18); canvas.Children.Add(title1);
@@ -606,6 +746,131 @@ namespace OOPGames
 
             // draw bottom (Player2)
             var f2 = rules.SchiffeField2;
+            
+            // Wasser-Hintergrund für Player 2 Feld
+            var water2 = new Rectangle 
+            { 
+                Width = f2.Width * smallCell, 
+                Height = f2.Height * smallCell,
+                Fill = new LinearGradientBrush(
+                    Color.FromRgb(65, 105, 225),
+                    Color.FromRgb(30, 144, 255),
+                    90)
+            };
+            Canvas.SetLeft(water2, bottomBaseX);
+            Canvas.SetTop(water2, bottomBaseY);
+            Canvas.SetZIndex(water2, 0);
+            canvas.Children.Add(water2);
+            
+            // ULTRA-REALISTISCHES WASSER für Player 2
+            double time2 = System.DateTime.Now.TimeOfDay.TotalSeconds + 1.5; // Phasenverschiebung
+            
+            // Tiefenschichten
+            for (int layer = 0; layer < 2; layer++)
+            {
+                var depth = new Rectangle
+                {
+                    Width = f2.Width * smallCell,
+                    Height = f2.Height * smallCell,
+                    Fill = new LinearGradientBrush(
+                        Color.FromArgb((byte)(20 + layer * 10), 0, 0, 80),
+                        Color.FromArgb((byte)(25 + layer * 12), 0, 40, 120),
+                        45 + layer * 45)
+                };
+                Canvas.SetLeft(depth, bottomBaseX);
+                Canvas.SetTop(depth, bottomBaseY);
+                Canvas.SetZIndex(depth, 1 + layer);
+                canvas.Children.Add(depth);
+            }
+            
+            // Wellen-Schattierungen (identisch zu Setup)
+            for (int y = 0; y < f2.Height; y++)
+            {
+                for (int x = 0; x < f2.Width; x++)
+                {
+                    double wavePattern = System.Math.Sin(x * 0.8 + y * 0.6 + time2 * 0.3) * 0.5 + 0.5;
+                    if (wavePattern > 0.6)
+                    {
+                        var waveShade = new Rectangle
+                        {
+                            Width = smallCell,
+                            Height = smallCell,
+                            Fill = new SolidColorBrush(Color.FromArgb((byte)(wavePattern * 15), 0, 50, 100))
+                        };
+                        Canvas.SetLeft(waveShade, bottomBaseX + x * smallCell);
+                        Canvas.SetTop(waveShade, bottomBaseY + y * smallCell);
+                        Canvas.SetZIndex(waveShade, 5);
+                        canvas.Children.Add(waveShade);
+                    }
+                }
+            }
+            
+            // Kaustik-Lichtmuster (identisch zu Setup)
+            for (int c = 0; c < 100; c++)
+            {
+                double causticPhase = (time2 * 0.3 + c * 0.3) % 3.0;
+                int cx = c % 10;
+                int cy = c / 10;
+                double offsetX = System.Math.Sin(causticPhase * 2) * smallCell * 0.4;
+                double offsetY = System.Math.Cos(causticPhase * 2) * smallCell * 0.4;
+                
+                var causticPath = new System.Windows.Shapes.Path
+                {
+                    Data = new PathGeometry
+                    {
+                        Figures = new PathFigureCollection
+                        {
+                            new PathFigure
+                            {
+                                StartPoint = new System.Windows.Point(cx * smallCell + offsetX, cy * smallCell + offsetY),
+                                Segments = new PathSegmentCollection
+                                {
+                                    new BezierSegment
+                                    {
+                                        Point1 = new System.Windows.Point(cx * smallCell + smallCell * 0.3 + offsetX, cy * smallCell + smallCell * 0.2 + offsetY),
+                                        Point2 = new System.Windows.Point(cx * smallCell + smallCell * 0.6 + offsetX, cy * smallCell + smallCell * 0.5 + offsetY),
+                                        Point3 = new System.Windows.Point(cx * smallCell + smallCell * 0.8 + offsetX, cy * smallCell + smallCell * 0.3 + offsetY)
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    Stroke = new LinearGradientBrush(
+                        Color.FromArgb(50, 255, 255, 200),
+                        Color.FromArgb(10, 200, 255, 255),
+                        0),
+                    StrokeThickness = 1.5
+                };
+                Canvas.SetLeft(causticPath, bottomBaseX);
+                Canvas.SetTop(causticPath, bottomBaseY);
+                Canvas.SetZIndex(causticPath, 8);
+                canvas.Children.Add(causticPath);
+            }
+            
+            // Strömungswirbel (identisch zu Setup - 10x10 Raster)
+            for (int w = 0; w < 100; w++)
+            {
+                double whirlPhase = (time2 * 0.15 + w * 0.1) % 4.0;
+                int wx = w % 10;
+                int wy = w / 10;
+                double whirlRadius = smallCell * (0.8 + System.Math.Sin(whirlPhase) * 0.3);
+                
+                var whirl = new Ellipse
+                {
+                    Width = whirlRadius,
+                    Height = whirlRadius,
+                    Stroke = new SolidColorBrush(Color.FromArgb(20, 100, 180, 255)),
+                    StrokeThickness = 1.5,
+                    Fill = new RadialGradientBrush(
+                        Color.FromArgb(0, 0, 0, 0),
+                        Color.FromArgb(10, 50, 120, 200))
+                };
+                Canvas.SetLeft(whirl, bottomBaseX + wx * smallCell + smallCell * 0.5 - whirlRadius / 2);
+                Canvas.SetTop(whirl, bottomBaseY + wy * smallCell + smallCell * 0.5 - whirlRadius / 2);
+                Canvas.SetZIndex(whirl, 6);
+                canvas.Children.Add(whirl);
+            }
+            
             for (int x = 0; x <= f2.Width; x++) canvas.Children.Add(new Line { X1 = bottomBaseX + x * smallCell, Y1 = bottomBaseY, X2 = bottomBaseX + x * smallCell, Y2 = bottomBaseY + f2.Height * smallCell, Stroke = Brushes.Black, StrokeThickness = 1 });
             for (int y = 0; y <= f2.Height; y++) canvas.Children.Add(new Line { X1 = bottomBaseX, Y1 = bottomBaseY + y * smallCell, X2 = bottomBaseX + f2.Width * smallCell, Y2 = bottomBaseY + y * smallCell, Stroke = Brushes.Black, StrokeThickness = 1 });
             var title2 = new TextBlock { Text = "Spielfeld Spieler 2", FontWeight = System.Windows.FontWeights.Bold }; Canvas.SetLeft(title2, bottomBaseX); Canvas.SetTop(title2, bottomBaseY - 18); canvas.Children.Add(title2);
