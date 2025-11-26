@@ -2231,5 +2231,102 @@ namespace OOPGames
             Y = y;
             PlayerNumber = playerNumber;
         }
+
+        // Simple computer player for Schiffe versenken (placed here like A3 TicTacToe)
+        public class A3_LEA_ComputerSchiffePlayer : IComputerGamePlayer
+        {
+            private int _playerNumber = 0;
+            private Random _rand = new Random();
+            private Queue<(int x, int y)> _targetQueue = new Queue<(int x, int y)>();
+
+            public string Name => "A3 LEA Computer (Random Hunt)";
+            public int PlayerNumber => _playerNumber;
+
+            public void SetPlayerNumber(int playerNumber) => _playerNumber = playerNumber;
+
+            public bool CanBeRuledBy(IGameRules rules) => rules is A3_LEA_SchiffeRules;
+
+            public IGamePlayer Clone() => new A3_LEA_ComputerSchiffePlayer();
+
+            public IPlayMove GetMove(IGameField field)
+            {
+                var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_SchiffeRules;
+                if (rules == null) return null;
+
+                // SETUP phase: place all ships for this computer when it's its setup turn
+                if (rules.IsSetupPhase)
+                {
+                    if (rules.CurrentSetupPlayer != _playerNumber) return null;
+
+                    var shipsList = rules.CurrentSetupPlayer == 1 ? rules.Ships : rules.Ships2;
+                    var targetField = rules.CurrentSetupPlayer == 1 ? rules.SchiffeField : rules.SchiffeField2;
+
+                    var ship = shipsList.FirstOrDefault(s => s.X == 0 && s.Y == 0);
+                    if (ship == null) return null;
+
+                    // try random placements
+                    ship.IsHorizontal = _rand.Next(2) == 0;
+                    for (int tries = 0; tries < 1000; tries++)
+                    {
+                        int gx = _rand.Next(0, targetField.Width);
+                        int gy = _rand.Next(0, targetField.Height);
+                        if (rules.CanPlaceShip(ship, gx, gy, ship.IsHorizontal))
+                            return new A3_LEA_SchiffeMove(gx, gy, _playerNumber);
+                        if (tries % 8 == 0) ship.IsHorizontal = !ship.IsHorizontal;
+                    }
+
+                    // deterministic fallback
+                    for (int y = 0; y < targetField.Height; y++)
+                        for (int x = 0; x < targetField.Width; x++)
+                            if (rules.CanPlaceShip(ship, x, y, ship.IsHorizontal))
+                                return new A3_LEA_SchiffeMove(x, y, _playerNumber);
+
+                    return null;
+                }
+
+                // PLAYING phase: shooting logic
+                List<A3_LEA_Ship> oppShips = _playerNumber == 1 ? rules.Ships2 : rules.Ships;
+                var oppShots = _playerNumber == 1 ? rules.Shots2 : rules.Shots;
+                var oppField = _playerNumber == 1 ? rules.SchiffeField2 : rules.SchiffeField;
+
+                // Hunt: enqueue neighbors of partially hit ships
+                foreach (var s in oppShips)
+                {
+                    if (s.Hits > 0 && s.Hits < s.Size)
+                    {
+                        for (int i = 0; i < s.Size; i++)
+                        {
+                            if (!s.HitCells[i]) continue;
+                            int sx = s.IsHorizontal ? s.X + i : s.X;
+                            int sy = s.IsHorizontal ? s.Y : s.Y + i;
+                            var neighbors = new (int x, int y)[] { (sx+1,sy),(sx-1,sy),(sx,sy+1),(sx,sy-1) };
+                            foreach (var n in neighbors)
+                            {
+                                if (!oppField.IsValidPosition(n.x, n.y)) continue;
+                                if (oppShots.Contains((n.x, n.y))) continue;
+                                if (!_targetQueue.Contains(n)) _targetQueue.Enqueue(n);
+                            }
+                        }
+                    }
+                }
+
+                while (_targetQueue.Count > 0)
+                {
+                    var t = _targetQueue.Dequeue();
+                    if (!oppShots.Contains((t.x, t.y)) && oppField.IsValidPosition(t.x, t.y))
+                        return new A3_LEA_SchiffeMove(t.x, t.y, _playerNumber);
+                }
+
+                // random shot on an unshot cell
+                var free = new List<(int x, int y)>();
+                for (int y = 0; y < oppField.Height; y++)
+                    for (int x = 0; x < oppField.Width; x++)
+                        if (!oppShots.Contains((x, y))) free.Add((x, y));
+
+                if (free.Count == 0) return null;
+                var pick = free[_rand.Next(free.Count)];
+                return new A3_LEA_SchiffeMove(pick.x, pick.y, _playerNumber);
+            }
+        }
     }
 }
