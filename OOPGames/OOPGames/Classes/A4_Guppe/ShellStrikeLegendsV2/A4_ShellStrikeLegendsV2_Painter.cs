@@ -160,9 +160,9 @@ namespace OOPGames
                 return;
             }
 
-            // Immer mit konfigurierter Größe rendern
-            double w = A4_ShellStrikeLegendsV2_Config.TankBodyWidthPx;
-            double h = A4_ShellStrikeLegendsV2_Config.TankBodyHeightPx;
+            // Größe und Position aus Der Config von Skallierungsfaktor 
+            double w = A4_ShellStrikeLegendsV2_Config.TankBodyWidthPx * A4_ShellStrikeLegendsV2_Config.TankScale;
+			double h = A4_ShellStrikeLegendsV2_Config.TankBodyHeightPx * A4_ShellStrikeLegendsV2_Config.TankScale;
 
             var img = new Image
             {
@@ -192,9 +192,9 @@ namespace OOPGames
 
             var src = LoadImage(tank.BarrelSpritePath);
             if (src == null) return;
-
-            double w = 20;   // Barrel-breite (wir passen später an)
-            double h = 5;   // Barrel-höhe
+			// Größe und Position aus Der Config von Skallierungsfaktor
+			double w = A4_ShellStrikeLegendsV2_Config.BarrelWidthPx * A4_ShellStrikeLegendsV2_Config.TankScale;
+    		double h = A4_ShellStrikeLegendsV2_Config.BarrelHeightPx * A4_ShellStrikeLegendsV2_Config.TankScale;
 
             double angleDeg = (tank.RotationRad + tank.BarrelAngleRad) * 180.0 / Math.PI;
 

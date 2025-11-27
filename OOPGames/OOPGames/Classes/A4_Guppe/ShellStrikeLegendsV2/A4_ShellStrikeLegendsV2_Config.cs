@@ -8,6 +8,9 @@ namespace OOPGames
         // Tank body render size (pixels)
         public const int TankBodyWidthPx = 30;
         public const int TankBodyHeightPx = 15;
+        //Barrel Body render size (pixels)
+        public static double BarrelWidthPx = 20;
+        public static double BarrelHeightPx = 5;
 
         //Tank Spawn Position
         // Tank Startposition (von hier fällt er herunter)
@@ -22,12 +25,22 @@ namespace OOPGames
         public const int TankPivotRightXOffsetPx = 12;   // right wheel ~10px right of center
         public const int TankPivotRightYOffsetPx = 17;   // wheel center ~2px above bottom
 
+        // skalierte Ketten-Pivot-Offsets
+        public static double TankPivotLeftXOffsetScaled  => TankPivotLeftXOffsetPx  * TankScale;
+        public static double TankPivotRightXOffsetScaled => TankPivotRightXOffsetPx * TankScale;
+        public static double TankPivotLeftYOffsetScaled  => TankPivotLeftYOffsetPx  * TankScale;
+        public static double TankPivotRightYOffsetScaled => TankPivotRightYOffsetPx * TankScale;
+
         // Horizontalgeschwindigkeit des Tanks (Pixel pro Move)
         public static double TankDriveSpeedPx = 6.0;
 
         //Position des Barrels auf dem Tank
         public static double BarrelPivotOffsetX = -2;   // relativ zur Tankmitte
-        public static double BarrelPivotOffsetY = 3;   // relativ zur Tankoberkante
+        public static double BarrelPivotOffsetY = 4;   // relativ zur Tankoberkante
+        public static double BarrelPivotOffsetXScaled => BarrelPivotOffsetX * TankScale;//Skallierungsfaktor anwenden
+        public static double BarrelPivotOffsetYScaled => BarrelPivotOffsetY * TankScale;
 
+        // Skallierungsfaktor für den Panzer
+        public static double TankScale = 1.6;
     }
 }

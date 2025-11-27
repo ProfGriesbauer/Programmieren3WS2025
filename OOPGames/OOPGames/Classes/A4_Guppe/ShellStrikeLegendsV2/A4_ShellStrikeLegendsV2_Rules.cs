@@ -40,8 +40,8 @@ namespace OOPGames
             double groundRightY = _field.Terrain.GroundYAt(rightPivotX);
 
             // Oberkante des Tanks, bei der die Pivots genau auf dem Boden liegen würden
-            double topLimitLeft = groundLeftY - A4_ShellStrikeLegendsV2_Config.TankPivotLeftYOffsetPx;
-            double topLimitRight = groundRightY - A4_ShellStrikeLegendsV2_Config.TankPivotRightYOffsetPx;
+            double topLimitLeft  = groundLeftY  - A4_ShellStrikeLegendsV2_Config.TankPivotLeftYOffsetScaled;
+            double topLimitRight = groundRightY - A4_ShellStrikeLegendsV2_Config.TankPivotRightYOffsetScaled;
 
             // strengstes Limit wählen, damit keine Seite in den Boden clippt
             double topLimit = Math.Min(topLimitLeft, topLimitRight);
@@ -54,7 +54,7 @@ namespace OOPGames
                 t.Y = nextY;
                 return;   // keine Drehung während des Falls!
             }
-
+            
             // ----------------------------------------------------------
             // 4) TANK LANDET: Auf Boden setzen + Rotation übernehmen
             // ----------------------------------------------------------
@@ -92,7 +92,7 @@ namespace OOPGames
                 case SSLV2Action.BarrelDown:
                     t.BarrelAngleRad += 0.02;   // ↓
                     break;
-                    
+
                 case SSLV2Action.None:
                 default:
                     // nichts tun

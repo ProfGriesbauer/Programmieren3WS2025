@@ -16,10 +16,12 @@ namespace OOPGames
         public string BarrelSpritePath { get; set; } = "Assets/ShellStrikeLegends/camo-tank-barrel.png";
          // Winkel des Kanonenrohrs in Radiant (relativ zum Tank!)
          //Berechnung der Barrel Rotation
-         public double BarrelPivotX => X + Math.Cos(RotationRad) * A4_ShellStrikeLegendsV2_Config.BarrelPivotOffsetX 
-        - Math.Sin(RotationRad) * A4_ShellStrikeLegendsV2_Config.BarrelPivotOffsetY;
-        public double BarrelPivotY => Y + Math.Sin(RotationRad) * A4_ShellStrikeLegendsV2_Config.BarrelPivotOffsetX 
-        + Math.Cos(RotationRad) * A4_ShellStrikeLegendsV2_Config.BarrelPivotOffsetY;
+         public double BarrelPivotX => X + Math.Cos(RotationRad) * A4_ShellStrikeLegendsV2_Config.BarrelPivotOffsetXScaled
+        - Math.Sin(RotationRad) * A4_ShellStrikeLegendsV2_Config.BarrelPivotOffsetYScaled;
+
+        public double BarrelPivotY => Y + Math.Sin(RotationRad) * A4_ShellStrikeLegendsV2_Config.BarrelPivotOffsetXScaled
+        + Math.Cos(RotationRad) * A4_ShellStrikeLegendsV2_Config.BarrelPivotOffsetYScaled;
+
 
         public double BarrelAngleRad { get; set; } = 0;   // 0 = waagrecht rechts
 
@@ -43,8 +45,8 @@ namespace OOPGames
                 return;
 
             // 2. X-Positionen der beiden Pivots relativ zur Tank-Mitte
-            double xL = X + A4_ShellStrikeLegendsV2_Config.TankPivotLeftXOffsetPx;
-            double xR = X + A4_ShellStrikeLegendsV2_Config.TankPivotRightXOffsetPx;
+            double xL = X + A4_ShellStrikeLegendsV2_Config.TankPivotLeftXOffsetScaled;
+            double xR = X + A4_ShellStrikeLegendsV2_Config.TankPivotRightXOffsetScaled;
 
             // 3. Bodenhöhe unter jedem Pivot
             double yL = terrain.GroundYAt(xL);
@@ -67,8 +69,8 @@ namespace OOPGames
 
             // 7. Tank so hoch schieben, dass die Ketten aufliegen
             double avgPivotYOffset =
-                (A4_ShellStrikeLegendsV2_Config.TankPivotLeftYOffsetPx +
-                 A4_ShellStrikeLegendsV2_Config.TankPivotRightYOffsetPx) * 0.5;
+                (A4_ShellStrikeLegendsV2_Config.TankPivotLeftYOffsetScaled +
+                A4_ShellStrikeLegendsV2_Config.TankPivotRightYOffsetScaled) * 0.5;
 
             X = midX;
             Y = midPivotY - avgPivotYOffset;   // Tank-Top-Y = mittlere Pivot-Höhe minus Offsets
