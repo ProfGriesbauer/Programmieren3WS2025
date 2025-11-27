@@ -36,6 +36,22 @@ namespace OOPGames{
                 Y = y;
             }
 
+        public int ComputeCaptureRate(Player attacker, Field field)
+        {
+            int rate = attacker.CaptureRate; // konstant, keine weiteren Einflüsse außer Boosts
+
+            // Boost: FasterCapture (in Nachbarschaft)
+            bool hasFastBoost = field.GetNeighbours4(this)
+                .Any(n => n.OwnerID == attacker.Id && n.BoostOnTile == BoostType.FasterCapture);
+            if (hasFastBoost) rate += 10;
+
+            // Boost: AreaJammer (Gegner in Nachbarschaft)
+            bool hasEnemyJammer = field.GetNeighbours4(this)
+                .Any(n => n.OwnerID != -1 && n.OwnerID != attacker.Id && n.BoostOnTile == BoostType.AreaJammer);
+            if (hasEnemyJammer) rate -= 10;
+
+            return System.Math.Max(1, rate);
+        }
 
 
         public bool CanBeCapturedBy(Player player, Field field)
@@ -49,32 +65,7 @@ namespace OOPGames{
         }
 
 
-        public int ComputeCaptureRate(Player attacker, Field field)
-        {
-            int ownedNeighbours = field
-                .GetNeighbours4(this)
-                .Count(n => n.OwnerID == attacker.Id);
-
-            int rate = attacker.CaptureRate +
-                    ownedNeighbours * attacker.AdjacencyBonusPerNeighbour;
-
-            // Boosts/Jammer
-            bool hasFastBoost = field.GetNeighbours4(this)
-                .Any(n => n.OwnerID == attacker.Id &&
-                        n.BoostOnTile == BoostType.FasterCapture);
-
-            if (hasFastBoost) rate += 10;
-
-            bool hasEnemyJammer = field.GetNeighbours4(this)
-                .Any(n => n.OwnerID != -1 &&
-                        n.OwnerID != attacker.Id &&
-                        n.BoostOnTile == BoostType.AreaJammer);
-
-            if (hasEnemyJammer) rate -= 10;
-
-            rate = Math.Max(1, rate - DefenseLevel / 5);
-            return rate;
-        }
+        
 
         public void AdvanceCapture(Player attacker, Field field)
         {

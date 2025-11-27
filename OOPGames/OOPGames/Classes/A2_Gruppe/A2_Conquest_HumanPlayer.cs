@@ -19,30 +19,31 @@ namespace OOPGames
         {
             if (selection == null) return null;
 
-            // SPACE = Pass
+            // Pass per Space
             if (selection is IKeySelection ks && ks.Key == Key.Space)
                 return new A2_ConquestPassMove(PlayerNumber);
 
             if (selection is not IClickSelection cs) return null;
-            if (field is not A2_ConquestGameField gf) return null;
 
+            // Rechtsklick = Pass (optional)
+            if (cs.ChangedButton == 1)
+                return new A2_ConquestPassMove(PlayerNumber);
+
+            // Spielfeld-Coordinates bestimmen
             int x = cs.XClickPos;
             int y = cs.YClickPos;
 
             int col = (x - A2_ConquestPainter.BoardLeft) / A2_ConquestPainter.CellSize;
             int row = (y - A2_ConquestPainter.BoardTop) / A2_ConquestPainter.CellSize;
 
-            // bounds
+            if (field is not A2_ConquestGameField gf) return null;
+
             if (col < 0 || row < 0 || col >= gf.Game.Field.Width || row >= gf.Game.Field.Height)
                 return null;
 
-            // Optional: nur gültige Captures zulassen (sonst null)
-            var tile = gf.Game.Field.GetTile(col, row);
-            var current = gf.Game.CurrentPlayer;
-            if (!tile.CanBeCapturedBy(current, gf.Game.Field)) return null;
-            if (tile.IsBeingContested) return null;
-
+            // **Keine** Capture-Logik mehr hier -> nur Move mit Koordinaten
             return new A2_ConquestMove(PlayerNumber, row, col);
         }
+
     }
 }
