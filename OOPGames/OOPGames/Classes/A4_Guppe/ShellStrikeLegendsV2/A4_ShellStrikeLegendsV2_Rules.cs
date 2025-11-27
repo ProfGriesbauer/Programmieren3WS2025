@@ -24,33 +24,45 @@ namespace OOPGames
 
             var t = _field.Tank1;
 
-            // 1. Aktuelle X-Positionen der beiden Pivots
+            // ----------------------------------------------------------
+            // 1) FALLPHYSIK: Geschwindigkeit erhöht sich durch Gravitation
+            // ----------------------------------------------------------
+            t.FallVelocity += t.FallAccelerationPx;       // z.B. 0.5 px pro Tick^2
+            double nextY = t.Y + t.FallVelocity;
+
+            // ----------------------------------------------------------
+            // 2) Bodenhöhe unter beiden Pivot-Punkten bestimmen
+            // ----------------------------------------------------------
             double leftPivotX = t.X + A4_ShellStrikeLegendsV2_Config.TankPivotLeftXOffsetPx;
             double rightPivotX = t.X + A4_ShellStrikeLegendsV2_Config.TankPivotRightXOffsetPx;
 
-            // 2. Bodenhöhe unter den Pivots
             double groundLeftY = _field.Terrain.GroundYAt(leftPivotX);
             double groundRightY = _field.Terrain.GroundYAt(rightPivotX);
 
-            // 3. Y-Top-Limits, bei denen die Ketten genau aufliegen würden
+            // Oberkante des Tanks, bei der die Pivots genau auf dem Boden liegen würden
             double topLimitLeft = groundLeftY - A4_ShellStrikeLegendsV2_Config.TankPivotLeftYOffsetPx;
             double topLimitRight = groundRightY - A4_ShellStrikeLegendsV2_Config.TankPivotRightYOffsetPx;
 
-            // Strengstes Limit nehmen (damit keine Seite im Boden steckt)
+            // strengstes Limit wählen, damit keine Seite in den Boden clippt
             double topLimit = Math.Min(topLimitLeft, topLimitRight);
 
-            // 4. Ist der Tank noch in der Luft? -> weiterfallen lassen
-            double nextY = t.Y + A4_ShellStrikeLegendsV2_Config.TankFallSpeedPxPerTick;
+            // ----------------------------------------------------------
+            // 3) TANK IST NOCH IN DER LUFT → weiterfallen lassen
+            // ----------------------------------------------------------
             if (nextY < topLimit)
             {
                 t.Y = nextY;
-                return; // noch nicht gelandet, keine Drehung
+                return;   // keine Drehung während des Falls!
             }
 
-            // 5. Tank ist "aufgeschlagen": Y auf Boden klemmen und Terrain-Ausrichtung machen
+            // ----------------------------------------------------------
+            // 4) TANK LANDET: Auf Boden setzen + Rotation übernehmen
+            // ----------------------------------------------------------
             t.Y = topLimit;
-            t.UpdateFromTerrain(_field.Terrain);
+            t.FallVelocity = 0;                    // wichtig: Geschwindigkeit zurücksetzen
+            t.UpdateFromTerrain(_field.Terrain);   // Pivots und Rotation berechnen
         }
+
 
 
         public void DoMove(IPlayMove move)

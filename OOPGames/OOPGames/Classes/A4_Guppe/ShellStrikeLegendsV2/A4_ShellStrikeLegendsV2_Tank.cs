@@ -21,8 +21,10 @@ namespace OOPGames
         public double RightPivotX { get; private set; }
         public double RightPivotY { get; private set; }
 
-        // Align tank orientation and center to current terrain under both pivots
-        // Align tank orientation and center to current terrain under both pivots
+        // Konstanten für Fallgeschwindigkeit und Beschleunigung
+        public double FallVelocity = 0.0;
+        public double FallAccelerationPx = 0.4;  // kannst du tunen (entspricht g)
+
         public void UpdateFromTerrain(A4_ShellStrikeLegendsV2_Terrain terrain)
         {
             // 1. Terrain vorhanden?
