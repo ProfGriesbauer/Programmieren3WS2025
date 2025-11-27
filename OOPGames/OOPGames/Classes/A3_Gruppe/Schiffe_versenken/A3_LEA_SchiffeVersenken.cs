@@ -65,6 +65,9 @@ namespace OOPGames
         // Whether the last move grants an extra turn (e.g., hit in Battleship)
         public bool LastMoveGivesExtraTurn { get; private set; } = false;
 
+        // Track current player during Phase 3 (playing phase)
+        public int CurrentPlayerNumber { get; set; } = 1;
+
         // Maus-Tracking (wie IQ-Puzzle)
         public int MouseX { get; set; } = -1;
         public int MouseY { get; set; } = -1;
@@ -302,6 +305,17 @@ namespace OOPGames
                     bool hit = ShootAtForPlayer(m.PlayerNumber, m.X, m.Y);
                     // grant extra turn on hit
                     LastMoveGivesExtraTurn = hit;
+                    
+                    // Wechsle sofort zum anderen Spieler bei Fehlschuss
+                    if (!hit)
+                    {
+                        CurrentPlayerNumber = m.PlayerNumber == 1 ? 2 : 1;
+                    }
+                    else
+                    {
+                        // Bei Treffer bleibt der aktuelle Spieler
+                        CurrentPlayerNumber = m.PlayerNumber;
+                    }
                 }
             }
         }
@@ -335,7 +349,7 @@ namespace OOPGames
         public override void PaintSchiffeField(Canvas canvas, IA3_LEA_SchiffeField field, List<A3_LEA_Ship> ships)
         {
             canvas.Children.Clear();
-            canvas.Background = new SolidColorBrush(Colors.LightBlue);
+            canvas.Background = new SolidColorBrush(Colors.White);
             var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_SchiffeRules;
             if (rules == null) return;
 
@@ -606,6 +620,22 @@ namespace OOPGames
             for (int x = 0; x <= f1.Width; x++) canvas.Children.Add(new Line { X1 = topBaseX + x * smallCell, Y1 = topBaseY, X2 = topBaseX + x * smallCell, Y2 = topBaseY + f1.Height * smallCell, Stroke = Brushes.Black, StrokeThickness = 1 });
             for (int y = 0; y <= f1.Height; y++) canvas.Children.Add(new Line { X1 = topBaseX, Y1 = topBaseY + y * smallCell, X2 = topBaseX + f1.Width * smallCell, Y2 = topBaseY + y * smallCell, Stroke = Brushes.Black, StrokeThickness = 1 });
             var title1 = new TextBlock { Text = "Spielfeld Spieler 1", FontWeight = System.Windows.FontWeights.Bold }; Canvas.SetLeft(title1, topBaseX); Canvas.SetTop(title1, topBaseY - 18); canvas.Children.Add(title1);
+            
+            // Orange border around Player 1 field if it's their turn to shoot (Player 2 shoots at Player 1's field)
+            if (rules.CurrentPlayerNumber == 2)
+            {
+                var orangeBorder1 = new Rectangle 
+                { 
+                    Width = f1.Width * smallCell, 
+                    Height = f1.Height * smallCell,
+                    Stroke = Brushes.Orange,
+                    StrokeThickness = 4
+                };
+                Canvas.SetLeft(orangeBorder1, topBaseX);
+                Canvas.SetTop(orangeBorder1, topBaseY);
+                Canvas.SetZIndex(orangeBorder1, 101);
+                canvas.Children.Add(orangeBorder1);
+            }
             // draw ships as warship models if visible for Player 1
             if (rules.ShowShipsPlayer1)
             {
@@ -874,6 +904,77 @@ namespace OOPGames
             for (int x = 0; x <= f2.Width; x++) canvas.Children.Add(new Line { X1 = bottomBaseX + x * smallCell, Y1 = bottomBaseY, X2 = bottomBaseX + x * smallCell, Y2 = bottomBaseY + f2.Height * smallCell, Stroke = Brushes.Black, StrokeThickness = 1 });
             for (int y = 0; y <= f2.Height; y++) canvas.Children.Add(new Line { X1 = bottomBaseX, Y1 = bottomBaseY + y * smallCell, X2 = bottomBaseX + f2.Width * smallCell, Y2 = bottomBaseY + y * smallCell, Stroke = Brushes.Black, StrokeThickness = 1 });
             var title2 = new TextBlock { Text = "Spielfeld Spieler 2", FontWeight = System.Windows.FontWeights.Bold }; Canvas.SetLeft(title2, bottomBaseX); Canvas.SetTop(title2, bottomBaseY - 18); canvas.Children.Add(title2);
+            
+            // Orange border around Player 2 field if it's their turn to shoot (Player 1 shoots at Player 2's field)
+            if (rules.CurrentPlayerNumber == 1)
+            {
+                var orangeBorder2 = new Rectangle 
+                { 
+                    Width = f2.Width * smallCell, 
+                    Height = f2.Height * smallCell,
+                    Stroke = Brushes.Orange,
+                    StrokeThickness = 4
+                };
+                Canvas.SetLeft(orangeBorder2, bottomBaseX);
+                Canvas.SetTop(orangeBorder2, bottomBaseY);
+                Canvas.SetZIndex(orangeBorder2, 101);
+                canvas.Children.Add(orangeBorder2);
+            }
+            
+            // Player indicator boxes on the right side
+            double indicatorX = bottomBaseX + f2.Width * smallCell + 30;
+            double indicatorY1 = topBaseY + 50;
+            double indicatorY2 = topBaseY + 120;
+            double indicatorWidth = 120;
+            double indicatorHeight = 50;
+            
+            // Player 1 indicator box
+            var player1Box = new Rectangle
+            {
+                Width = indicatorWidth,
+                Height = indicatorHeight,
+                Fill = Brushes.LightGray,
+                Stroke = rules.CurrentPlayerNumber == 1 ? Brushes.Orange : Brushes.Black,
+                StrokeThickness = rules.CurrentPlayerNumber == 1 ? 4 : 2
+            };
+            Canvas.SetLeft(player1Box, indicatorX);
+            Canvas.SetTop(player1Box, indicatorY1);
+            canvas.Children.Add(player1Box);
+            
+            var player1Text = new TextBlock
+            {
+                Text = "Spieler 1",
+                FontSize = 16,
+                FontWeight = rules.CurrentPlayerNumber == 1 ? System.Windows.FontWeights.Bold : System.Windows.FontWeights.Normal,
+                Foreground = Brushes.Black
+            };
+            Canvas.SetLeft(player1Text, indicatorX + 20);
+            Canvas.SetTop(player1Text, indicatorY1 + 15);
+            canvas.Children.Add(player1Text);
+            
+            // Player 2 indicator box
+            var player2Box = new Rectangle
+            {
+                Width = indicatorWidth,
+                Height = indicatorHeight,
+                Fill = Brushes.LightGray,
+                Stroke = rules.CurrentPlayerNumber == 2 ? Brushes.Orange : Brushes.Black,
+                StrokeThickness = rules.CurrentPlayerNumber == 2 ? 4 : 2
+            };
+            Canvas.SetLeft(player2Box, indicatorX);
+            Canvas.SetTop(player2Box, indicatorY2);
+            canvas.Children.Add(player2Box);
+            
+            var player2Text = new TextBlock
+            {
+                Text = "Spieler 2",
+                FontSize = 16,
+                FontWeight = rules.CurrentPlayerNumber == 2 ? System.Windows.FontWeights.Bold : System.Windows.FontWeights.Normal,
+                Foreground = Brushes.Black
+            };
+            Canvas.SetLeft(player2Text, indicatorX + 20);
+            Canvas.SetTop(player2Text, indicatorY2 + 15);
+            canvas.Children.Add(player2Text);
             // draw ships as warship models if visible for Player 2
             if (rules.ShowShipsPlayer2)
             {
