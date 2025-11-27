@@ -32,6 +32,8 @@ namespace OOPGames
         public ImageSource BarrelImage { get; private set; }
         // Sprite geometry meta (pixels in sprite coordinate system)
         public Point HullPivot { get; set; } = new Point(20, 10); // center-bottom approx
+        // Ground contact line (Y pixel from top) to anchor the hull to terrain. If <= 0, painter falls back to HullPivot.Y, then hull bottom.
+        public double HullGroundPivotYPx { get; set; } = 15;
         // Socket finetune (pixels from hull bottom), actual X is centered at runtime
         public double HullSocketYOffsetPx { get; set; } = 20;
         public Point BarrelPivot { get; set; } = new Point(5, 5);  // rotation origin on barrel image
@@ -42,10 +44,18 @@ namespace OOPGames
         public double HullScale { get; set; } = 0.0;  // per-sprite override
         public double BarrelScale { get; set; } = 0.0;
 
+        // Crest snapping state (managed by rules): marks that front wheel reached a peak
+        public bool CrestReadyRight { get; set; } = false;
+        public bool CrestReadyLeft { get; set; } = false;
+
+        // Facing direction: +1 = right, -1 = left
+        public int Facing { get; set; } = 1;
+
         public A4_ShellStrike_Tank(int playerNumber, double startX)
         {
             PlayerNumber = playerNumber;
             X = startX;
+            Facing = (playerNumber == 1) ? 1 : -1;
         }
 
         public void EnsureSpritesLoaded()
@@ -98,6 +108,11 @@ namespace OOPGames
             X = Math.Max(minX, Math.Min(maxX, X + delta));
         }
 
+        public void SnapTo(double targetX, double minX, double maxX)
+        {
+            X = Math.Max(minX, Math.Min(maxX, targetX));
+        }
+
         public void AdjustTurret(double deltaDeg)
         {
             TurretAngleDeg = Math.Max(5, Math.Min(85, TurretAngleDeg + deltaDeg));
@@ -107,7 +122,7 @@ namespace OOPGames
         {
             // Fire projectile from the end of the turret
             double rad = TurretAngleDeg * Math.PI / 180.0;
-            double sign = PlayerNumber == 1 ? 1.0 : -1.0;
+            double sign = Facing >= 0 ? 1.0 : -1.0;
             double cx = X + Width / 2.0;            // turret base center x
             double cy = floorY - Height;            // turret base y (top of tank)
             double tipX = cx + TurretLength * Math.Cos(rad) * sign; // turret end x

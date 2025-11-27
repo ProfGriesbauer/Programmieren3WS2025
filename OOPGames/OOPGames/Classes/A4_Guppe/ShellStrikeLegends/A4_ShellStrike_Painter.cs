@@ -38,7 +38,8 @@ namespace OOPGames
                 if (field.Terrain == null || field.Terrain.Heights.Length != wi || field.Terrain.CanvasHeight != hi)
                 {
                     field.Terrain = new A4_ShellStrike_Terrain();
-                    field.Terrain.Generate(wi, hi);
+                    // Use Config-driven seed if defined
+                    field.Terrain.Generate(wi, hi, OOPGames.Classes.A4_Guppe.ShellStrikeLegends.Config.TerrainSeed);
                 }
 
                 // Rebuild cached terrain path only if size changed or no cache
@@ -92,9 +93,7 @@ namespace OOPGames
             double cx = tank.X + tank.Width / 2.0;
             double cy = baseY;
             double rad = tank.TurretAngleDeg * Math.PI / 180.0;
-            double dir = (tank.PlayerNumber == 1 ? 1.0 : -1.0);
-            double socketBaseX = double.NaN;
-            double socketBaseY = double.NaN;
+            double dir = (tank.Facing >= 0 ? 1.0 : -1.0);
             // optional turret socket world coords (unused in legacy DrawTank)
 
             if (hasHull)
@@ -200,25 +199,40 @@ namespace OOPGames
             tank.EnsureSpritesLoaded();
             bool hasHull = tank.HullImage != null;
             bool hasBarrel = tank.BarrelImage != null;
-            double dir = (tank.PlayerNumber == 1 ? 1.0 : -1.0);
-            double socketBaseX = double.NaN;
-            double socketBaseY = double.NaN;
+            double dir = (tank.Facing >= 0 ? 1.0 : -1.0);
 
             // Wheel sample positions (outermost wheels at left/right edges)
             double leftWheelX = tank.X;
             double rightWheelX = tank.X + tank.Width;
-            int maxIdx = field.Terrain.Heights.Length - 1;
-            int li = (int)Math.Max(0, Math.Min(maxIdx, Math.Round(leftWheelX)));
-            int ri = (int)Math.Max(0, Math.Min(maxIdx, Math.Round(rightWheelX)));
-            double groundLeftY = field.Terrain.Heights[li];
-            double groundRightY = field.Terrain.Heights[ri];
+            // Use interpolated terrain sampling for smoother contact
+            double groundLeftY = field.Terrain.GroundYAt(leftWheelX);
+            double groundRightY = field.Terrain.GroundYAt(rightWheelX);
 
             // Slope of terrain between wheels (y increases downward)
             double slopeRad = Math.Atan2(groundRightY - groundLeftY, rightWheelX - leftWheelX);
             double slopeDeg = slopeRad * 180.0 / Math.PI;
 
-            // Anchor wheel: earliest contact (higher terrain -> smaller y value)
+            // Determine anchor side. Default: earliest contact (higher terrain -> smaller y)
             bool anchorLeft = groundLeftY <= groundRightY;
+            // Ridge snap: if more than half the tank spans beyond a local peak between wheels,
+            // snap anchor to the far side to avoid clipping.
+            int peakSamples = 17;
+            double spanX = Math.Max(1, rightWheelX - leftWheelX);
+            double peakY = double.MinValue;
+            double peakX = leftWheelX;
+            for (int i = 0; i <= peakSamples; i++)
+            {
+                double t = i / (double)peakSamples;
+                double sx = leftWheelX + t * spanX;
+                double sy = field.Terrain.GroundYAt(sx);
+                if (sy > peakY) { peakY = sy; peakX = sx; }
+            }
+            // How much of the hull is over the peak to the right/left
+            double overRight = Math.Max(0, rightWheelX - peakX);
+            double overLeft = Math.Max(0, peakX - leftWheelX);
+            double half = tank.Width * 0.5;
+            if (overRight >= half) anchorLeft = false;
+            else if (overLeft >= half) anchorLeft = true;
             double anchorX = anchorLeft ? leftWheelX : rightWheelX;
             double anchorY = anchorLeft ? groundLeftY : groundRightY;
 
@@ -235,9 +249,11 @@ namespace OOPGames
                 bool mirrored = dir < 0;
                 // Compute full matrix: Translate(-pivot) -> Scale(mirror*scale, scale) -> Rotate(slope) -> Translate(anchorX, anchorY)
                 hullPivotPixelX = anchorLeft ? (mirrored ? hullW : 0) : (mirrored ? 0 : hullW);
-                hullPivotPixelY = hullH;
+                // Use calibrated ground line if provided, else fallback to HullPivot.Y, else sprite bottom
+                double groundPivotY = tank.HullGroundPivotYPx > 0 ? tank.HullGroundPivotYPx : (tank.HullPivot.Y > 0 ? tank.HullPivot.Y : hullH);
+                hullPivotPixelY = groundPivotY;
                 var tg = new TransformGroup();
-                tg.Children.Add(new TranslateTransform(-hullPivotPixelX, -hullPivotPixelY));
+                //tg.Children.Add(new TranslateTransform(-hullPivotPixelX, -hullPivotPixelY));
                 tg.Children.Add(new ScaleTransform(dir * hullScale, hullScale));
                 tg.Children.Add(new RotateTransform(slopeDeg));
                 tg.Children.Add(new TranslateTransform(anchorX, anchorY));
@@ -247,10 +263,10 @@ namespace OOPGames
                 Canvas.SetTop(hullImg, 0);
                 // Compute world turret base by transforming a socket point
                 // Socket X: symmetric middle of hull; Socket Y: slightly above bottom
-                var socketLocal = new Point(hullW / 2.0, hullH - tank.HullSocketYOffsetPx);
+                var socketLocal = new Point(hullW / 2.0, hullH -tank.HullSocketYOffsetPx);
                 var socketWorld = tg.Value.Transform(socketLocal);
-                socketBaseX = socketWorld.X;
-                socketBaseY = socketWorld.Y;
+                double socketBaseX = socketWorld.X;
+                double socketBaseY = socketWorld.Y;
                 // legacy DrawTank does not use socket attachment
                 // We add hull AFTER barrel so raise its ZIndex
             }
@@ -275,16 +291,28 @@ namespace OOPGames
 
             // Turret base: from hull socket if sprite available; otherwise from midpoint approximation
             // socketBaseX/Y already set if hull sprite path was used
-            double centerX = (leftWheelX + rightWheelX) / 2.0;
-            double tFactor = (centerX - leftWheelX) / (rightWheelX - leftWheelX);
-            double bottomCenterY = groundLeftY + (groundRightY - groundLeftY) * tFactor;
-            double hullHeightWorld = hullScale * hullH; // scaled sprite pixel height (or fallback height)
-            double cxWorld = double.IsNaN(socketBaseX) ? centerX : socketBaseX;
-            double cyWorld = double.IsNaN(socketBaseY) ? (bottomCenterY - hullHeightWorld) : socketBaseY;
+    double centerX = (leftWheelX + rightWheelX) / 2.0;
+    double tFactor = (centerX - leftWheelX) / (rightWheelX - leftWheelX);
+    double bottomCenterY = groundLeftY + (groundRightY - groundLeftY) * tFactor;
+    double hullHeightWorld = hullScale * hullH; // scaled sprite pixel height (or fallback height)
+    double cxWorld;
+    double cyWorld;
+    if (hasHull)
+    {
+        var socketLocal2 = new Point(hullW / 2.0, hullH - tank.HullSocketYOffsetPx);
+        var socketWorld2 = ((TransformGroup)hullImg.RenderTransform).Value.Transform(socketLocal2);
+        cxWorld = socketWorld2.X;
+        cyWorld = socketWorld2.Y;
+    }
+    else
+    {
+        cxWorld = centerX;
+        cyWorld = bottomCenterY - hullHeightWorld;
+    }
 
             // Turret direction (world) using original angle relative to horizontal
             double turretRad = tank.TurretAngleDeg * Math.PI / 180.0;
-            double vx = Math.Cos(turretRad) * (tank.PlayerNumber == 1 ? 1 : -1);
+            double vx = Math.Cos(turretRad) * (tank.Facing >= 0 ? 1 : -1);
             double vy = -Math.Sin(turretRad);
             // Apply barrel vertical offset (raise/lower within turret)
             cyWorld += tank.BarrelYOffset;

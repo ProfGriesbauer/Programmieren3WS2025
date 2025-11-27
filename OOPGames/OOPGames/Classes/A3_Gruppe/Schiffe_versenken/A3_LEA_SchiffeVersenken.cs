@@ -442,7 +442,8 @@ namespace OOPGames
                     Fill = new LinearGradientBrush(
                         Color.FromRgb(65, 105, 225),  // Royal Blue
                         Color.FromRgb(30, 144, 255),  // Dodger Blue
-                        90)
+                        90),
+                    IsHitTestVisible = false
                 };
                 Canvas.SetLeft(waterRect, baseX);
                 Canvas.SetTop(waterRect, baseY);
@@ -452,12 +453,12 @@ namespace OOPGames
                 // draw grid
                 for (int x = 0; x <= targetField.Width; x++)
                 {
-                    var line = new Line { X1 = baseX + x * cellSize, Y1 = baseY, X2 = baseX + x * cellSize, Y2 = baseY + targetField.Height * cellSize, Stroke = Brushes.Black, StrokeThickness = 1 };
+                    var line = new Line { X1 = baseX + x * cellSize, Y1 = baseY, X2 = baseX + x * cellSize, Y2 = baseY + targetField.Height * cellSize, Stroke = Brushes.Black, StrokeThickness = 1, IsHitTestVisible = false };
                     canvas.Children.Add(line);
                 }
                 for (int y = 0; y <= targetField.Height; y++)
                 {
-                    var line = new Line { X1 = baseX, Y1 = baseY + y * cellSize, X2 = baseX + targetField.Width * cellSize, Y2 = baseY + y * cellSize, Stroke = Brushes.Black, StrokeThickness = 1 };
+                    var line = new Line { X1 = baseX, Y1 = baseY + y * cellSize, X2 = baseX + targetField.Width * cellSize, Y2 = baseY + y * cellSize, Stroke = Brushes.Black, StrokeThickness = 1, IsHitTestVisible = false };
                     canvas.Children.Add(line);
                 }
 
@@ -483,7 +484,7 @@ namespace OOPGames
                         int y = ship.IsHorizontal ? rules.MouseY : rules.MouseY + i;
                         if (targetField.IsValidPosition(x, y))
                         {
-                            var rect = new Rectangle { Width = cellSize - 2, Height = cellSize - 2, Fill = previewBrush, Stroke = canPlace ? Brushes.LimeGreen : Brushes.Red, StrokeThickness = 2, StrokeDashArray = new DoubleCollection { 4, 2 } };
+                            var rect = new Rectangle { Width = cellSize - 2, Height = cellSize - 2, Fill = previewBrush, Stroke = canPlace ? Brushes.LimeGreen : Brushes.Red, StrokeThickness = 2, StrokeDashArray = new DoubleCollection { 4, 2 }, IsHitTestVisible = false };
                             Canvas.SetLeft(rect, baseX + x * cellSize + 1);
                             Canvas.SetTop(rect, baseY + y * cellSize + 1);
                             canvas.Children.Add(rect);
@@ -496,7 +497,7 @@ namespace OOPGames
                 double shipPreviewX = baseX;
                 const double shipCellSize = 12;
                 const double shipStep = 80;
-                var shipLabel = new TextBlock { Text = "Verfügbare Schiffe:", FontSize = 12, FontWeight = System.Windows.FontWeights.Bold };
+                var shipLabel = new TextBlock { Text = "Verfügbare Schiffe:", FontSize = 12, FontWeight = System.Windows.FontWeights.Bold, IsHitTestVisible = false };
                 Canvas.SetLeft(shipLabel, shipPreviewX);
                 Canvas.SetTop(shipLabel, shipPreviewY - 25);
                 canvas.Children.Add(shipLabel);
@@ -511,7 +512,7 @@ namespace OOPGames
                     // Grüne Umrandung für platzierte Schiffe
                     if (isPlaced)
                     {
-                        var border = new Rectangle { Width = s.Size * shipCellSize + 6, Height = shipCellSize + 6, Stroke = Brushes.LimeGreen, StrokeThickness = 3, RadiusX = 3, RadiusY = 3 };
+                        var border = new Rectangle { Width = s.Size * shipCellSize + 6, Height = shipCellSize + 6, Stroke = Brushes.LimeGreen, StrokeThickness = 3, RadiusX = 3, RadiusY = 3, IsHitTestVisible = false };
                         Canvas.SetLeft(border, x - 3);
                         Canvas.SetTop(border, shipPreviewY - 3);
                         canvas.Children.Add(border);
@@ -519,7 +520,7 @@ namespace OOPGames
                     // Goldene Umrandung für das aktuelle (nächste) Schiff
                     else if (isCurrent)
                     {
-                        var border = new Rectangle { Width = s.Size * shipCellSize + 6, Height = shipCellSize + 6, Stroke = Brushes.Gold, StrokeThickness = 3, RadiusX = 3, RadiusY = 3 };
+                        var border = new Rectangle { Width = s.Size * shipCellSize + 6, Height = shipCellSize + 6, Stroke = Brushes.Gold, StrokeThickness = 3, RadiusX = 3, RadiusY = 3, IsHitTestVisible = false };
                         Canvas.SetLeft(border, x - 3);
                         Canvas.SetTop(border, shipPreviewY - 3);
                         canvas.Children.Add(border);
@@ -539,7 +540,7 @@ namespace OOPGames
                     double buttonHeight = 40;
                     var buttonRect = new Rectangle { Width = buttonWidth, Height = buttonHeight, Fill = new SolidColorBrush(Color.FromRgb(0, 150, 0)), Stroke = Brushes.DarkGreen, StrokeThickness = 2, RadiusX = 5, RadiusY = 5 };
                     Canvas.SetLeft(buttonRect, buttonX); Canvas.SetTop(buttonRect, buttonY); canvas.Children.Add(buttonRect);
-                    var buttonText = new TextBlock { Text = "Weiter", FontSize = 14, FontWeight = System.Windows.FontWeights.Bold, Foreground = Brushes.White };
+                    var buttonText = new TextBlock { Text = "Weiter", FontSize = 14, FontWeight = System.Windows.FontWeights.Bold, Foreground = Brushes.White, IsHitTestVisible = false };
                     Canvas.SetLeft(buttonText, buttonX + 30); Canvas.SetTop(buttonText, buttonY + 10); canvas.Children.Add(buttonText);
                 }
 
@@ -547,7 +548,7 @@ namespace OOPGames
                 string labelText = nextShipInfo != null 
                     ? $"Spieler {rules.CurrentSetupPlayer}: Platziere Schiff ({nextShipInfo.Size} Felder) - R: Drehen" 
                     : $"Spieler {rules.CurrentSetupPlayer}: Alle Schiffe platziert";
-                var label = new TextBlock { Text = labelText, FontSize = 13, Foreground = Brushes.Black };
+                var label = new TextBlock { Text = labelText, FontSize = 13, Foreground = Brushes.Black, IsHitTestVisible = false };
                 Canvas.SetLeft(label, baseX);
                 Canvas.SetTop(label, baseY + targetField.Height * cellSize + 30);
                 canvas.Children.Add(label);
@@ -572,7 +573,8 @@ namespace OOPGames
                 Fill = new LinearGradientBrush(
                     Color.FromRgb(65, 105, 225),
                     Color.FromRgb(30, 144, 255),
-                    90)
+                    90),
+                IsHitTestVisible = false
             };
             Canvas.SetLeft(water1, topBaseX);
             Canvas.SetTop(water1, topBaseY);
@@ -592,7 +594,8 @@ namespace OOPGames
                     Fill = new LinearGradientBrush(
                         Color.FromArgb((byte)(20 + layer * 10), 0, 0, 80),
                         Color.FromArgb((byte)(25 + layer * 12), 0, 40, 120),
-                        45 + layer * 45)
+                        45 + layer * 45),
+                    IsHitTestVisible = false
                 };
                 Canvas.SetLeft(depth, topBaseX);
                 Canvas.SetTop(depth, topBaseY);
@@ -612,7 +615,8 @@ namespace OOPGames
                         {
                             Width = smallCell,
                             Height = smallCell,
-                            Fill = new SolidColorBrush(Color.FromArgb((byte)(wavePattern * 15), 0, 50, 100))
+                            Fill = new SolidColorBrush(Color.FromArgb((byte)(wavePattern * 15), 0, 50, 100)),
+                            IsHitTestVisible = false
                         };
                         Canvas.SetLeft(waveShade, topBaseX + x * smallCell);
                         Canvas.SetTop(waveShade, topBaseY + y * smallCell);
@@ -656,7 +660,8 @@ namespace OOPGames
                         Color.FromArgb(50, 255, 255, 200),
                         Color.FromArgb(10, 200, 255, 255),
                         0),
-                    StrokeThickness = 1.5
+                    StrokeThickness = 1.5,
+                    IsHitTestVisible = false
                 };
                 Canvas.SetLeft(causticPath, topBaseX);
                 Canvas.SetTop(causticPath, topBaseY);
@@ -680,7 +685,8 @@ namespace OOPGames
                     StrokeThickness = 1.5,
                     Fill = new RadialGradientBrush(
                         Color.FromArgb(0, 0, 0, 0),
-                        Color.FromArgb(10, 50, 120, 200))
+                        Color.FromArgb(10, 50, 120, 200)),
+                    IsHitTestVisible = false
                 };
                 Canvas.SetLeft(whirl, topBaseX + wx * smallCell + smallCell * 0.5 - whirlRadius / 2);
                 Canvas.SetTop(whirl, topBaseY + wy * smallCell + smallCell * 0.5 - whirlRadius / 2);
@@ -688,9 +694,9 @@ namespace OOPGames
                 canvas.Children.Add(whirl);
             }
             
-            for (int x = 0; x <= f1.Width; x++) canvas.Children.Add(new Line { X1 = topBaseX + x * smallCell, Y1 = topBaseY, X2 = topBaseX + x * smallCell, Y2 = topBaseY + f1.Height * smallCell, Stroke = Brushes.Black, StrokeThickness = 1 });
-            for (int y = 0; y <= f1.Height; y++) canvas.Children.Add(new Line { X1 = topBaseX, Y1 = topBaseY + y * smallCell, X2 = topBaseX + f1.Width * smallCell, Y2 = topBaseY + y * smallCell, Stroke = Brushes.Black, StrokeThickness = 1 });
-            var title1 = new TextBlock { Text = "Spielfeld Spieler 1", FontWeight = System.Windows.FontWeights.Bold }; Canvas.SetLeft(title1, topBaseX); Canvas.SetTop(title1, topBaseY - 18); canvas.Children.Add(title1);
+            for (int x = 0; x <= f1.Width; x++) canvas.Children.Add(new Line { X1 = topBaseX + x * smallCell, Y1 = topBaseY, X2 = topBaseX + x * smallCell, Y2 = topBaseY + f1.Height * smallCell, Stroke = Brushes.Black, StrokeThickness = 1, IsHitTestVisible = false });
+            for (int y = 0; y <= f1.Height; y++) canvas.Children.Add(new Line { X1 = topBaseX, Y1 = topBaseY + y * smallCell, X2 = topBaseX + f1.Width * smallCell, Y2 = topBaseY + y * smallCell, Stroke = Brushes.Black, StrokeThickness = 1, IsHitTestVisible = false });
+            var title1 = new TextBlock { Text = "Spielfeld Spieler 1", FontWeight = System.Windows.FontWeights.Bold, IsHitTestVisible = false }; Canvas.SetLeft(title1, topBaseX); Canvas.SetTop(title1, topBaseY - 18); canvas.Children.Add(title1);
             
             // Orange border around Player 1 field if it's their turn to shoot (Player 2 shoots at Player 1's field)
             // Zeige Orange-Markierung wenn Spieler 2 dran ist (schießt auf Feld 1)
@@ -701,7 +707,8 @@ namespace OOPGames
                     Width = f1.Width * smallCell, 
                     Height = f1.Height * smallCell,
                     Stroke = Brushes.Orange,
-                    StrokeThickness = 4
+                    StrokeThickness = 4,
+                    IsHitTestVisible = false
                 };
                 Canvas.SetLeft(orangeBorder1, topBaseX);
                 Canvas.SetTop(orangeBorder1, topBaseY);
@@ -726,7 +733,7 @@ namespace OOPGames
                     {
                         int sx = s.IsHorizontal ? s.X + i : s.X;
                         int sy = s.IsHorizontal ? s.Y : s.Y + i;
-                        var e = new Ellipse { Width = 8, Height = 8, Fill = Brushes.Red, Stroke = Brushes.DarkRed, StrokeThickness = 1.5 };
+                        var e = new Ellipse { Width = 8, Height = 8, Fill = Brushes.Red, Stroke = Brushes.DarkRed, StrokeThickness = 1.5, IsHitTestVisible = false };
                         Canvas.SetLeft(e, topBaseX + sx * smallCell + smallCell / 2 - 4);
                         Canvas.SetTop(e, topBaseY + sy * smallCell + smallCell / 2 - 4);
                         Canvas.SetZIndex(e, 100); // Hoher Z-Index damit Treffer IMMER vor Schiffen sind
@@ -738,7 +745,7 @@ namespace OOPGames
                 // if miss (no ship at that cell)
                 if (f1.IsValidPosition(miss.x, miss.y) && f1[miss.x, miss.y] == 0)
                 {
-                    var m = new Ellipse { Width = 6, Height = 6, Stroke = Brushes.CornflowerBlue, Fill = Brushes.White, StrokeThickness = 1.5 };
+                    var m = new Ellipse { Width = 6, Height = 6, Stroke = Brushes.CornflowerBlue, Fill = Brushes.White, StrokeThickness = 1.5, IsHitTestVisible = false };
                     Canvas.SetLeft(m, topBaseX + miss.x * smallCell + smallCell / 2 - 3);
                     Canvas.SetTop(m, topBaseY + miss.y * smallCell + smallCell / 2 - 3);
                     Canvas.SetZIndex(m, 99);
@@ -857,7 +864,8 @@ namespace OOPGames
                 Fill = new LinearGradientBrush(
                     Color.FromRgb(65, 105, 225),
                     Color.FromRgb(30, 144, 255),
-                    90)
+                    90),
+                IsHitTestVisible = false
             };
             Canvas.SetLeft(water2, bottomBaseX);
             Canvas.SetTop(water2, bottomBaseY);
@@ -877,7 +885,8 @@ namespace OOPGames
                     Fill = new LinearGradientBrush(
                         Color.FromArgb((byte)(20 + layer * 10), 0, 0, 80),
                         Color.FromArgb((byte)(25 + layer * 12), 0, 40, 120),
-                        45 + layer * 45)
+                        45 + layer * 45),
+                    IsHitTestVisible = false
                 };
                 Canvas.SetLeft(depth, bottomBaseX);
                 Canvas.SetTop(depth, bottomBaseY);
@@ -897,7 +906,8 @@ namespace OOPGames
                         {
                             Width = smallCell,
                             Height = smallCell,
-                            Fill = new SolidColorBrush(Color.FromArgb((byte)(wavePattern * 15), 0, 50, 100))
+                            Fill = new SolidColorBrush(Color.FromArgb((byte)(wavePattern * 15), 0, 50, 100)),
+                            IsHitTestVisible = false
                         };
                         Canvas.SetLeft(waveShade, bottomBaseX + x * smallCell);
                         Canvas.SetTop(waveShade, bottomBaseY + y * smallCell);
@@ -941,7 +951,8 @@ namespace OOPGames
                         Color.FromArgb(50, 255, 255, 200),
                         Color.FromArgb(10, 200, 255, 255),
                         0),
-                    StrokeThickness = 1.5
+                    StrokeThickness = 1.5,
+                    IsHitTestVisible = false
                 };
                 Canvas.SetLeft(causticPath, bottomBaseX);
                 Canvas.SetTop(causticPath, bottomBaseY);
@@ -965,7 +976,8 @@ namespace OOPGames
                     StrokeThickness = 1.5,
                     Fill = new RadialGradientBrush(
                         Color.FromArgb(0, 0, 0, 0),
-                        Color.FromArgb(10, 50, 120, 200))
+                        Color.FromArgb(10, 50, 120, 200)),
+                    IsHitTestVisible = false
                 };
                 Canvas.SetLeft(whirl, bottomBaseX + wx * smallCell + smallCell * 0.5 - whirlRadius / 2);
                 Canvas.SetTop(whirl, bottomBaseY + wy * smallCell + smallCell * 0.5 - whirlRadius / 2);
@@ -973,9 +985,9 @@ namespace OOPGames
                 canvas.Children.Add(whirl);
             }
             
-            for (int x = 0; x <= f2.Width; x++) canvas.Children.Add(new Line { X1 = bottomBaseX + x * smallCell, Y1 = bottomBaseY, X2 = bottomBaseX + x * smallCell, Y2 = bottomBaseY + f2.Height * smallCell, Stroke = Brushes.Black, StrokeThickness = 1 });
-            for (int y = 0; y <= f2.Height; y++) canvas.Children.Add(new Line { X1 = bottomBaseX, Y1 = bottomBaseY + y * smallCell, X2 = bottomBaseX + f2.Width * smallCell, Y2 = bottomBaseY + y * smallCell, Stroke = Brushes.Black, StrokeThickness = 1 });
-            var title2 = new TextBlock { Text = "Spielfeld Spieler 2", FontWeight = System.Windows.FontWeights.Bold }; Canvas.SetLeft(title2, bottomBaseX); Canvas.SetTop(title2, bottomBaseY - 18); canvas.Children.Add(title2);
+            for (int x = 0; x <= f2.Width; x++) canvas.Children.Add(new Line { X1 = bottomBaseX + x * smallCell, Y1 = bottomBaseY, X2 = bottomBaseX + x * smallCell, Y2 = bottomBaseY + f2.Height * smallCell, Stroke = Brushes.Black, StrokeThickness = 1, IsHitTestVisible = false });
+            for (int y = 0; y <= f2.Height; y++) canvas.Children.Add(new Line { X1 = bottomBaseX, Y1 = bottomBaseY + y * smallCell, X2 = bottomBaseX + f2.Width * smallCell, Y2 = bottomBaseY + y * smallCell, Stroke = Brushes.Black, StrokeThickness = 1, IsHitTestVisible = false });
+            var title2 = new TextBlock { Text = "Spielfeld Spieler 2", FontWeight = System.Windows.FontWeights.Bold, IsHitTestVisible = false }; Canvas.SetLeft(title2, bottomBaseX); Canvas.SetTop(title2, bottomBaseY - 18); canvas.Children.Add(title2);
             
             // Orange border around Player 2 field if it's their turn to shoot (Player 1 shoots at Player 2's field)
             // Zeige Orange-Markierung wenn Spieler 1 dran ist (schießt auf Feld 2)
@@ -986,7 +998,8 @@ namespace OOPGames
                     Width = f2.Width * smallCell, 
                     Height = f2.Height * smallCell,
                     Stroke = Brushes.Orange,
-                    StrokeThickness = 4
+                    StrokeThickness = 4,
+                    IsHitTestVisible = false
                 };
                 Canvas.SetLeft(orangeBorder2, bottomBaseX);
                 Canvas.SetTop(orangeBorder2, bottomBaseY);
@@ -1009,7 +1022,8 @@ namespace OOPGames
                 Height = indicatorHeight,
                 Fill = Brushes.LightGray,
                 Stroke = (rules.CurrentPlayerNumber == 1) ? Brushes.Orange : Brushes.Black,
-                StrokeThickness = (rules.CurrentPlayerNumber == 1) ? 4 : 2
+                StrokeThickness = (rules.CurrentPlayerNumber == 1) ? 4 : 2,
+                IsHitTestVisible = false
             };
             Canvas.SetLeft(player1Box, indicatorX);
             Canvas.SetTop(player1Box, indicatorY1);
@@ -1020,7 +1034,8 @@ namespace OOPGames
                 Text = "Spieler 1",
                 FontSize = 16,
                 FontWeight = (rules.CurrentPlayerNumber == 1) ? System.Windows.FontWeights.Bold : System.Windows.FontWeights.Normal,
-                Foreground = Brushes.Black
+                Foreground = Brushes.Black,
+                IsHitTestVisible = false
             };
             Canvas.SetLeft(player1Text, indicatorX + 20);
             Canvas.SetTop(player1Text, indicatorY1 + 15);
@@ -1033,7 +1048,8 @@ namespace OOPGames
                 Height = indicatorHeight,
                 Fill = Brushes.LightGray,
                 Stroke = (rules.CurrentPlayerNumber == 2) ? Brushes.Orange : Brushes.Black,
-                StrokeThickness = (rules.CurrentPlayerNumber == 2) ? 4 : 2
+                StrokeThickness = (rules.CurrentPlayerNumber == 2) ? 4 : 2,
+                IsHitTestVisible = false
             };
             Canvas.SetLeft(player2Box, indicatorX);
             Canvas.SetTop(player2Box, indicatorY2);
@@ -1044,7 +1060,8 @@ namespace OOPGames
                 Text = "Spieler 2",
                 FontSize = 16,
                 FontWeight = (rules.CurrentPlayerNumber == 2) ? System.Windows.FontWeights.Bold : System.Windows.FontWeights.Normal,
-                Foreground = Brushes.Black
+                Foreground = Brushes.Black,
+                IsHitTestVisible = false
             };
             Canvas.SetLeft(player2Text, indicatorX + 20);
             Canvas.SetTop(player2Text, indicatorY2 + 15);
@@ -1064,7 +1081,8 @@ namespace OOPGames
                     Fill = new LinearGradientBrush(
                         Color.FromArgb(200, 20, 40, 80),   // Dunkelblau oben
                         Color.FromArgb(200, 10, 70, 120),  // Ozeanblau unten
-                        90)
+                        90),
+                    IsHitTestVisible = false
                 };
                 Canvas.SetLeft(overlay, 0);
                 Canvas.SetTop(overlay, 0);
@@ -1291,7 +1309,7 @@ namespace OOPGames
                     {
                         int sx = s.IsHorizontal ? s.X + i : s.X;
                         int sy = s.IsHorizontal ? s.Y : s.Y + i;
-                        var e = new Ellipse { Width = 8, Height = 8, Fill = Brushes.Red, Stroke = Brushes.DarkRed, StrokeThickness = 1.5 };
+                        var e = new Ellipse { Width = 8, Height = 8, Fill = Brushes.Red, Stroke = Brushes.DarkRed, StrokeThickness = 1.5, IsHitTestVisible = false };
                         Canvas.SetLeft(e, bottomBaseX + sx * smallCell + smallCell / 2 - 4);
                         Canvas.SetTop(e, bottomBaseY + sy * smallCell + smallCell / 2 - 4);
                         Canvas.SetZIndex(e, 100); // Hoher Z-Index damit Treffer IMMER vor Schiffen sind
@@ -1302,7 +1320,7 @@ namespace OOPGames
             {
                 if (f2.IsValidPosition(miss.x, miss.y) && f2[miss.x, miss.y] == 0)
                 {
-                    var m = new Ellipse { Width = 6, Height = 6, Stroke = Brushes.CornflowerBlue, Fill = Brushes.White, StrokeThickness = 1.5 };
+                    var m = new Ellipse { Width = 6, Height = 6, Stroke = Brushes.CornflowerBlue, Fill = Brushes.White, StrokeThickness = 1.5, IsHitTestVisible = false };
                     Canvas.SetLeft(m, bottomBaseX + miss.x * smallCell + smallCell / 2 - 3);
                     Canvas.SetTop(m, bottomBaseY + miss.y * smallCell + smallCell / 2 - 3);
                     Canvas.SetZIndex(m, 99);
@@ -1410,7 +1428,7 @@ namespace OOPGames
                 }
             }
 
-            var info = new TextBlock { Text = "Spielphase: Klicke auf das gegnerische Feld zum Schießen", FontSize = 13, Foreground = Brushes.Black };
+            var info = new TextBlock { Text = "Spielphase: Klicke auf das gegnerische Feld zum Schießen", FontSize = 13, Foreground = Brushes.Black, IsHitTestVisible = false };
             Canvas.SetLeft(info, OFFSET_X);
             Canvas.SetTop(info, bottomBaseY + f2.Height * smallCell + 10);
             canvas.Children.Add(info);
@@ -1422,7 +1440,7 @@ namespace OOPGames
             double btnH = 28;
             var btn1Rect = new Rectangle { Width = btnW, Height = btnH, Fill = new SolidColorBrush(Color.FromRgb(50, 100, 150)), Stroke = Brushes.Black, StrokeThickness = 1, RadiusX = 4, RadiusY = 4 };
             Canvas.SetLeft(btn1Rect, btn1X); Canvas.SetTop(btn1Rect, btn1Y); canvas.Children.Add(btn1Rect);
-            var btn1Text = new TextBlock { Text = rules.ShowShipsPlayer1 ? "Schiffe 1 Verbergen" : "Schiffe 1 Anzeigen", FontSize = 10, Foreground = Brushes.White, FontWeight = System.Windows.FontWeights.Bold, Width = btnW, TextAlignment = System.Windows.TextAlignment.Center };
+            var btn1Text = new TextBlock { Text = rules.ShowShipsPlayer1 ? "Schiffe 1 Verbergen" : "Schiffe 1 Anzeigen", FontSize = 10, Foreground = Brushes.White, FontWeight = System.Windows.FontWeights.Bold, Width = btnW, TextAlignment = System.Windows.TextAlignment.Center, IsHitTestVisible = false };
             Canvas.SetLeft(btn1Text, btn1X); Canvas.SetTop(btn1Text, btn1Y + 7); canvas.Children.Add(btn1Text);
 
             // Button für Player 2 Schiffe
@@ -1430,12 +1448,25 @@ namespace OOPGames
             double btn2Y = bottomBaseY;
             var btn2Rect = new Rectangle { Width = btnW, Height = btnH, Fill = new SolidColorBrush(Color.FromRgb(150, 50, 50)), Stroke = Brushes.Black, StrokeThickness = 1, RadiusX = 4, RadiusY = 4 };
             Canvas.SetLeft(btn2Rect, btn2X); Canvas.SetTop(btn2Rect, btn2Y); canvas.Children.Add(btn2Rect);
-            var btn2Text = new TextBlock { Text = rules.ShowShipsPlayer2 ? "Schiffe 2 Verbergen" : "Schiffe 2 Anzeigen", FontSize = 10, Foreground = Brushes.White, FontWeight = System.Windows.FontWeights.Bold, Width = btnW, TextAlignment = System.Windows.TextAlignment.Center };
+            var btn2Text = new TextBlock { Text = rules.ShowShipsPlayer2 ? "Schiffe 2 Verbergen" : "Schiffe 2 Anzeigen", FontSize = 10, Foreground = Brushes.White, FontWeight = System.Windows.FontWeights.Bold, Width = btnW, TextAlignment = System.Windows.TextAlignment.Center, IsHitTestVisible = false };
             Canvas.SetLeft(btn2Text, btn2X); Canvas.SetTop(btn2Text, btn2Y + 7); canvas.Children.Add(btn2Text);
+        }
+
+        // Hilfsmethode um Elemente mit IsHitTestVisible = false zum Canvas hinzuzufügen
+        private void AddNonInteractiveElement(Canvas canvas, System.Windows.UIElement element, double left, double top, int zIndex)
+        {
+            element.IsHitTestVisible = false;
+            Canvas.SetLeft(element, left);
+            Canvas.SetTop(element, top);
+            Canvas.SetZIndex(element, zIndex);
+            canvas.Children.Add(element);
         }
 
         private void DrawWarship(Canvas canvas, A3_LEA_Ship ship, double baseX, double baseY, double cellSize, bool horizontal)
         {
+            // Merke die Anzahl der Elemente vor dem Zeichnen des Schiffs
+            int childrenCountBefore = canvas.Children.Count;
+            
             // Realistische Kriegsschiff-Farben (Vogelperspektive)
             var hullColor = new LinearGradientBrush(
                 Color.FromRgb(55, 65, 75),    // Dunkel
@@ -1468,10 +1499,7 @@ namespace OOPGames
                         Height = shipHeight * (0.6 + shadowLayer * 0.1),
                         Fill = new SolidColorBrush(Color.FromArgb((byte)(25 - shadowLayer * 8), 0, 0, 0))
                     };
-                    Canvas.SetLeft(shadow, startX + shipWidth * 0.075 - shadowLayer * 2);
-                    Canvas.SetTop(shadow, startY + yOffset + shipHeight * 0.2 + shadowLayer * 1);
-                    Canvas.SetZIndex(shadow, 10);
-                    canvas.Children.Add(shadow);
+                    AddNonInteractiveElement(canvas, shadow, startX + shipWidth * 0.075 - shadowLayer * 2, startY + yOffset + shipHeight * 0.2 + shadowLayer * 1, 10);
                 }
 
                 // Wasserverdrängung unter dem Schiff
@@ -1483,10 +1511,7 @@ namespace OOPGames
                         Color.FromArgb(40, 50, 120, 180),
                         Color.FromArgb(0, 50, 120, 180))
                 };
-                Canvas.SetLeft(waterDisplacement, startX + shipWidth * 0.025);
-                Canvas.SetTop(waterDisplacement, startY + yOffset + shipHeight * 0.08);
-                Canvas.SetZIndex(waterDisplacement, 10);
-                canvas.Children.Add(waterDisplacement);
+                AddNonInteractiveElement(canvas, waterDisplacement, startX + shipWidth * 0.025, startY + yOffset + shipHeight * 0.08, 10);
 
                 // Bugwelle mit Gischt-Effekt
                 var bowWave = new System.Windows.Shapes.Ellipse
@@ -1644,7 +1669,7 @@ namespace OOPGames
                         };
                         Canvas.SetLeft(rivetShadow, startX + cellSize * i + cellSize * 0.5 - 0.5);
                         Canvas.SetTop(rivetShadow, startY + yOffset + 12.5 + n * (shipHeight - 24) / 2);
-                        Canvas.SetZIndex(rivetShadow, 3);
+                        Canvas.SetZIndex(rivetShadow, 20);
                         canvas.Children.Add(rivetShadow);
 
                         // Nieten-Basis
@@ -1657,7 +1682,7 @@ namespace OOPGames
                         };
                         Canvas.SetLeft(rivet, startX + cellSize * i + cellSize * 0.5 - 1);
                         Canvas.SetTop(rivet, startY + yOffset + 12 + n * (shipHeight - 24) / 2);
-                        Canvas.SetZIndex(rivet, 4);
+                        Canvas.SetZIndex(rivet, 21);
                         canvas.Children.Add(rivet);
 
                         // Nieten-Highlight
@@ -1668,7 +1693,7 @@ namespace OOPGames
                         };
                         Canvas.SetLeft(rivetHighlight, startX + cellSize * i + cellSize * 0.5 - 0.7);
                         Canvas.SetTop(rivetHighlight, startY + yOffset + 12.2 + n * (shipHeight - 24) / 2);
-                        Canvas.SetZIndex(rivetHighlight, 15);
+                        Canvas.SetZIndex(rivetHighlight, 22);
                         canvas.Children.Add(rivetHighlight);
                     }
                 }
@@ -1683,7 +1708,7 @@ namespace OOPGames
                         Stroke = new SolidColorBrush(Color.FromRgb(80, 90, 100)),
                         StrokeThickness = 1.5
                     };
-                    Canvas.SetZIndex(anchorChain, 4);
+                    Canvas.SetZIndex(anchorChain, 20);
                     canvas.Children.Add(anchorChain);
 
                     var anchor = new System.Windows.Shapes.Polygon
@@ -1696,7 +1721,7 @@ namespace OOPGames
                     anchor.Points.Add(new System.Windows.Point(startX + cellSize * 0.18, startY + yOffset + 16));
                     anchor.Points.Add(new System.Windows.Point(startX + cellSize * 0.2, startY + yOffset + 15));
                     anchor.Points.Add(new System.Windows.Point(startX + cellSize * 0.22, startY + yOffset + 16));
-                    Canvas.SetZIndex(anchor, 14);
+                    Canvas.SetZIndex(anchor, 21);
                     canvas.Children.Add(anchor);
                 }
 
@@ -1964,7 +1989,7 @@ namespace OOPGames
                         };
                         Canvas.SetLeft(lifeboat, boatX);
                         Canvas.SetTop(lifeboat, boatY);
-                        Canvas.SetZIndex(lifeboat, 4);
+                        Canvas.SetZIndex(lifeboat, 22);
                         canvas.Children.Add(lifeboat);
 
                         // Highlight auf Rettungsboot
@@ -2314,7 +2339,7 @@ namespace OOPGames
                         };
                         Canvas.SetLeft(rivet, startX + xOffset + 12 + n * (shipWidth - 24) / 2);
                         Canvas.SetTop(rivet, startY + cellSize * i + cellSize * 0.5 - 0.75);
-                        Canvas.SetZIndex(rivet, 3);
+                        Canvas.SetZIndex(rivet, 21);
                         canvas.Children.Add(rivet);
                     }
                 }
@@ -2339,7 +2364,7 @@ namespace OOPGames
                         Stroke = new SolidColorBrush(Color.FromRgb(80, 90, 100)),
                         StrokeThickness = 1.5
                     };
-                    Canvas.SetZIndex(anchorChain, 4);
+                    Canvas.SetZIndex(anchorChain, 20);
                     canvas.Children.Add(anchorChain);
 
                     var anchor = new System.Windows.Shapes.Polygon
@@ -2352,7 +2377,7 @@ namespace OOPGames
                     anchor.Points.Add(new System.Windows.Point(startX + xOffset + 16, startY + cellSize * 0.18));
                     anchor.Points.Add(new System.Windows.Point(startX + xOffset + 15, startY + cellSize * 0.2));
                     anchor.Points.Add(new System.Windows.Point(startX + xOffset + 16, startY + cellSize * 0.22));
-                    Canvas.SetZIndex(anchor, 4);
+                    Canvas.SetZIndex(anchor, 21);
                     canvas.Children.Add(anchor);
                 }
 
@@ -2420,7 +2445,7 @@ namespace OOPGames
                         X2 = startX + xOffset + shipWidth / 2 - 5, Y2 = bridgeY,
                         Stroke = new SolidColorBrush(Color.FromRgb(120, 130, 140)), StrokeThickness = 1
                     };
-                    Canvas.SetZIndex(antenna1, 6);
+                    Canvas.SetZIndex(antenna1, 23);
                     canvas.Children.Add(antenna1);
 
                     var antenna2 = new Line
@@ -2429,7 +2454,7 @@ namespace OOPGames
                         X2 = startX + xOffset + shipWidth / 2 + 4, Y2 = bridgeY + bridgeH * 0.3,
                         Stroke = new SolidColorBrush(Color.FromRgb(120, 130, 140)), StrokeThickness = 0.8
                     };
-                    Canvas.SetZIndex(antenna2, 6);
+                    Canvas.SetZIndex(antenna2, 23);
                     canvas.Children.Add(antenna2);
                 }
 
@@ -2450,7 +2475,7 @@ namespace OOPGames
                     };
                     Canvas.SetLeft(gunBase1, gunX - cellSize * 0.1);
                     Canvas.SetTop(gunBase1, gun1Y - cellSize * 0.1);
-                    Canvas.SetZIndex(gunBase1, 3);
+                    Canvas.SetZIndex(gunBase1, 21);
                     canvas.Children.Add(gunBase1);
 
                     var gunBarrel1 = new Rectangle
@@ -2460,7 +2485,7 @@ namespace OOPGames
                     };
                     Canvas.SetLeft(gunBarrel1, gunX - 1.25);
                     Canvas.SetTop(gunBarrel1, gun1Y - cellSize * 0.2);
-                    Canvas.SetZIndex(gunBarrel1, 4);
+                    Canvas.SetZIndex(gunBarrel1, 22);
                     canvas.Children.Add(gunBarrel1);
 
                     // Hinterer Geschützturm
@@ -2475,7 +2500,7 @@ namespace OOPGames
                     };
                     Canvas.SetLeft(gunBase2, gunX - cellSize * 0.1);
                     Canvas.SetTop(gunBase2, gun2Y - cellSize * 0.1);
-                    Canvas.SetZIndex(gunBase2, 3);
+                    Canvas.SetZIndex(gunBase2, 21);
                     canvas.Children.Add(gunBase2);
 
                     var gunBarrel2 = new Rectangle
@@ -2485,7 +2510,7 @@ namespace OOPGames
                     };
                     Canvas.SetLeft(gunBarrel2, gunX - 1.25);
                     Canvas.SetTop(gunBarrel2, gun2Y - cellSize * 0.2);
-                    Canvas.SetZIndex(gunBarrel2, 4);
+                    Canvas.SetZIndex(gunBarrel2, 22);
                     canvas.Children.Add(gunBarrel2);
                 }
 
@@ -2580,7 +2605,7 @@ namespace OOPGames
                     };
                     Canvas.SetLeft(flagpole, startX + xOffset + shipWidth * 0.35);
                     Canvas.SetTop(flagpole, startY + shipHeight - 8);
-                    Canvas.SetZIndex(flagpole, 5);
+                    Canvas.SetZIndex(flagpole, 23);
                     canvas.Children.Add(flagpole);
 
                     // Wehende Flagge
@@ -2593,14 +2618,23 @@ namespace OOPGames
                     flag.Points.Add(new System.Windows.Point(startX + xOffset + shipWidth * 0.35, startY + shipHeight - 7));
                     flag.Points.Add(new System.Windows.Point(startX + xOffset + shipWidth * 0.37, startY + shipHeight - 3));
                     flag.Points.Add(new System.Windows.Point(startX + xOffset + shipWidth * 0.39, startY + shipHeight - 7));
-                    Canvas.SetZIndex(flag, 6);
+                    Canvas.SetZIndex(flag, 24);
                     canvas.Children.Add(flag);
                 }
+            }
+            
+            // Setze alle Schiffs-Elemente auf IsHitTestVisible = false, damit Klicks durchgehen
+            for (int i = childrenCountBefore; i < canvas.Children.Count; i++)
+            {
+                canvas.Children[i].IsHitTestVisible = false;
             }
         }
 
         private void DrawMiniWarship(Canvas canvas, A3_LEA_Ship ship, double startX, double startY, double cellSize, bool horizontal, bool isPlaced)
         {
+            // Merke die Anzahl der Elemente vor dem Zeichnen
+            int childrenCountBefore = canvas.Children.Count;
+            
             // Kleinere Version für die Auswahlleiste
             var hullColor = new SolidColorBrush(isPlaced ? Color.FromRgb(50, 50, 60) : Color.FromRgb(70, 70, 80));
             var deckColor = new SolidColorBrush(isPlaced ? Color.FromRgb(60, 60, 70) : Color.FromRgb(90, 90, 100));
@@ -2672,6 +2706,12 @@ namespace OOPGames
                 Canvas.SetTop(gun2, startY + shipHeight * 0.35);
                 canvas.Children.Add(gun2);
             }
+            
+            // Setze alle Mini-Schiff-Elemente auf IsHitTestVisible = false
+            for (int i = childrenCountBefore; i < canvas.Children.Count; i++)
+            {
+                canvas.Children[i].IsHitTestVisible = false;
+            }
         }
     }
 
@@ -2735,9 +2775,9 @@ namespace OOPGames
                         double buttonY = shipPreviewY - 5;
                         double buttonWidth = 120;
                         double buttonHeight = 40;
-                        // Großzügige Toleranz für Button
-                        if (click.XClickPos >= buttonX - 5 && click.XClickPos <= buttonX + buttonWidth + 5 && 
-                            click.YClickPos >= buttonY - 5 && click.YClickPos <= buttonY + buttonHeight + 5)
+                        // Sehr großzügige Toleranz für Button
+                        if (click.XClickPos >= buttonX - 20 && click.XClickPos <= buttonX + buttonWidth + 20 && 
+                            click.YClickPos >= buttonY - 20 && click.YClickPos <= buttonY + buttonHeight + 20)
                         {
                             // Instead of directly changing the phase here, return a special move
                             // that signals the rules to advance the phase. This ensures MainWindow
@@ -2820,23 +2860,23 @@ namespace OOPGames
                     double topBaseY = 20;
                     double bottomBaseY = 20 + field.Height * smallCell + 40;
                     
-                    // Button für Player 1 Schiffe (mit 10px Toleranz)
+                    // Button für Player 1 Schiffe (mit 20px Toleranz)
                     double btn1X = baseOffset + field.Width * smallCell + 20;
                     double btn1Y = topBaseY;
                     double btnW = 120;
                     double btnH = 28;
-                    if (click.XClickPos >= btn1X - 10 && click.XClickPos <= btn1X + btnW + 10 && 
-                        click.YClickPos >= btn1Y - 10 && click.YClickPos <= btn1Y + btnH + 10)
+                    if (click.XClickPos >= btn1X - 20 && click.XClickPos <= btn1X + btnW + 20 && 
+                        click.YClickPos >= btn1Y - 20 && click.YClickPos <= btn1Y + btnH + 20)
                     {
                         rules.ShowShipsPlayer1 = !rules.ShowShipsPlayer1;
                         return null;
                     }
                     
-                    // Button für Player 2 Schiffe (mit 10px Toleranz)
+                    // Button für Player 2 Schiffe (mit 20px Toleranz)
                     double btn2X = baseOffset + field.Width * smallCell + 20;
                     double btn2Y = bottomBaseY;
-                    if (click.XClickPos >= btn2X - 10 && click.XClickPos <= btn2X + btnW + 10 && 
-                        click.YClickPos >= btn2Y - 10 && click.YClickPos <= btn2Y + btnH + 10)
+                    if (click.XClickPos >= btn2X - 20 && click.XClickPos <= btn2X + btnW + 20 && 
+                        click.YClickPos >= btn2Y - 20 && click.YClickPos <= btn2Y + btnH + 20)
                     {
                         rules.ShowShipsPlayer2 = !rules.ShowShipsPlayer2;
                         return null;
@@ -2913,6 +2953,7 @@ namespace OOPGames
     public class A3_LEA_ComputerSchiffePlayer : A3_LEA_BaseComputerSchiffePlayer
     {
         private int _playerNumber = 2;
+        private static readonly System.Random _rand = new System.Random();
         public override string Name => "A3 LEA Schiffe Computer";
         public override int PlayerNumber => _playerNumber;
         public override void SetPlayerNumber(int playerNumber) => _playerNumber = playerNumber;
@@ -2923,17 +2964,12 @@ namespace OOPGames
             var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_SchiffeRules;
             if (rules != null)
             {
-                if (!rules.IsSetupPhase && rules.Phase == 3 && rules.CurrentSetupPlayer == _playerNumber)
+                // If called with a selection wrapper, forward to the field-only decision
+                if (!rules.IsSetupPhase && rules.Phase == 3)
                 {
-                    // Computer is in playing phase and it's his turn: shoot at random field
-                    Random rand = new Random();
-                    int x, y;
-                    do
-                    {
-                        x = rand.Next(0, field.Width);
-                        y = rand.Next(0, field.Height);
-                    } while (rules.Shots2.Contains((x, y))); // avoid shooting the same cell twice
-                    return new A3_LEA_SchiffeMove(x, y, _playerNumber);
+                    var target = ChooseSmartTarget(rules, field);
+                    if (target.HasValue)
+                        return new A3_LEA_SchiffeMove(target.Value.x, target.Value.y, _playerNumber);
                 }
             }
             return null;
@@ -2972,25 +3008,109 @@ namespace OOPGames
                 return null;
             }
 
-            // Playing phase: computer should shoot at random unshot cell
+            // Playing phase: choose a smart target (neighboring cells after hits, orientation-aware)
             if (!rules.IsSetupPhase && rules.Phase == 3)
             {
-                // choose the correct shots list based on shooter
-                var shotsList = _playerNumber == 1 ? rules.Shots2 : rules.Shots;
-                Random rand = new Random();
-                int x, y;
-                int tries = 0;
-                do
-                {
-                    x = rand.Next(0, field.Width);
-                    y = rand.Next(0, field.Height);
-                    tries++;
-                    if (tries > 500) break; // fail-safe
-                } while (shotsList.Contains((x, y)));
+                var target = ChooseSmartTarget(rules, field);
+                if (target.HasValue)
+                    return new A3_LEA_SchiffeMove(target.Value.x, target.Value.y, _playerNumber);
+            }
 
-                // If we found a valid cell, return a shooting move
-                if (tries <= 500 && field.IsValidPosition(x, y))
-                    return new A3_LEA_SchiffeMove(x, y, _playerNumber);
+            return null;
+        }
+
+        // Helper: choose a smart target cell or null if none
+        private (int x, int y)? ChooseSmartTarget(A3_LEA_SchiffeRules rules, IA3_LEA_SchiffeField field)
+        {
+            // Determine my shots list and the opponent's ships (the ones I try to hit)
+            var myShots = _playerNumber == 1 ? rules.Shots2 : rules.Shots; // shots I've already made
+            var opponentShips = _playerNumber == 1 ? rules.Ships2 : rules.Ships;
+
+            // 1) Look for partially hit (but not sunk) ships and target neighbors
+            foreach (var ship in opponentShips)
+            {
+                if (ship.X < 0 || ship.Y < 0) continue; // not placed yet
+                if (ship.Hits == 0) continue; // no hits on this ship
+                if (ship.Hits >= ship.Size) continue; // already sunk
+
+                // collect hit coordinates for this ship
+                var hitCoords = new List<(int x, int y)>();
+                for (int i = 0; i < ship.Size; i++)
+                {
+                    if (ship.HitCells != null && i < ship.HitCells.Length && ship.HitCells[i])
+                    {
+                        int hx = ship.IsHorizontal ? ship.X + i : ship.X;
+                        int hy = ship.IsHorizontal ? ship.Y : ship.Y + i;
+                        hitCoords.Add((hx, hy));
+                    }
+                }
+
+                if (hitCoords.Count == 0) continue;
+
+                // If at least two hits: try to infer orientation and extend along that line
+                if (hitCoords.Count >= 2)
+                {
+                    bool sameRow = hitCoords.All(h => h.y == hitCoords[0].y);
+                    bool sameCol = hitCoords.All(h => h.x == hitCoords[0].x);
+                    if (sameRow)
+                    {
+                        int y = hitCoords[0].y;
+                        int minX = hitCoords.Min(h => h.x);
+                        int maxX = hitCoords.Max(h => h.x);
+                        var candidates = new List<(int x, int y)> { (minX - 1, y), (maxX + 1, y) };
+                        foreach (var c in candidates)
+                            if (field.IsValidPosition(c.x, c.y) && !myShots.Contains((c.x, c.y)))
+                                return c;
+                    }
+                    else if (sameCol)
+                    {
+                        int x = hitCoords[0].x;
+                        int minY = hitCoords.Min(h => h.y);
+                        int maxY = hitCoords.Max(h => h.y);
+                        var candidates = new List<(int x, int y)> { (x, minY - 1), (x, maxY + 1) };
+                        foreach (var c in candidates)
+                            if (field.IsValidPosition(c.x, c.y) && !myShots.Contains((c.x, c.y)))
+                                return c;
+                    }
+                }
+
+                // Single hit or no clear orientation: try adjacent cells (4-neighborhood)
+                var adj = new List<(int x, int y)>
+                {
+                    (hitCoords[0].x - 1, hitCoords[0].y),
+                    (hitCoords[0].x + 1, hitCoords[0].y),
+                    (hitCoords[0].x, hitCoords[0].y - 1),
+                    (hitCoords[0].x, hitCoords[0].y + 1)
+                };
+                // randomize order to add variety
+                var shuffled = adj.OrderBy(a => _rand.Next()).ToList();
+                foreach (var c in shuffled)
+                    if (field.IsValidPosition(c.x, c.y) && !myShots.Contains((c.x, c.y)))
+                        return c;
+            }
+
+            // 2) Hunt mode: choose unshot cells using parity (checkerboard) to be more efficient
+            var parityCandidates = new List<(int x, int y)>();
+            var fallbackCandidates = new List<(int x, int y)>();
+            for (int x = 0; x < field.Width; x++)
+            {
+                for (int y = 0; y < field.Height; y++)
+                {
+                    if (myShots.Contains((x, y))) continue;
+                    if (((x + y) & 1) == 0) parityCandidates.Add((x, y));
+                    else fallbackCandidates.Add((x, y));
+                }
+            }
+
+            if (parityCandidates.Count > 0)
+            {
+                var pick = parityCandidates[_rand.Next(parityCandidates.Count)];
+                return pick;
+            }
+            if (fallbackCandidates.Count > 0)
+            {
+                var pick = fallbackCandidates[_rand.Next(fallbackCandidates.Count)];
+                return pick;
             }
 
             return null;

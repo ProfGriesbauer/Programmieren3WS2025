@@ -1,5 +1,6 @@
 using System;
 using System.Linq; // Needed for .Where LINQ on projectile list
+using OOPGames.Classes.A4_Guppe.ShellStrikeLegends;
 
 namespace OOPGames
 {
@@ -19,8 +20,7 @@ namespace OOPGames
             int maxX = _field.Terrain?.Heights?.Length > 0 ? _field.Terrain.Heights.Length - 1 : 800;
             foreach (var p in _field.Projectiles)
             {
-                double groundY = _field.Terrain?.GroundYAt(p.X) ?? 320;
-                p.Tick(0.5, groundY, maxX);
+                p.Tick(0.5, _field.Terrain, maxX);
             }
             _field.Projectiles.RemoveAll(p => !p.Active);
 
@@ -51,18 +51,99 @@ namespace OOPGames
             {
                 var tank = sm.PlayerNumber == 1 ? _field.Tank1 : _field.Tank2;
                 if (tank == null) return;
+                int terrainWidth = _field.Terrain?.Heights?.Length ?? 0;
+                int slopeThreshold = Config.CrestSlopeThresholdPx; // pixels difference to count as sharp crest
+                bool IsCrest(int idx)
+                {
+                    if (_field.Terrain == null || _field.Terrain.Heights == null) return false;
+                    var h = _field.Terrain.Heights;
+                    if (idx <= 0 || idx >= h.Length - 1) return false;
+                    int y = h[idx];
+                    int yL = h[idx - 1];
+                    int yR = h[idx + 1];
+                    // y grows downward; a sharp crest (mountain peak) is a local minimum with steep drop to both sides
+                    return (yL - y) >= slopeThreshold && (yR - y) >= slopeThreshold; // local min, sharp
+                }
                 switch (sm.Action)
                 {
                     case ShellStrikeAction.MoveLeft:
                     {
-                        int maxXBound = (_field.Terrain?.Heights?.Length ?? 800) - (int)tank.Width;
-                        tank.Move(sm.Magnitude, 0, Math.Max(0, maxXBound));
+                        int maxXBound = (_field.Terrain?.Heights?.Length ?? 800) - (int)tank.Height;
+                        // Face left when moving left
+                        tank.Facing = -1;
+                        // Moving left: front wheel is the left wheel; clear opposite crest flag
+                        tank.CrestReadyRight = false;
+                        if (terrainWidth >= 3 && _field.Terrain != null)
+                        {
+                            int iLeft = (int)Math.Floor(tank.X);
+                            int iNextLeft = Math.Max(0, iLeft - 1); // next front-wheel pixel if we move left
+
+                            // If already armed and currently on crest pixel, snap across now
+                            if (tank.CrestReadyLeft && IsCrest(iLeft))
+                            {
+                                int off = Math.Max(1, Config.CrestSnapOffsetPx);
+                                // Place right wheel at (crest - off)
+                                double targetX = (iLeft - off) - tank.Width;
+                                tank.SnapTo(targetX, 0, Math.Max(0, maxXBound));
+                                tank.CrestReadyLeft = false;
+                                break;
+                            }
+
+                            // If the immediate next pixel is a crest, clamp to it and arm
+                            if (IsCrest(iNextLeft))
+                            {
+                                tank.SnapTo(iNextLeft, 0, Math.Max(0, maxXBound));
+                                tank.CrestReadyLeft = true;
+                                break;
+                            }
+                            else
+                            {
+                                // No crest immediately ahead; disarm and move freely
+                                tank.CrestReadyLeft = false;
+                            }
+                        }
+                        tank.Move(-Math.Abs(sm.Magnitude), 0, Math.Max(0, maxXBound));
                         break;
                     }
                     case ShellStrikeAction.MoveRight:
                     {
                         int maxXBound = (_field.Terrain?.Heights?.Length ?? 800) - (int)tank.Width;
-                        tank.Move(sm.Magnitude, 0, Math.Max(0, maxXBound));
+                        // Face right when moving right
+                        tank.Facing = 1;
+                        // Moving right: front wheel is the right wheel; clear opposite crest flag
+                        tank.CrestReadyLeft = false;
+                        if (terrainWidth >= 3 && _field.Terrain != null)
+                        {
+                            int iRight = (int)Math.Ceiling(tank.X + tank.Width);
+                            int lastIndex = _field.Terrain.Heights.Length - 1;
+                            int iNextRight = Math.Min(lastIndex, iRight + 1); // next front-wheel pixel if we move right
+
+                            // If already armed and currently on crest pixel, snap across now
+                            if (tank.CrestReadyRight && IsCrest(iRight))
+                            {
+                                int off = Math.Max(1, Config.CrestSnapOffsetPx);
+                                // Place left wheel at (crest + off)
+                                double targetX = (iRight + off) - tank.Width;
+                                tank.SnapTo(targetX, 0, Math.Max(0, maxXBound));
+                                tank.CrestReadyRight = false;
+                                break;
+                            }
+
+                            // If the immediate next pixel is a crest, clamp to it and arm
+                            if (IsCrest(iNextRight))
+                            {
+                                double targetX = iNextRight - tank.Width;
+                                tank.SnapTo(targetX, 0, Math.Max(0, maxXBound));
+                                tank.CrestReadyRight = true;
+                                break;
+                            }
+                            else
+                            {
+                                // No crest immediately ahead; disarm and move freely
+                                tank.CrestReadyRight = false;
+                            }
+                        }
+                        tank.Move(Math.Abs(sm.Magnitude), 0, Math.Max(0, maxXBound));
                         break;
                     }
                     case ShellStrikeAction.TurretUp:
