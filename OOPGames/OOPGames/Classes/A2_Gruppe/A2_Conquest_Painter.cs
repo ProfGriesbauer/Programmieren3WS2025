@@ -97,6 +97,23 @@ namespace OOPGames
                     }
                 }
             }
+            // Troops zeichnen (kleine Kreise)
+            foreach (var troop in gf.Game.Troops)
+            {
+                var circ = new Ellipse
+                {
+                    Width = CellSize * 0.35,
+                    Height = CellSize * 0.35,
+                    StrokeThickness = 2,
+                    Stroke = Brushes.Black,
+                    Fill = troop.OwnerId == 0 ? Brushes.DarkRed : Brushes.DarkBlue
+                };
+
+                Canvas.SetLeft(circ, BoardLeft + troop.X * CellSize + CellSize * 0.325);
+                Canvas.SetTop(circ, BoardTop + troop.Y * CellSize + CellSize * 0.325);
+                canvas.Children.Add(circ);
+            }
+
         }
 
         private Brush OwnerBrush(int ownerId)

@@ -6,6 +6,8 @@ namespace OOPGames
 {
     public class Game
     {
+        public Troop[] Troops { get; private set; } = new Troop[0];
+
         private const int TargetOffset = 3;
 
         public Field Field { get; }
@@ -68,6 +70,27 @@ namespace OOPGames
             Field.GetTile(x2, y2).BoostOnTile = BoostType.FasterCapture;
             Field.GetTile(x1, y2).BoostOnTile = BoostType.ExtraAP;
             Field.GetTile(x2, y1).BoostOnTile = BoostType.AreaJammer;
+             PlaceOwnedTile(0, 1, 0);
+            PlaceOwnedTile(0, 0, 1);
+
+            // Player 1 Home: (W-1,H-1) -> Troops auf (W-2,H-1) und (W-1,H-2)
+            PlaceOwnedTile(1, Field.Width - 2, Field.Height - 1);
+            PlaceOwnedTile(1, Field.Width - 1, Field.Height - 2);
+
+            Troops = new[]
+            {
+                new Troop(0, 1, 0),
+                new Troop(0, 0, 1),
+                new Troop(1, Field.Width - 2, Field.Height - 1),
+                new Troop(1, Field.Width - 1, Field.Height - 2)
+            };
+            
+        }
+        private void PlaceOwnedTile(int ownerId, int x, int y)
+        {
+            var t = Field.GetTile(x, y);
+            t.OwnerID = ownerId;
+            // optional: t.ResourceYield = 1; // Standard lassen
         }
 
 
@@ -166,26 +189,26 @@ namespace OOPGames
         }
 
        public bool CheckWin(out int winnerId)
+    {
+        // Spieler 0 gewinnt, wenn er die Target-Base von Spieler 1 erobert hat
+        var targetFor0 = Field.GetTile(Field.Width - 1 - TargetOffset, Field.Height - 1 - TargetOffset);
+        if (targetFor0.IsTargetBase && targetFor0.OwnerID == 0)
         {
-            // Spieler 0 gewinnt, wenn er die Target-Base von Spieler 1 erobert hat
-            var targetFor0 = Field.GetTile(Field.Width - 1 - TargetOffset, Field.Height - 1 - TargetOffset);
-            if (targetFor0.IsTargetBase && targetFor0.OwnerID == 0)
-            {
-                winnerId = 0;
-                return true;
-            }
-
-            // Spieler 1 gewinnt, wenn er die Target-Base von Spieler 0 erobert hat
-            var targetFor1 = Field.GetTile(TargetOffset, TargetOffset);
-            if (targetFor1.IsTargetBase && targetFor1.OwnerID == 1)
-            {
-                winnerId = 1;
-                return true;
-            }
-
-            winnerId = -1;
-            return false;
+            winnerId = 0;
+            return true;
         }
+
+        // Spieler 1 gewinnt, wenn er die Target-Base von Spieler 0 erobert hat
+        var targetFor1 = Field.GetTile(TargetOffset, TargetOffset);
+        if (targetFor1.IsTargetBase && targetFor1.OwnerID == 1)
+        {
+            winnerId = 1;
+            return true;
+        }
+
+        winnerId = -1;
+        return false;
+    }
 
 
 
