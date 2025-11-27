@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace OOPGames
@@ -59,6 +60,59 @@ namespace OOPGames
             int dy = Math.Abs(ty - fy);
             return (dx <= 1 && dy <= 1) && !(dx == 0 && dy == 0);
         }
+
+
+        private (int x, int y) GetHomeCoord(int playerId)
+    => playerId == 0 ? (0, 0) : (Field.Width - 1, Field.Height - 1);
+
+        private bool HasConnectedPathFromHomeToAnyNeighbour(int playerId, Tile target)
+        {
+            // Welche Nachbarn gehören dem Spieler überhaupt?
+            var ownedNeighbours = Field.GetNeighbours4(target)
+                .Where(n => n.OwnerID == playerId)
+                .ToList();
+
+            if (ownedNeighbours.Count == 0) return false;
+
+            var (hx, hy) = GetHomeCoord(playerId);
+
+            var visited = new bool[Field.Width, Field.Height];
+            var q = new Queue<(int x, int y)>();
+
+            q.Enqueue((hx, hy));
+            visited[hx, hy] = true;
+
+            while (q.Count > 0)
+            {
+                var (x, y) = q.Dequeue();
+                var cur = Field.GetTile(x, y);
+
+                foreach (var n in Field.GetNeighbours4(cur))
+                {
+                    if (n.OwnerID != playerId) continue;
+                    if (visited[n.X, n.Y]) continue;
+
+                    visited[n.X, n.Y] = true;
+                    q.Enqueue((n.X, n.Y));
+                }
+            }
+
+            return ownedNeighbours.Any(n => visited[n.X, n.Y]);
+        }
+
+        // öffentlich, damit die KI die Regel ebenfalls sauber prüfen kann
+        public bool MeetsTargetBasePreconditions(int playerId, Tile tile)
+        {
+            if (!tile.IsTargetBase) return true;
+
+            // Regel 1: mind. 2 Nachbarn schon owned
+            int ownedNeighbours = Field.GetNeighbours4(tile).Count(n => n.OwnerID == playerId);
+            if (ownedNeighbours < 2) return false;
+
+            // Regel 2: Verbindung zur Homebase über owned Tiles
+            return HasConnectedPathFromHomeToAnyNeighbour(playerId, tile);
+        }
+
 
         public bool IsLegalTroopMove(int playerId, int troopLocalIndex, int targetX, int targetY)
         {
@@ -237,13 +291,26 @@ namespace OOPGames
 
             if (!tile.CanBeCapturedBy(p)) return;
 
-            // Falls nicht genug Ressourcen/Capacity: dann einfach nicht capturen
+            // TargetBase nur dann eroberbar, wenn mind. 2 Nachbarn schon erobert sind
+            if (tile.IsTargetBase)
+            {
+                int ownedNeighbours = Field.GetNeighbours4(tile).Count(n => n.OwnerID == p.Id);
+                if (ownedNeighbours < 2) return;
+            }
+
             if (!p.TrySpendResources(CaptureCost)) return;
             if (!p.TryReserveCaptureSlot()) return;
+
+            if (!tile.CanBeCapturedBy(p)) return;
+
+            // TargetBase: nur wenn Nachbarn+Connection erfüllt
+            if (!MeetsTargetBasePreconditions(p.Id, tile)) return;
+
 
             tile.CapturingPlayerID = p.Id;
             tile.IsBeingContested = true;
         }
+
 
         // Capture läuft nur, solange Troop auf dem Tile steht
         public void ResolveCaptures()
