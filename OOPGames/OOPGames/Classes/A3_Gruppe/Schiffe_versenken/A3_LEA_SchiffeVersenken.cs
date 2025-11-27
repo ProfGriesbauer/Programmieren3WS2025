@@ -293,6 +293,8 @@ namespace OOPGames
             WinnerPlayer = 0;
             WinnerTimestamp = null;
             CurrentPlayerNumber = 1;
+            ShowShipsPlayer1 = false;
+            ShowShipsPlayer2 = false;
         }
 
         // IGameRules2 Implementation
@@ -691,8 +693,8 @@ namespace OOPGames
             var title1 = new TextBlock { Text = "Spielfeld Spieler 1", FontWeight = System.Windows.FontWeights.Bold }; Canvas.SetLeft(title1, topBaseX); Canvas.SetTop(title1, topBaseY - 18); canvas.Children.Add(title1);
             
             // Orange border around Player 1 field if it's their turn to shoot (Player 2 shoots at Player 1's field)
-            // Nur anzeigen wenn mindestens ein Schuss abgegeben wurde
-            if ((rules.Shots.Count > 0 || rules.Shots2.Count > 0) && rules.CurrentPlayerNumber == 2)
+            // Zeige Orange-Markierung wenn Spieler 2 dran ist (schießt auf Feld 1)
+            if (rules.CurrentPlayerNumber == 2)
             {
                 var orangeBorder1 = new Rectangle 
                 { 
@@ -976,8 +978,8 @@ namespace OOPGames
             var title2 = new TextBlock { Text = "Spielfeld Spieler 2", FontWeight = System.Windows.FontWeights.Bold }; Canvas.SetLeft(title2, bottomBaseX); Canvas.SetTop(title2, bottomBaseY - 18); canvas.Children.Add(title2);
             
             // Orange border around Player 2 field if it's their turn to shoot (Player 1 shoots at Player 2's field)
-            // Nur anzeigen wenn mindestens ein Schuss abgegeben wurde
-            if ((rules.Shots.Count > 0 || rules.Shots2.Count > 0) && rules.CurrentPlayerNumber == 1)
+            // Zeige Orange-Markierung wenn Spieler 1 dran ist (schießt auf Feld 2)
+            if (rules.CurrentPlayerNumber == 1)
             {
                 var orangeBorder2 = new Rectangle 
                 { 
@@ -1000,14 +1002,14 @@ namespace OOPGames
             double indicatorHeight = 50;
             
             // Player 1 indicator box
-            bool hasShots = rules.Shots.Count > 0 || rules.Shots2.Count > 0;
+            // Orange-Markierung ab Spielstart (Spieler 1 beginnt immer)
             var player1Box = new Rectangle
             {
                 Width = indicatorWidth,
                 Height = indicatorHeight,
                 Fill = Brushes.LightGray,
-                Stroke = (hasShots && rules.CurrentPlayerNumber == 1) ? Brushes.Orange : Brushes.Black,
-                StrokeThickness = (hasShots && rules.CurrentPlayerNumber == 1) ? 4 : 2
+                Stroke = (rules.CurrentPlayerNumber == 1) ? Brushes.Orange : Brushes.Black,
+                StrokeThickness = (rules.CurrentPlayerNumber == 1) ? 4 : 2
             };
             Canvas.SetLeft(player1Box, indicatorX);
             Canvas.SetTop(player1Box, indicatorY1);
@@ -1017,7 +1019,7 @@ namespace OOPGames
             {
                 Text = "Spieler 1",
                 FontSize = 16,
-                FontWeight = (hasShots && rules.CurrentPlayerNumber == 1) ? System.Windows.FontWeights.Bold : System.Windows.FontWeights.Normal,
+                FontWeight = (rules.CurrentPlayerNumber == 1) ? System.Windows.FontWeights.Bold : System.Windows.FontWeights.Normal,
                 Foreground = Brushes.Black
             };
             Canvas.SetLeft(player1Text, indicatorX + 20);
@@ -1030,8 +1032,8 @@ namespace OOPGames
                 Width = indicatorWidth,
                 Height = indicatorHeight,
                 Fill = Brushes.LightGray,
-                Stroke = (hasShots && rules.CurrentPlayerNumber == 2) ? Brushes.Orange : Brushes.Black,
-                StrokeThickness = (hasShots && rules.CurrentPlayerNumber == 2) ? 4 : 2
+                Stroke = (rules.CurrentPlayerNumber == 2) ? Brushes.Orange : Brushes.Black,
+                StrokeThickness = (rules.CurrentPlayerNumber == 2) ? 4 : 2
             };
             Canvas.SetLeft(player2Box, indicatorX);
             Canvas.SetTop(player2Box, indicatorY2);
@@ -1041,7 +1043,7 @@ namespace OOPGames
             {
                 Text = "Spieler 2",
                 FontSize = 16,
-                FontWeight = (hasShots && rules.CurrentPlayerNumber == 2) ? System.Windows.FontWeights.Bold : System.Windows.FontWeights.Normal,
+                FontWeight = (rules.CurrentPlayerNumber == 2) ? System.Windows.FontWeights.Bold : System.Windows.FontWeights.Normal,
                 Foreground = Brushes.Black
             };
             Canvas.SetLeft(player2Text, indicatorX + 20);
