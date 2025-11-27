@@ -12,6 +12,17 @@ namespace OOPGames
         // Asset path for the hull sprite
         public string HullSpritePath { get; set; } = "Assets/ShellStrikeLegends/camo-tank-4 smaller.png";
 
+        //Sprite Fürs Barrel Initialisieren
+        public string BarrelSpritePath { get; set; } = "Assets/ShellStrikeLegends/camo-tank-barrel.png";
+         // Winkel des Kanonenrohrs in Radiant (relativ zum Tank!)
+         //Berechnung der Barrel Rotation
+         public double BarrelPivotX => X + Math.Cos(RotationRad) * A4_ShellStrikeLegendsV2_Config.BarrelPivotOffsetX 
+        - Math.Sin(RotationRad) * A4_ShellStrikeLegendsV2_Config.BarrelPivotOffsetY;
+        public double BarrelPivotY => Y + Math.Sin(RotationRad) * A4_ShellStrikeLegendsV2_Config.BarrelPivotOffsetX 
+        + Math.Cos(RotationRad) * A4_ShellStrikeLegendsV2_Config.BarrelPivotOffsetY;
+
+        public double BarrelAngleRad { get; set; } = 0;   // 0 = waagrecht rechts
+
         // Computed rotation (radians) aligning track pivots to terrain segment
         public double RotationRad { get; private set; }
 
@@ -49,7 +60,6 @@ namespace OOPGames
             double dx = xR - xL;
             double dy = yR - yL;
             RotationRad = Math.Atan2(dy, dx);
-
 
             // 6. Tank-Mittelpunkt als Mittelpunkt der beiden Pivots
             double midX = (xL + xR) * 0.5;

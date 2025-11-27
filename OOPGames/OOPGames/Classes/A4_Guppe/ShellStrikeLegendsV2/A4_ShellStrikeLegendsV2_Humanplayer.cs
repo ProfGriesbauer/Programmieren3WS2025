@@ -21,13 +21,13 @@ namespace OOPGames
             return p;
         }
 
-        // Liefert Moves basierend auf Tastatur-Eingaben (Left/Right)
+        // Liefert Moves basierend auf Tastatur-Eingaben (Left/Right+ Up/Down)
         public IPlayMove GetMove(IMoveSelection selection, IGameField field)
         {
             if (selection == null)
                 return null;
 
-            // Nur Key-Events interessieren uns
+            // Wir reagieren nur auf Keyboard-Eingaben
             if (selection.MoveType == MoveType.key && selection is IKeySelection keySel)
             {
                 switch (keySel.Key)
@@ -39,12 +39,21 @@ namespace OOPGames
                     case Key.Right:
                     case Key.D:
                         return new A4_ShellStrikeLegendsV2_Move(SSLV2Action.MoveRight, _playerNumber);
+
+                    case Key.Up:
+                    case Key.W:
+                        return new A4_ShellStrikeLegendsV2_Move(SSLV2Action.BarrelUp, _playerNumber);
+
+                    case Key.Down:
+                    case Key.S:
+                        return new A4_ShellStrikeLegendsV2_Move(SSLV2Action.BarrelDown, _playerNumber);
                 }
             }
 
-            // Keine relevante Eingabe -> kein Move
+            // Keine relevante Eingabe → kein Move
             return null;
         }
+
     }
 }
 

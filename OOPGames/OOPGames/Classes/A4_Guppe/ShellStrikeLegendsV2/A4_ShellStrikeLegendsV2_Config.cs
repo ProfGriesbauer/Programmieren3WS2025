@@ -24,5 +24,10 @@ namespace OOPGames
 
         // Horizontalgeschwindigkeit des Tanks (Pixel pro Move)
         public static double TankDriveSpeedPx = 6.0;
+
+        //Position des Barrels auf dem Tank
+        public static double BarrelPivotOffsetX = -2;   // relativ zur Tankmitte
+        public static double BarrelPivotOffsetY = 3;   // relativ zur Tankoberkante
+
     }
 }

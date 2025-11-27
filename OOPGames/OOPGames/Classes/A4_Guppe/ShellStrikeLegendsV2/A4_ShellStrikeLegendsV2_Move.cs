@@ -4,7 +4,9 @@ namespace OOPGames
     {
         None,
         MoveLeft,
-        MoveRight
+        MoveRight,
+        BarrelUp,
+        BarrelDown,
     }
 
     public class A4_ShellStrikeLegendsV2_Move : IPlayMove

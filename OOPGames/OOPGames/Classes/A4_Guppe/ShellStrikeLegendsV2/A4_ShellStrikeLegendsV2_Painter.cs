@@ -43,6 +43,7 @@ namespace OOPGames
             if (field.Tank1 != null)
             {
                 DrawHull(canvas, field.Terrain, field.Tank1);
+				DrawBarrel(canvas, field.Tank1); // Barrel zeichnen
             }
         }
 
@@ -183,8 +184,36 @@ namespace OOPGames
 
             canvas.Children.Add(img);
             Canvas.SetZIndex(img, 10);
-        }
+		}
+        //Barrel Zeichnen
+        private void DrawBarrel(Canvas canvas, A4_ShellStrikeLegendsV2_Tank tank)
+        {
+            if (string.IsNullOrWhiteSpace(tank.BarrelSpritePath)) return;
 
-    }
+            var src = LoadImage(tank.BarrelSpritePath);
+            if (src == null) return;
+
+            double w = 20;   // Barrel-breite (wir passen später an)
+            double h = 5;   // Barrel-höhe
+
+            double angleDeg = (tank.RotationRad + tank.BarrelAngleRad) * 180.0 / Math.PI;
+
+            var img = new Image
+            {
+                Source = src,
+                Width = w,
+                Height = h,
+                RenderTransformOrigin = new Point(0.0, 0.5)  // Rotation links in der Mitte
+            };
+
+            img.RenderTransform = new RotateTransform(angleDeg);
+
+            Canvas.SetLeft(img, tank.BarrelPivotX);
+            Canvas.SetTop(img, tank.BarrelPivotY - h / 2.0);
+
+            canvas.Children.Add(img);
+            Canvas.SetZIndex(img, 9); // Unter dem Tank-Hull zeichnen da kleinerer Z wert wie Bei DrawHull
+        }
+	}
 }
 

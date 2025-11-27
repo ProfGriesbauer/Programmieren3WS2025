@@ -85,7 +85,14 @@ namespace OOPGames
                     t.MoveRight();
                     t.UpdateFromTerrain(_field.Terrain);
                     break;
+                case SSLV2Action.BarrelUp:
+                    t.BarrelAngleRad -= 0.02;   // ↑
+                    break;
 
+                case SSLV2Action.BarrelDown:
+                    t.BarrelAngleRad += 0.02;   // ↓
+                    break;
+                    
                 case SSLV2Action.None:
                 default:
                     // nichts tun
