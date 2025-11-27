@@ -83,8 +83,8 @@ namespace OOPGames
         // Hilfsmethode: Gibt das aktuelle Schiff zurück (manuell ausgewählt oder nächstes unplatziertes)
         public A3_LEA_Ship GetCurrentShip(List<A3_LEA_Ship> shipsList)
         {
-            // Wenn manuell ein Schiff ausgewählt wurde und es noch nicht platziert ist, verwende es
-            if (ManuallySelectedShip != null && ManuallySelectedShip.X < 0 && ManuallySelectedShip.Y < 0 && shipsList.Contains(ManuallySelectedShip))
+            // Wenn manuell ein Schiff ausgewählt wurde (auch platzierte), verwende es
+            if (ManuallySelectedShip != null && shipsList.Contains(ManuallySelectedShip))
             {
                 return ManuallySelectedShip;
             }
@@ -166,9 +166,26 @@ namespace OOPGames
             return true;
         }
 
+        public void RemoveShipFromField(A3_LEA_Ship ship)
+        {
+            if (ship.X < 0 || ship.Y < 0) return; // Schiff ist nicht platziert
+            var targetField = _ships.Contains(ship) ? _field : _field2;
+            for (int i = 0; i < ship.Size; i++)
+            {
+                if (ship.IsHorizontal)
+                    targetField[ship.X + i, ship.Y] = 0;
+                else
+                    targetField[ship.X, ship.Y + i] = 0;
+            }
+            ship.X = -1;
+            ship.Y = -1;
+        }
+
         public override void PlaceShip(A3_LEA_Ship ship, int x, int y, bool horizontal)
         {
             if (!CanPlaceShip(ship, x, y, horizontal)) return;
+            // Entferne Schiff zuerst vom alten Platz falls es schon platziert war
+            RemoveShipFromField(ship);
             ship.X = x;
             ship.Y = y;
             ship.IsHorizontal = horizontal;
@@ -1371,16 +1388,16 @@ namespace OOPGames
             double btnH = 28;
             var btn1Rect = new Rectangle { Width = btnW, Height = btnH, Fill = new SolidColorBrush(Color.FromRgb(50, 100, 150)), Stroke = Brushes.Black, StrokeThickness = 1, RadiusX = 4, RadiusY = 4 };
             Canvas.SetLeft(btn1Rect, btn1X); Canvas.SetTop(btn1Rect, btn1Y); canvas.Children.Add(btn1Rect);
-            var btn1Text = new TextBlock { Text = rules.ShowShipsPlayer1 ? "Feld 1 Verbergen" : "Feld 1 Anzeigen", FontSize = 10, Foreground = Brushes.White, FontWeight = System.Windows.FontWeights.Bold };
-            Canvas.SetLeft(btn1Text, btn1X + 8); Canvas.SetTop(btn1Text, btn1Y + 6); canvas.Children.Add(btn1Text);
+            var btn1Text = new TextBlock { Text = rules.ShowShipsPlayer1 ? "Schiffe 1 Verbergen" : "Schiffe 1 Anzeigen", FontSize = 10, Foreground = Brushes.White, FontWeight = System.Windows.FontWeights.Bold, Width = btnW, TextAlignment = System.Windows.TextAlignment.Center };
+            Canvas.SetLeft(btn1Text, btn1X); Canvas.SetTop(btn1Text, btn1Y + 7); canvas.Children.Add(btn1Text);
 
             // Button für Player 2 Schiffe
             double btn2X = bottomBaseX + f2.Width * smallCell + 20;
             double btn2Y = bottomBaseY;
             var btn2Rect = new Rectangle { Width = btnW, Height = btnH, Fill = new SolidColorBrush(Color.FromRgb(150, 50, 50)), Stroke = Brushes.Black, StrokeThickness = 1, RadiusX = 4, RadiusY = 4 };
             Canvas.SetLeft(btn2Rect, btn2X); Canvas.SetTop(btn2Rect, btn2Y); canvas.Children.Add(btn2Rect);
-            var btn2Text = new TextBlock { Text = rules.ShowShipsPlayer2 ? "Feld 2 Verbergen" : "Feld 2 Anzeigen", FontSize = 10, Foreground = Brushes.White, FontWeight = System.Windows.FontWeights.Bold };
-            Canvas.SetLeft(btn2Text, btn2X + 8); Canvas.SetTop(btn2Text, btn2Y + 6); canvas.Children.Add(btn2Text);
+            var btn2Text = new TextBlock { Text = rules.ShowShipsPlayer2 ? "Schiffe 2 Verbergen" : "Schiffe 2 Anzeigen", FontSize = 10, Foreground = Brushes.White, FontWeight = System.Windows.FontWeights.Bold, Width = btnW, TextAlignment = System.Windows.TextAlignment.Center };
+            Canvas.SetLeft(btn2Text, btn2X); Canvas.SetTop(btn2Text, btn2Y + 7); canvas.Children.Add(btn2Text);
         }
 
         private void DrawWarship(Canvas canvas, A3_LEA_Ship ship, double baseX, double baseY, double cellSize, bool horizontal)
@@ -2711,17 +2728,19 @@ namespace OOPGames
                             if (shipClicked >= 0 && shipClicked < shipsList.Count)
                             {
                                 var ship = shipsList[shipClicked];
-                                // Nur unplatzierte Schiffe können ausgewählt werden
-                                if (ship.X < 0 && ship.Y < 0)
+                                // Alle Schiffe können ausgewählt werden
+                                rules.ManuallySelectedShip = ship;
+                                // Wenn Schiff bereits platziert war, entferne es vom Feld
+                                if (ship.X >= 0 && ship.Y >= 0)
                                 {
-                                    rules.ManuallySelectedShip = ship;
-                                    return null; // Schiff wurde ausgewählt, keine weitere Aktion
+                                    rules.RemoveShipFromField(ship);
                                 }
+                                return null; // Schiff wurde ausgewählt, keine weitere Aktion
                             }
                         }
                     }
 
-                    // Click on field to place: allow placement for the active setup player
+                    // Click on field to place or pick up ship
                     // Prüfe ob Klick im Spielfeld-Bereich ist (ohne oberen Rand zu beschneiden)
                     double fieldRight = baseOffset + field.Width * cellSize;
                     double fieldBottom = baseOffset + field.Height * cellSize;
@@ -2737,8 +2756,24 @@ namespace OOPGames
                             var targetField = activePlayer == 1 ? rules.SchiffeField : rules.SchiffeField2;
                             if (targetField.IsValidPosition(gridX, gridY))
                             {
-                                // Return a move that targets the active setup player (player who should receive the placement)
-                                return new A3_LEA_SchiffeMove(gridX, gridY, activePlayer);
+                                // Prüfe ob an dieser Stelle ein Schiff ist
+                                int shipIdAtCell = targetField[gridX, gridY];
+                                if (shipIdAtCell > 0)
+                                {
+                                    // Finde das Schiff und wähle es aus (aufnehmen)
+                                    var clickedShip = shipsList.FirstOrDefault(s => s.Id == shipIdAtCell);
+                                    if (clickedShip != null)
+                                    {
+                                        rules.ManuallySelectedShip = clickedShip;
+                                        rules.RemoveShipFromField(clickedShip);
+                                        return null; // Schiff wurde aufgenommen
+                                    }
+                                }
+                                else
+                                {
+                                    // Leere Zelle: Platziere aktuelles Schiff
+                                    return new A3_LEA_SchiffeMove(gridX, gridY, activePlayer);
+                                }
                             }
                         }
                     }
@@ -2814,6 +2849,16 @@ namespace OOPGames
             {
                 if (rules != null && rules.IsSetupPhase)
                 {
+                    // ESC-Key: Abwählen des aktuellen Schiffs (zurück in die Leiste)
+                    if (keySelection.Key == System.Windows.Input.Key.Escape)
+                    {
+                        if (rules.ManuallySelectedShip != null)
+                        {
+                            // Schiff zurück in Auswahlleiste legen (unplatziert)
+                            rules.ManuallySelectedShip = null;
+                            return null;
+                        }
+                    }
                     // R-Key: Rotation des nächsten unplatzierten Schiffs
                     if (keySelection.Key == System.Windows.Input.Key.R)
                     {
