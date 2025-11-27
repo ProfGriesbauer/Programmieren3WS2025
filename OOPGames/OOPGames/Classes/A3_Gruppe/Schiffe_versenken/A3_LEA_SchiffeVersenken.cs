@@ -292,6 +292,7 @@ namespace OOPGames
             SunkShipTimestamp.Clear();
             WinnerPlayer = 0;
             WinnerTimestamp = null;
+            CurrentPlayerNumber = 1;
         }
 
         // IGameRules2 Implementation
@@ -342,6 +343,12 @@ namespace OOPGames
                 else
                 {
                     // Playing-Phase: Schießen (auf das gegnerische Feld)
+                    // Beim allerersten Schuss: Setze CurrentPlayerNumber auf den aktiven Spieler
+                    if (_shots.Count == 0 && _shots2.Count == 0)
+                    {
+                        CurrentPlayerNumber = m.PlayerNumber;
+                    }
+                    
                     bool hit = ShootAtForPlayer(m.PlayerNumber, m.X, m.Y);
                     // grant extra turn on hit
                     LastMoveGivesExtraTurn = hit;
@@ -662,7 +669,8 @@ namespace OOPGames
             var title1 = new TextBlock { Text = "Spielfeld Spieler 1", FontWeight = System.Windows.FontWeights.Bold }; Canvas.SetLeft(title1, topBaseX); Canvas.SetTop(title1, topBaseY - 18); canvas.Children.Add(title1);
             
             // Orange border around Player 1 field if it's their turn to shoot (Player 2 shoots at Player 1's field)
-            if (rules.CurrentPlayerNumber == 2)
+            // Nur anzeigen wenn mindestens ein Schuss abgegeben wurde
+            if ((rules.Shots.Count > 0 || rules.Shots2.Count > 0) && rules.CurrentPlayerNumber == 2)
             {
                 var orangeBorder1 = new Rectangle 
                 { 
@@ -946,7 +954,8 @@ namespace OOPGames
             var title2 = new TextBlock { Text = "Spielfeld Spieler 2", FontWeight = System.Windows.FontWeights.Bold }; Canvas.SetLeft(title2, bottomBaseX); Canvas.SetTop(title2, bottomBaseY - 18); canvas.Children.Add(title2);
             
             // Orange border around Player 2 field if it's their turn to shoot (Player 1 shoots at Player 2's field)
-            if (rules.CurrentPlayerNumber == 1)
+            // Nur anzeigen wenn mindestens ein Schuss abgegeben wurde
+            if ((rules.Shots.Count > 0 || rules.Shots2.Count > 0) && rules.CurrentPlayerNumber == 1)
             {
                 var orangeBorder2 = new Rectangle 
                 { 
@@ -969,13 +978,14 @@ namespace OOPGames
             double indicatorHeight = 50;
             
             // Player 1 indicator box
+            bool hasShots = rules.Shots.Count > 0 || rules.Shots2.Count > 0;
             var player1Box = new Rectangle
             {
                 Width = indicatorWidth,
                 Height = indicatorHeight,
                 Fill = Brushes.LightGray,
-                Stroke = rules.CurrentPlayerNumber == 1 ? Brushes.Orange : Brushes.Black,
-                StrokeThickness = rules.CurrentPlayerNumber == 1 ? 4 : 2
+                Stroke = (hasShots && rules.CurrentPlayerNumber == 1) ? Brushes.Orange : Brushes.Black,
+                StrokeThickness = (hasShots && rules.CurrentPlayerNumber == 1) ? 4 : 2
             };
             Canvas.SetLeft(player1Box, indicatorX);
             Canvas.SetTop(player1Box, indicatorY1);
@@ -985,7 +995,7 @@ namespace OOPGames
             {
                 Text = "Spieler 1",
                 FontSize = 16,
-                FontWeight = rules.CurrentPlayerNumber == 1 ? System.Windows.FontWeights.Bold : System.Windows.FontWeights.Normal,
+                FontWeight = (hasShots && rules.CurrentPlayerNumber == 1) ? System.Windows.FontWeights.Bold : System.Windows.FontWeights.Normal,
                 Foreground = Brushes.Black
             };
             Canvas.SetLeft(player1Text, indicatorX + 20);
@@ -998,8 +1008,8 @@ namespace OOPGames
                 Width = indicatorWidth,
                 Height = indicatorHeight,
                 Fill = Brushes.LightGray,
-                Stroke = rules.CurrentPlayerNumber == 2 ? Brushes.Orange : Brushes.Black,
-                StrokeThickness = rules.CurrentPlayerNumber == 2 ? 4 : 2
+                Stroke = (hasShots && rules.CurrentPlayerNumber == 2) ? Brushes.Orange : Brushes.Black,
+                StrokeThickness = (hasShots && rules.CurrentPlayerNumber == 2) ? 4 : 2
             };
             Canvas.SetLeft(player2Box, indicatorX);
             Canvas.SetTop(player2Box, indicatorY2);
@@ -1009,7 +1019,7 @@ namespace OOPGames
             {
                 Text = "Spieler 2",
                 FontSize = 16,
-                FontWeight = rules.CurrentPlayerNumber == 2 ? System.Windows.FontWeights.Bold : System.Windows.FontWeights.Normal,
+                FontWeight = (hasShots && rules.CurrentPlayerNumber == 2) ? System.Windows.FontWeights.Bold : System.Windows.FontWeights.Normal,
                 Foreground = Brushes.Black
             };
             Canvas.SetLeft(player2Text, indicatorX + 20);
@@ -1436,7 +1446,7 @@ namespace OOPGames
                     };
                     Canvas.SetLeft(shadow, startX + shipWidth * 0.075 - shadowLayer * 2);
                     Canvas.SetTop(shadow, startY + yOffset + shipHeight * 0.2 + shadowLayer * 1);
-                    Canvas.SetZIndex(shadow, 0);
+                    Canvas.SetZIndex(shadow, 10);
                     canvas.Children.Add(shadow);
                 }
 
@@ -1451,7 +1461,7 @@ namespace OOPGames
                 };
                 Canvas.SetLeft(waterDisplacement, startX + shipWidth * 0.025);
                 Canvas.SetTop(waterDisplacement, startY + yOffset + shipHeight * 0.08);
-                Canvas.SetZIndex(waterDisplacement, 0);
+                Canvas.SetZIndex(waterDisplacement, 10);
                 canvas.Children.Add(waterDisplacement);
 
                 // Bugwelle mit Gischt-Effekt
@@ -1467,7 +1477,7 @@ namespace OOPGames
                 };
                 Canvas.SetLeft(bowWave, startX - cellSize * 0.18);
                 Canvas.SetTop(bowWave, startY + yOffset + shipHeight * 0.28);
-                Canvas.SetZIndex(bowWave, 0);
+                Canvas.SetZIndex(bowWave, 10);
                 canvas.Children.Add(bowWave);
 
                 // Gischt-Spritzer am Bug
@@ -1481,7 +1491,7 @@ namespace OOPGames
                     };
                     Canvas.SetLeft(sprayDrop, startX - cellSize * 0.22 - spray * 2);
                     Canvas.SetTop(sprayDrop, startY + yOffset + shipHeight * 0.3 + spray * 3);
-                    Canvas.SetZIndex(sprayDrop, 0);
+                    Canvas.SetZIndex(sprayDrop, 10);
                     canvas.Children.Add(sprayDrop);
                 }
 
@@ -1496,7 +1506,7 @@ namespace OOPGames
                 };
                 Canvas.SetLeft(sternWave, startX + shipWidth - cellSize * 0.12);
                 Canvas.SetTop(sternWave, startY + yOffset + shipHeight * 0.31);
-                Canvas.SetZIndex(sternWave, 0);
+                Canvas.SetZIndex(sternWave, 10);
                 canvas.Children.Add(sternWave);
 
                 // Dynamische Kielwasser-Trails
@@ -1512,7 +1522,7 @@ namespace OOPGames
                     };
                     Canvas.SetLeft(wake, startX + shipWidth + cellSize * 0.08 + wakeTrail * 4);
                     Canvas.SetTop(wake, startY + yOffset + shipHeight * (0.35 + wakeTrail * 0.02));
-                    Canvas.SetZIndex(wake, 0);
+                    Canvas.SetZIndex(wake, 10);
                     canvas.Children.Add(wake);
                 }
 
@@ -1527,7 +1537,7 @@ namespace OOPGames
                     };
                     Canvas.SetLeft(foamBubble, startX + shipWidth + 3 + foam * 2.5);
                     Canvas.SetTop(foamBubble, startY + yOffset + shipHeight * 0.4 + foam * 1.5);
-                    Canvas.SetZIndex(foamBubble, 1);
+                    Canvas.SetZIndex(foamBubble, 11);
                     canvas.Children.Add(foamBubble);
                 }
 
@@ -1552,7 +1562,7 @@ namespace OOPGames
                 hull.Points.Add(new System.Windows.Point(startX + cellSize * 0.35, startY + yOffset + shipHeight - 2));
                 hull.Points.Add(new System.Windows.Point(startX + cellSize * 0.2, startY + yOffset + shipHeight - 4));
                 
-                Canvas.SetZIndex(hull, 1);
+                Canvas.SetZIndex(hull, 11);
                 canvas.Children.Add(hull);
 
                 // Seitliche Schatten/Details
@@ -1562,7 +1572,7 @@ namespace OOPGames
                     X2 = startX + shipWidth - cellSize * 0.2, Y2 = startY + yOffset + 5,
                     Stroke = darkHullColor, StrokeThickness = 1.5
                 };
-                Canvas.SetZIndex(sideDetail1, 2);
+                Canvas.SetZIndex(sideDetail1, 12);
                 canvas.Children.Add(sideDetail1);
 
                 var sideDetail2 = new Line
@@ -1571,7 +1581,7 @@ namespace OOPGames
                     X2 = startX + shipWidth - cellSize * 0.2, Y2 = startY + yOffset + shipHeight - 5,
                     Stroke = darkHullColor, StrokeThickness = 1.5
                 };
-                Canvas.SetZIndex(sideDetail2, 2);
+                Canvas.SetZIndex(sideDetail2, 12);
                 canvas.Children.Add(sideDetail2);
 
                 // Deck-Mittellinie
@@ -1581,7 +1591,7 @@ namespace OOPGames
                     X2 = startX + shipWidth - cellSize * 0.15, Y2 = startY + yOffset + shipHeight / 2,
                     Stroke = highlightColor, StrokeThickness = 2
                 };
-                Canvas.SetZIndex(deckLine, 2);
+                Canvas.SetZIndex(deckLine, 12);
                 canvas.Children.Add(deckLine);
 
                 // Panzerplatten-Textur mit Nieten
@@ -1596,7 +1606,7 @@ namespace OOPGames
                         Stroke = new SolidColorBrush(Color.FromArgb(50, 0, 0, 0)),
                         StrokeThickness = 0.8
                     };
-                    Canvas.SetZIndex(plate, 2);
+                    Canvas.SetZIndex(plate, 12);
                     canvas.Children.Add(plate);
 
                     // 3D-Nieten auf den Panzerplatten
@@ -1634,7 +1644,7 @@ namespace OOPGames
                         };
                         Canvas.SetLeft(rivetHighlight, startX + cellSize * i + cellSize * 0.5 - 0.7);
                         Canvas.SetTop(rivetHighlight, startY + yOffset + 12.2 + n * (shipHeight - 24) / 2);
-                        Canvas.SetZIndex(rivetHighlight, 5);
+                        Canvas.SetZIndex(rivetHighlight, 15);
                         canvas.Children.Add(rivetHighlight);
                     }
                 }
@@ -1662,7 +1672,7 @@ namespace OOPGames
                     anchor.Points.Add(new System.Windows.Point(startX + cellSize * 0.18, startY + yOffset + 16));
                     anchor.Points.Add(new System.Windows.Point(startX + cellSize * 0.2, startY + yOffset + 15));
                     anchor.Points.Add(new System.Windows.Point(startX + cellSize * 0.22, startY + yOffset + 16));
-                    Canvas.SetZIndex(anchor, 4);
+                    Canvas.SetZIndex(anchor, 14);
                     canvas.Children.Add(anchor);
                 }
 
@@ -1682,7 +1692,7 @@ namespace OOPGames
                         };
                         Canvas.SetLeft(lifeboat, boatX);
                         Canvas.SetTop(lifeboat, boatY);
-                        Canvas.SetZIndex(lifeboat, 4);
+                        Canvas.SetZIndex(lifeboat, 16);
                         canvas.Children.Add(lifeboat);
                     }
                 }
@@ -1705,7 +1715,7 @@ namespace OOPGames
                     };
                     Canvas.SetLeft(bridge, bridgeX);
                     Canvas.SetTop(bridge, bridgeY);
-                    Canvas.SetZIndex(bridge, 3);
+                    Canvas.SetZIndex(bridge, 16);
                     canvas.Children.Add(bridge);
 
                     // Fenster/Kommandobrücke
@@ -1719,7 +1729,7 @@ namespace OOPGames
                         };
                         Canvas.SetLeft(windowFrame, bridgeX + bridgeW * 0.1 + i * bridgeW * 0.28);
                         Canvas.SetTop(windowFrame, bridgeY + bridgeH * 0.22);
-                        Canvas.SetZIndex(windowFrame, 5);
+                        Canvas.SetZIndex(windowFrame, 17);
                         canvas.Children.Add(windowFrame);
 
                         // Innenraumbeleuchtung hinter Fenster
@@ -1732,7 +1742,7 @@ namespace OOPGames
                         };
                         Canvas.SetLeft(interiorLight, bridgeX + bridgeW * 0.11 + i * bridgeW * 0.28);
                         Canvas.SetTop(interiorLight, bridgeY + bridgeH * 0.24);
-                        Canvas.SetZIndex(interiorLight, 5);
+                        Canvas.SetZIndex(interiorLight, 17);
                         canvas.Children.Add(interiorLight);
 
                         var window = new Rectangle
@@ -1744,7 +1754,7 @@ namespace OOPGames
                         };
                         Canvas.SetLeft(window, bridgeX + bridgeW * 0.12 + i * bridgeW * 0.28);
                         Canvas.SetTop(window, bridgeY + bridgeH * 0.25);
-                        Canvas.SetZIndex(window, 6);
+                        Canvas.SetZIndex(window, 18);
                         canvas.Children.Add(window);
 
                         // Fenster-Spiegelung
@@ -1757,7 +1767,7 @@ namespace OOPGames
                             Stroke = new SolidColorBrush(Color.FromArgb(150, 240, 250, 255)),
                             StrokeThickness = 0.5
                         };
-                        Canvas.SetZIndex(windowReflection, 7);
+                        Canvas.SetZIndex(windowReflection, 19);
                         canvas.Children.Add(windowReflection);
                     }
 
@@ -1770,7 +1780,7 @@ namespace OOPGames
                     };
                     Canvas.SetLeft(chimney, bridgeX + bridgeW + 2);
                     Canvas.SetTop(chimney, bridgeY - bridgeH * 0.2);
-                    Canvas.SetZIndex(chimney, 5);
+                    Canvas.SetZIndex(chimney, 17);
                     canvas.Children.Add(chimney);
 
                     // Volumetrischer Rauch mit Wirbeln
@@ -1785,7 +1795,7 @@ namespace OOPGames
                         };
                         Canvas.SetLeft(smoke, bridgeX + bridgeW + 2 - s * 0.7 + (s % 2 == 0 ? 1 : -1));
                         Canvas.SetTop(smoke, bridgeY - bridgeH * 0.3 - s * 2.5);
-                        Canvas.SetZIndex(smoke, 5);
+                        Canvas.SetZIndex(smoke, 18);
                         canvas.Children.Add(smoke);
                     }
 
@@ -1800,7 +1810,7 @@ namespace OOPGames
                     };
                     Canvas.SetLeft(heatDistortion, bridgeX + bridgeW + 1);
                     Canvas.SetTop(heatDistortion, bridgeY - bridgeH * 0.4);
-                    Canvas.SetZIndex(heatDistortion, 4);
+                    Canvas.SetZIndex(heatDistortion, 16);
                     canvas.Children.Add(heatDistortion);
 
                     // Scheinwerfer mit volumetrischem Licht
@@ -1813,7 +1823,7 @@ namespace OOPGames
                     };
                     Canvas.SetLeft(spotlightGlow, bridgeX + bridgeW * 0.1 - 1.5);
                     Canvas.SetTop(spotlightGlow, bridgeY + bridgeH * 0.7 - 1.5);
-                    Canvas.SetZIndex(spotlightGlow, 6);
+                    Canvas.SetZIndex(spotlightGlow, 18);
                     canvas.Children.Add(spotlightGlow);
 
                     var spotlight = new Ellipse
@@ -1825,7 +1835,7 @@ namespace OOPGames
                     };
                     Canvas.SetLeft(spotlight, bridgeX + bridgeW * 0.1);
                     Canvas.SetTop(spotlight, bridgeY + bridgeH * 0.7);
-                    Canvas.SetZIndex(spotlight, 7);
+                    Canvas.SetZIndex(spotlight, 19);
                     canvas.Children.Add(spotlight);
 
                     // Lichtstrahl-Effekt
@@ -1838,7 +1848,7 @@ namespace OOPGames
                     lightBeam.Points.Add(new System.Windows.Point(bridgeX + bridgeW * 0.1 + 1.5, bridgeY + bridgeH * 0.7 + 1.5));
                     lightBeam.Points.Add(new System.Windows.Point(bridgeX + bridgeW * 0.1 - 3, bridgeY + bridgeH * 0.7 + 8));
                     lightBeam.Points.Add(new System.Windows.Point(bridgeX + bridgeW * 0.1 + 6, bridgeY + bridgeH * 0.7 + 8));
-                    Canvas.SetZIndex(lightBeam, 5);
+                    Canvas.SetZIndex(lightBeam, 17);
                     canvas.Children.Add(lightBeam);
 
                     // Mehrere Antennen
@@ -1857,7 +1867,7 @@ namespace OOPGames
                         X2 = bridgeX + bridgeW * 0.7, Y2 = bridgeY - 4,
                         Stroke = new SolidColorBrush(Color.FromRgb(120, 130, 140)), StrokeThickness = 0.8
                     };
-                    Canvas.SetZIndex(antenna2, 6);
+                    Canvas.SetZIndex(antenna2, 18);
                     canvas.Children.Add(antenna2);
 
                     // Rotes Signallicht auf Antenne 1
@@ -1870,7 +1880,7 @@ namespace OOPGames
                     };
                     Canvas.SetLeft(signalLight, bridgeX + bridgeW * 0.3 - 1);
                     Canvas.SetTop(signalLight, bridgeY - 6);
-                    Canvas.SetZIndex(signalLight, 7);
+                    Canvas.SetZIndex(signalLight, 19);
                     canvas.Children.Add(signalLight);
 
                     // Licht-Glow um Signal
@@ -1883,7 +1893,7 @@ namespace OOPGames
                     };
                     Canvas.SetLeft(signalGlow, bridgeX + bridgeW * 0.3 - 2);
                     Canvas.SetTop(signalGlow, bridgeY - 7);
-                    Canvas.SetZIndex(signalGlow, 6);
+                    Canvas.SetZIndex(signalGlow, 18);
                     canvas.Children.Add(signalGlow);
 
                     // Elektrische Funken (klein)
@@ -1896,7 +1906,7 @@ namespace OOPGames
                             Stroke = new SolidColorBrush(Color.FromArgb(180, 150, 200, 255)),
                             StrokeThickness = 0.5
                         };
-                        Canvas.SetZIndex(electricSpark, 7);
+                        Canvas.SetZIndex(electricSpark, 19);
                         canvas.Children.Add(electricSpark);
                     }
                 }
@@ -1917,7 +1927,7 @@ namespace OOPGames
                         };
                         Canvas.SetLeft(boatShadow, boatX + 0.5);
                         Canvas.SetTop(boatShadow, boatY + 0.5);
-                        Canvas.SetZIndex(boatShadow, 3);
+                        Canvas.SetZIndex(boatShadow, 15);
                         canvas.Children.Add(boatShadow);
 
                         var lifeboat = new Ellipse
@@ -1941,7 +1951,7 @@ namespace OOPGames
                         };
                         Canvas.SetLeft(boatHighlight, boatX + cellSize * 0.02);
                         Canvas.SetTop(boatHighlight, boatY + 0.8);
-                        Canvas.SetZIndex(boatHighlight, 5);
+                        Canvas.SetZIndex(boatHighlight, 17);
                         canvas.Children.Add(boatHighlight);
                     }
                 }
@@ -1961,7 +1971,7 @@ namespace OOPGames
                     };
                     Canvas.SetLeft(platformShadow, gun1X - cellSize * 0.15 + 1);
                     Canvas.SetTop(platformShadow, gun1Y - cellSize * 0.15 + 1);
-                    Canvas.SetZIndex(platformShadow, 2);
+                    Canvas.SetZIndex(platformShadow, 15);
                     canvas.Children.Add(platformShadow);
 
                     var gunPlatform1 = new Ellipse
@@ -1975,7 +1985,7 @@ namespace OOPGames
                     };
                     Canvas.SetLeft(gunPlatform1, gun1X - cellSize * 0.14);
                     Canvas.SetTop(gunPlatform1, gun1Y - cellSize * 0.14);
-                    Canvas.SetZIndex(gunPlatform1, 3);
+                    Canvas.SetZIndex(gunPlatform1, 16);
                     canvas.Children.Add(gunPlatform1);
 
                     var gunBase1 = new Ellipse
@@ -1988,7 +1998,7 @@ namespace OOPGames
                     };
                     Canvas.SetLeft(gunBase1, gun1X - cellSize * 0.09);
                     Canvas.SetTop(gunBase1, gun1Y - cellSize * 0.09);
-                    Canvas.SetZIndex(gunBase1, 4);
+                    Canvas.SetZIndex(gunBase1, 17);
                     canvas.Children.Add(gunBase1);
 
                     // Metallglanz auf Turm
@@ -2001,7 +2011,7 @@ namespace OOPGames
                     };
                     Canvas.SetLeft(turretShine, gun1X - cellSize * 0.05);
                     Canvas.SetTop(turretShine, gun1Y - cellSize * 0.06);
-                    Canvas.SetZIndex(turretShine, 5);
+                    Canvas.SetZIndex(turretShine, 18);
                     canvas.Children.Add(turretShine);
 
                     // Doppelläufe
@@ -2015,7 +2025,7 @@ namespace OOPGames
                         };
                         Canvas.SetLeft(gunBarrel, gun1X - cellSize * 0.22);
                         Canvas.SetTop(gunBarrel, gun1Y - 2.5 + barrel * 3);
-                        Canvas.SetZIndex(gunBarrel, 5);
+                        Canvas.SetZIndex(gunBarrel, 18);
                         canvas.Children.Add(gunBarrel);
                     }
 
@@ -2031,7 +2041,7 @@ namespace OOPGames
                     };
                     Canvas.SetLeft(gunBase2, gun2X - cellSize * 0.1);
                     Canvas.SetTop(gunBase2, gun1Y - cellSize * 0.1);
-                    Canvas.SetZIndex(gunBase2, 3);
+                    Canvas.SetZIndex(gunBase2, 16);
                     canvas.Children.Add(gunBase2);
 
                     var gunBarrel2 = new Rectangle
@@ -2041,7 +2051,7 @@ namespace OOPGames
                     };
                     Canvas.SetLeft(gunBarrel2, gun2X - cellSize * 0.2);
                     Canvas.SetTop(gunBarrel2, gun1Y - 1.25);
-                    Canvas.SetZIndex(gunBarrel2, 4);
+                    Canvas.SetZIndex(gunBarrel2, 17);
                     canvas.Children.Add(gunBarrel2);
                 }
 
@@ -2061,7 +2071,7 @@ namespace OOPGames
                     };
                     Canvas.SetLeft(radarMast, radarX + cellSize * 0.068);
                     Canvas.SetTop(radarMast, radarY);
-                    Canvas.SetZIndex(radarMast, 5);
+                    Canvas.SetZIndex(radarMast, 17);
                     canvas.Children.Add(radarMast);
 
                     // Radar-Schüssel mit 3D-Gradient
@@ -2076,7 +2086,7 @@ namespace OOPGames
                     };
                     Canvas.SetLeft(radar, radarX);
                     Canvas.SetTop(radar, radarY);
-                    Canvas.SetZIndex(radar, 6);
+                    Canvas.SetZIndex(radar, 18);
                     canvas.Children.Add(radar);
 
                     // Radar-Scan-Linie (grün)
@@ -2087,10 +2097,10 @@ namespace OOPGames
                         Stroke = new SolidColorBrush(Color.FromRgb(100, 255, 100)),
                         StrokeThickness = 1.5
                     };
-                    Canvas.SetZIndex(radarLine, 7);
+                    Canvas.SetZIndex(radarLine, 19);
                     canvas.Children.Add(radarLine);
 
-                    // Pulsierender Radar-Glow
+                    // Pulsierender Radar-Glow)
                     var radarGlowOuter = new Ellipse
                     {
                         Width = 5, Height = 5,
@@ -2100,7 +2110,7 @@ namespace OOPGames
                     };
                     Canvas.SetLeft(radarGlowOuter, radarX + cellSize * 0.105);
                     Canvas.SetTop(radarGlowOuter, radarY + cellSize * 0.005);
-                    Canvas.SetZIndex(radarGlowOuter, 8);
+                    Canvas.SetZIndex(radarGlowOuter, 20);
                     canvas.Children.Add(radarGlowOuter);
 
                     var radarGlow = new Ellipse
@@ -2112,7 +2122,7 @@ namespace OOPGames
                     };
                     Canvas.SetLeft(radarGlow, radarX + cellSize * 0.118);
                     Canvas.SetTop(radarGlow, radarY + cellSize * 0.018);
-                    Canvas.SetZIndex(radarGlow, 9);
+                    Canvas.SetZIndex(radarGlow, 21);
                     canvas.Children.Add(radarGlow);
 
                     // Radar-Strahlungswellen
@@ -2126,7 +2136,7 @@ namespace OOPGames
                         };
                         Canvas.SetLeft(radarWave, radarX + cellSize * 0.085 - wave * 2.5);
                         Canvas.SetTop(radarWave, radarY - wave * 2.5);
-                        Canvas.SetZIndex(radarWave, 7);
+                        Canvas.SetZIndex(radarWave, 19);
                         canvas.Children.Add(radarWave);
                     }
 
@@ -2140,7 +2150,7 @@ namespace OOPGames
                     };
                     Canvas.SetLeft(flagpole, startX + shipWidth - 8);
                     Canvas.SetTop(flagpole, startY + yOffset + shipHeight * 0.35);
-                    Canvas.SetZIndex(flagpole, 5);
+                    Canvas.SetZIndex(flagpole, 17);
                     canvas.Children.Add(flagpole);
 
                     // Wehende Flagge mit Schatten
@@ -2151,7 +2161,7 @@ namespace OOPGames
                     flagShadow.Points.Add(new System.Windows.Point(startX + shipWidth - 6.5, startY + yOffset + shipHeight * 0.35 + 0.5));
                     flagShadow.Points.Add(new System.Windows.Point(startX + shipWidth - 2.5, startY + yOffset + shipHeight * 0.37 + 0.5));
                     flagShadow.Points.Add(new System.Windows.Point(startX + shipWidth - 6.5, startY + yOffset + shipHeight * 0.39 + 0.5));
-                    Canvas.SetZIndex(flagShadow, 5);
+                    Canvas.SetZIndex(flagShadow, 17);
                     canvas.Children.Add(flagShadow);
 
                     var flag = new System.Windows.Shapes.Polygon
@@ -2165,7 +2175,7 @@ namespace OOPGames
                     flag.Points.Add(new System.Windows.Point(startX + shipWidth - 7, startY + yOffset + shipHeight * 0.35));
                     flag.Points.Add(new System.Windows.Point(startX + shipWidth - 3, startY + yOffset + shipHeight * 0.37));
                     flag.Points.Add(new System.Windows.Point(startX + shipWidth - 7, startY + yOffset + shipHeight * 0.39));
-                    Canvas.SetZIndex(flag, 6);
+                    Canvas.SetZIndex(flag, 18);
                     canvas.Children.Add(flag);
                 }
             }
