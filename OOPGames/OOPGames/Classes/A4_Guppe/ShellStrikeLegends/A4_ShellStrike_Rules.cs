@@ -68,7 +68,7 @@ namespace OOPGames
                 {
                     case ShellStrikeAction.MoveLeft:
                     {
-                        int maxXBound = (_field.Terrain?.Heights?.Length ?? 800) - (int)tank.Width;
+                        int maxXBound = (_field.Terrain?.Heights?.Length ?? 800) - (int)tank.Height;
                         // Face left when moving left
                         tank.Facing = -1;
                         // Moving left: front wheel is the left wheel; clear opposite crest flag

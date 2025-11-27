@@ -253,7 +253,7 @@ namespace OOPGames
                 double groundPivotY = tank.HullGroundPivotYPx > 0 ? tank.HullGroundPivotYPx : (tank.HullPivot.Y > 0 ? tank.HullPivot.Y : hullH);
                 hullPivotPixelY = groundPivotY;
                 var tg = new TransformGroup();
-                tg.Children.Add(new TranslateTransform(-hullPivotPixelX, -hullPivotPixelY));
+                //tg.Children.Add(new TranslateTransform(-hullPivotPixelX, -hullPivotPixelY));
                 tg.Children.Add(new ScaleTransform(dir * hullScale, hullScale));
                 tg.Children.Add(new RotateTransform(slopeDeg));
                 tg.Children.Add(new TranslateTransform(anchorX, anchorY));
@@ -263,7 +263,7 @@ namespace OOPGames
                 Canvas.SetTop(hullImg, 0);
                 // Compute world turret base by transforming a socket point
                 // Socket X: symmetric middle of hull; Socket Y: slightly above bottom
-                var socketLocal = new Point(hullW / 2.0, hullH - tank.HullSocketYOffsetPx);
+                var socketLocal = new Point(hullW / 2.0, hullH -tank.HullSocketYOffsetPx);
                 var socketWorld = tg.Value.Transform(socketLocal);
                 double socketBaseX = socketWorld.X;
                 double socketBaseY = socketWorld.Y;
