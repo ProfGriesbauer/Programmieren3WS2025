@@ -14,14 +14,51 @@ namespace OOPGames
 
         //Sprite Fürs Barrel Initialisieren
         public string BarrelSpritePath { get; set; } = "Assets/ShellStrikeLegends/camo-tank-barrel.png";
-         // Winkel des Kanonenrohrs in Radiant (relativ zum Tank!)
-         //Berechnung der Barrel Rotation
-         public double BarrelPivotX => X + Math.Cos(RotationRad) * A4_ShellStrikeLegendsV2_Config.BarrelPivotOffsetXScaled
-        - Math.Sin(RotationRad) * A4_ShellStrikeLegendsV2_Config.BarrelPivotOffsetYScaled;
+        // Winkel des Kanonenrohrs in Radiant (relativ zum Tank!)
+        //Berechnung der Barrel Rotation relativ zum Tank nicht mehr um oberkante!!!
+        public double BarrelPivotX
+        {
+            get
+            {
+                // 1. Das Rotationszentrum des Tanks (Mitte des Bildes!)
+                double cx = X;
+                double cy = Y + (A4_ShellStrikeLegendsV2_Config.TankBodyHeightPx *
+                                 A4_ShellStrikeLegendsV2_Config.TankScale) / 2.0;
 
-        public double BarrelPivotY => Y + Math.Sin(RotationRad) * A4_ShellStrikeLegendsV2_Config.BarrelPivotOffsetXScaled
-        + Math.Cos(RotationRad) * A4_ShellStrikeLegendsV2_Config.BarrelPivotOffsetYScaled;
+                // 2. Barrel-Offets relativ zur Tank-Mitte
+                double lx = A4_ShellStrikeLegendsV2_Config.BarrelPivotOffsetXScaled;
+                double ly = A4_ShellStrikeLegendsV2_Config.BarrelPivotOffsetYScaled
+                            - (A4_ShellStrikeLegendsV2_Config.TankBodyHeightPx *
+                               A4_ShellStrikeLegendsV2_Config.TankScale) / 2.0;
+                // Oberkante → zur Mitte verschoben
 
+                double cos = Math.Cos(RotationRad);
+                double sin = Math.Sin(RotationRad);
+
+                // 3. Rotation um Tank-Mitte
+                return cx + cos * lx - sin * ly;
+            }
+        }
+
+        public double BarrelPivotY
+        {
+            get
+            {
+                double cx = X;
+                double cy = Y + (A4_ShellStrikeLegendsV2_Config.TankBodyHeightPx *
+                                 A4_ShellStrikeLegendsV2_Config.TankScale) / 2.0;
+
+                double lx = A4_ShellStrikeLegendsV2_Config.BarrelPivotOffsetXScaled;
+                double ly = A4_ShellStrikeLegendsV2_Config.BarrelPivotOffsetYScaled
+                            - (A4_ShellStrikeLegendsV2_Config.TankBodyHeightPx *
+                               A4_ShellStrikeLegendsV2_Config.TankScale) / 2.0;
+
+                double cos = Math.Cos(RotationRad);
+                double sin = Math.Sin(RotationRad);
+
+                return cy + sin * lx + cos * ly;
+            }
+        }
 
         public double BarrelAngleRad { get; set; } = 0;   // 0 = waagrecht rechts
 
