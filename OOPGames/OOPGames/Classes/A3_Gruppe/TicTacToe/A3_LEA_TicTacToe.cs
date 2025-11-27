@@ -468,7 +468,7 @@ namespace OOPGames
     {
         private int _playerNumber = 0;
 
-        public override string Name { get { return "A3 LEA Human"; } }
+        public override string Name { get { return "A3 TicTacToe Human"; } }
 
         public override int PlayerNumber { get { return _playerNumber; } }
 
@@ -529,7 +529,7 @@ namespace OOPGames
         private int _playerNumber = 0;
         private Random _random = new Random();
 
-        public override string Name { get { return "A3 LEA Computer (Unschlagbar)"; } }
+        public override string Name { get { return "A3 TicTacToe Computer"; } }
 
         public override int PlayerNumber { get { return _playerNumber; } }
 

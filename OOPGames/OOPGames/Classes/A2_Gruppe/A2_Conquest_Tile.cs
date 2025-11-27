@@ -1,85 +1,59 @@
-
-using System.Linq;
 using System;
+using System.Linq;
 
-namespace OOPGames{
+namespace OOPGames
+{
     public class Tile
     {
-    public bool IsHomeBase { get; set; } = false;   // Ecke, NICHT eroberbar
-    public bool IsTargetBase { get; set; } = false; // Siegziel, eroberbar
-
-        
         public int X { get; }
-            public int Y { get; }
+        public int Y { get; }
 
-            /// -1 = neutral, 0 = Spieler, 1 = Gegner
-            public int OwnerID { get; set; } = -1;
+        public int OwnerID { get; set; } = -1; // -1 neutral, 0/1 players
 
-            public bool IsObjective { get; set; }    // Ziel im Gegnergebiet
-            public bool IsBase { get; set; }         // Startbasis
+        // Basissystem
+        public bool IsHomeBase { get; set; } = false;   // Ecke, NICHT eroberbar
+        public bool IsTargetBase { get; set; } = false; // Zielbasis, eroberbar, win-condition
+        public bool IsBase { get; set; } = false;       // nur fürs Zeichnen/Markieren
 
-            public int ResourceYield { get; set; } = 1;
-            public BoostType BoostOnTile { get; set; } = BoostType.None;
+        public int ResourceYield { get; set; } = 1;
+        public BoostType BoostOnTile { get; set; } = BoostType.None;
 
-            /// Erschwert die Einnahme
-            public int DefenseLevel { get; set; } = 0;
+        // Capture
+        public int CaptureTarget { get; set; } = 100;
+        public int CaptureProgress { get; set; } = 0;
+        public int CapturingPlayerID { get; set; } = -1;
+        public bool IsBeingContested { get; set; } = false;
 
-            /// Zielwert, der erreicht werden muss (Capture-Progress)
-            public int CaptureTarget { get; set; } = 100;
-            public int CaptureProgress { get; set; } = 0;
-            public int CapturingPlayerID { get; set; } = -1;
-            public bool IsBeingContested { get; set; } = false;
+        public Tile(int x, int y) { X = x; Y = y; }
 
-            public Tile(int x, int y)
-            {
-                X = x;
-                Y = y;
-            }
-
-
-
-        public bool CanBeCapturedBy(Player player, Field field)
+        // Troop-gesteuert: Keine Adjacency-Regel, nur Basen schützen
+        public bool CanBeCapturedBy(Player player)
         {
-            if (IsHomeBase) return false; // Homebase bleibt immer geschützt
-
+            if (IsHomeBase) return false;          // Homebase niemals
             if (OwnerID == player.Id) return false;
-
-            bool adjacentOwned = field.GetNeighbours4(this).Any(n => n.OwnerID == player.Id);
-            return adjacentOwned;
+            if (IsBeingContested) return false;
+            return true;
         }
 
-
+        // Eroberungsrate NUR durch Boosts beeinflusst
         public int ComputeCaptureRate(Player attacker, Field field)
         {
-            int ownedNeighbours = field
-                .GetNeighbours4(this)
-                .Count(n => n.OwnerID == attacker.Id);
+            int rate = attacker.CaptureRate;
 
-            int rate = attacker.CaptureRate +
-                    ownedNeighbours * attacker.AdjacencyBonusPerNeighbour;
-
-            // Boosts/Jammer
             bool hasFastBoost = field.GetNeighbours4(this)
-                .Any(n => n.OwnerID == attacker.Id &&
-                        n.BoostOnTile == BoostType.FasterCapture);
-
+                .Any(n => n.OwnerID == attacker.Id && n.BoostOnTile == BoostType.FasterCapture);
             if (hasFastBoost) rate += 10;
 
             bool hasEnemyJammer = field.GetNeighbours4(this)
-                .Any(n => n.OwnerID != -1 &&
-                        n.OwnerID != attacker.Id &&
-                        n.BoostOnTile == BoostType.AreaJammer);
-
+                .Any(n => n.OwnerID != -1 && n.OwnerID != attacker.Id && n.BoostOnTile == BoostType.AreaJammer);
             if (hasEnemyJammer) rate -= 10;
 
-            rate = Math.Max(1, rate - DefenseLevel / 5);
-            return rate;
+            return Math.Max(1, rate);
         }
 
         public void AdvanceCapture(Player attacker, Field field)
         {
-            int rate = ComputeCaptureRate(attacker, field);
-            CaptureProgress += rate;
+            CaptureProgress += ComputeCaptureRate(attacker, field);
 
             if (CaptureProgress >= CaptureTarget)
             {
