@@ -39,16 +39,8 @@ namespace OOPGames
         public int ComputeCaptureRate(Player attacker, Field field)
         {
             int rate = attacker.CaptureRate;
-
-            bool hasFastBoost = field.GetNeighbours4(this)
-                .Any(n => n.OwnerID == attacker.Id && n.BoostOnTile == BoostType.FasterCapture);
-            if (hasFastBoost) rate += 10;
-
-            bool hasEnemyJammer = field.GetNeighbours4(this)
-                .Any(n => n.OwnerID != -1 && n.OwnerID != attacker.Id && n.BoostOnTile == BoostType.AreaJammer);
-            if (hasEnemyJammer) rate -= 10;
-
-            return Math.Max(1, rate);
+            rate += BoostSystem.GetCaptureRateDelta(attacker, this, field);
+            return System.Math.Max(1, rate);
         }
 
         public void AdvanceCapture(Player attacker, Field field)
