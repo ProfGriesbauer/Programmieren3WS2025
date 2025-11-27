@@ -69,4 +69,22 @@ namespace OOPGames
             return null;
         }
     }
+
+    // Abstrakte Basis-Computer Player
+    public abstract class A3_LEA_BaseComputerSchiffePlayer : IA3_LEA_ComputerSchiffePlayer
+    {
+        public abstract string Name { get; }
+        public abstract int PlayerNumber { get; }
+        public abstract void SetPlayerNumber(int playerNumber);
+        public abstract IGamePlayer Clone();
+        public abstract IA3_LEA_SchiffeMove GetMove(IA3_LEA_SchiffeField field);
+
+        public bool CanBeRuledBy(IGameRules rules) => rules is IA3_LEA_SchiffeRules;
+        public IPlayMove GetMove(IGameField field)
+        {
+            if (field is IA3_LEA_SchiffeField)
+                return GetMove((IA3_LEA_SchiffeField)field);
+            return null;
+        }
+    }
 }
