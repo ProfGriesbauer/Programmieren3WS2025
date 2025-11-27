@@ -63,5 +63,17 @@ namespace OOPGames
             X = midX;
             Y = midPivotY - avgPivotYOffset;   // Tank-Top-Y = mittlere Pivot-Höhe minus Offsets
         }
+
+        //Variablen für die Tasteneingaben
+        public void MoveLeft()
+        {
+            X -= A4_ShellStrikeLegendsV2_Config.TankDriveSpeedPx;
+        }
+
+        public void MoveRight()
+        {
+            X += A4_ShellStrikeLegendsV2_Config.TankDriveSpeedPx;
+        }
+
     }
 }

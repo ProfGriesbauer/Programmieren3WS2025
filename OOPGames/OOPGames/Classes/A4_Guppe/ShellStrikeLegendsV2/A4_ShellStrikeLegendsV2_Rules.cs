@@ -64,17 +64,47 @@ namespace OOPGames
         }
 
 
-
+        //Methode um die Tasteneingaben aus HumanPlayer zu verarbeiten
         public void DoMove(IPlayMove move)
         {
-            // ignore moves in terrain-only demo
+            if (move is not A4_ShellStrikeLegendsV2_Move m)
+                return;
+
+            var t = _field.Tank1;
+            if (t == null || _field.Terrain == null)
+                return;
+
+            switch (m.Action)
+            {
+                case SSLV2Action.MoveLeft:
+                    t.MoveLeft();
+                    t.UpdateFromTerrain(_field.Terrain);
+                    break;
+
+                case SSLV2Action.MoveRight:
+                    t.MoveRight();
+                    t.UpdateFromTerrain(_field.Terrain);
+                    break;
+
+                case SSLV2Action.None:
+                default:
+                    // nichts tun
+                    break;
+            }
         }
+
+
 
         public void ClearField()
         {
-            // Reset tank to top so it can fall again
-            if (_field?.Tank1 != null) _field.Tank1.Y = -100; // etwas über dem Bild
+            if (_field?.Tank1 != null)
+            {
+                _field.Tank1.X = A4_ShellStrikeLegendsV2_Config.TankSpawnX;
+                _field.Tank1.Y = A4_ShellStrikeLegendsV2_Config.TankSpawnY;
+                _field.Tank1.FallVelocity = 0;
+            }
         }
+
 
         public int CheckIfPLayerWon()
         {
