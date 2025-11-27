@@ -5,6 +5,9 @@ using System;
 namespace OOPGames{
     public class Tile
     {
+    public bool IsHomeBase { get; set; } = false;   // Ecke, NICHT eroberbar
+    public bool IsTargetBase { get; set; } = false; // Siegziel, eroberbar
+
         
         public int X { get; }
             public int Y { get; }
@@ -37,12 +40,14 @@ namespace OOPGames{
 
         public bool CanBeCapturedBy(Player player, Field field)
         {
-            if (OwnerID == player.Id) return false;
-            if (IsBase && OwnerID != -1) return false; // optional: Base direkt sperren?
+            if (IsHomeBase) return false; // Homebase bleibt immer geschützt
 
-            bool isAdjacent = field.GetNeighbours4(this).Any(n => n.OwnerID == player.Id);
-            return isAdjacent;
+            if (OwnerID == player.Id) return false;
+
+            bool adjacentOwned = field.GetNeighbours4(this).Any(n => n.OwnerID == player.Id);
+            return adjacentOwned;
         }
+
 
         public int ComputeCaptureRate(Player attacker, Field field)
         {

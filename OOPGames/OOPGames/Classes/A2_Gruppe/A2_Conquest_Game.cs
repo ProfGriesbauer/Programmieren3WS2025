@@ -6,6 +6,8 @@ namespace OOPGames
 {
     public class Game
     {
+        private const int TargetOffset = 3;
+
         public Field Field { get; }
         public Player[] Players { get; }
 
@@ -28,28 +30,46 @@ namespace OOPGames
 
         private void SetupDefaultLayout()
         {
-            // Startbasis links
-            var baseTile = Field.GetTile(0, Field.Height / 2);
-            baseTile.OwnerID = 0;
-            baseTile.IsBase = true;
-            baseTile.ResourceYield = 2;
+            // 1) Home-Bases (Ecken, NICHT eroberbar)
+            var home0 = Field.GetTile(0, 0);
+            home0.OwnerID = 0;
+            home0.IsBase = true;
+            home0.IsHomeBase = true;
+            home0.ResourceYield = 2;
 
-            // Objective rechts
-            var objTile = Field.GetTile(Field.Width - 1, Field.Height / 2);
-            objTile.OwnerID = 1;
-            objTile.IsObjective = true;
-            objTile.DefenseLevel = 20;
-            objTile.ResourceYield = 2;
+            var home1 = Field.GetTile(Field.Width - 1, Field.Height - 1);
+            home1.OwnerID = 1;
+            home1.IsBase = true;
+            home1.IsHomeBase = true;
+            home1.ResourceYield = 2;
 
-            // ein paar Boost-Felder als Beispiel
-            if (Field.Width > 4 && Field.Height > 2)
-            {
-                Field.GetTile(2, 1).BoostOnTile = BoostType.ExtraCapacity;
-                Field.GetTile(3, 3).BoostOnTile = BoostType.FasterCapture;
-                Field.GetTile(1, 3).BoostOnTile = BoostType.ExtraAP;
-                Field.GetTile(4, 1).BoostOnTile = BoostType.AreaJammer;
-            }
+            // 2) Target-Bases (Siegziele, eroberbar) relativ zur gegnerischen Home-Base um (5,5)
+            var targetFor1 = Field.GetTile(TargetOffset, TargetOffset); // liegt nahe Home0 -> Ziel für Spieler 1
+            targetFor1.OwnerID = 0;               // gehört anfangs Spieler 0
+            targetFor1.IsBase = true;
+            targetFor1.IsTargetBase = true;
+            targetFor1.DefenseLevel = 30;
+            targetFor1.ResourceYield = 2;
+
+            var targetFor0 = Field.GetTile(Field.Width - 1 - TargetOffset, Field.Height - 1 - TargetOffset); // nahe Home1 -> Ziel für Spieler 0
+            targetFor0.OwnerID = 1;               // gehört anfangs Spieler 1
+            targetFor0.IsBase = true;
+            targetFor0.IsTargetBase = true;
+            targetFor0.DefenseLevel = 30;
+            targetFor0.ResourceYield = 2;
+
+            // 3) Optional: ein paar Boosts “relativ” verteilen
+            int x1 = Field.Width / 3;
+            int x2 = (2 * Field.Width) / 3;
+            int y1 = Field.Height / 3;
+            int y2 = (2 * Field.Height) / 3;
+
+            Field.GetTile(x1, y1).BoostOnTile = BoostType.ExtraCapacity;
+            Field.GetTile(x2, y2).BoostOnTile = BoostType.FasterCapture;
+            Field.GetTile(x1, y2).BoostOnTile = BoostType.ExtraAP;
+            Field.GetTile(x2, y1).BoostOnTile = BoostType.AreaJammer;
         }
+
 
         // ===== Rundenablauf =====
 
@@ -145,20 +165,29 @@ namespace OOPGames
             }
         }
 
-        public bool CheckWin(out int winnerId)
+       public bool CheckWin(out int winnerId)
         {
-            foreach (var t in Field.AllTiles().Where(t => t.IsObjective))
+            // Spieler 0 gewinnt, wenn er die Target-Base von Spieler 1 erobert hat
+            var targetFor0 = Field.GetTile(Field.Width - 1 - TargetOffset, Field.Height - 1 - TargetOffset);
+            if (targetFor0.IsTargetBase && targetFor0.OwnerID == 0)
             {
-                if (t.OwnerID != -1)
-                {
-                    winnerId = t.OwnerID;
-                    return true;
-                }
+                winnerId = 0;
+                return true;
+            }
+
+            // Spieler 1 gewinnt, wenn er die Target-Base von Spieler 0 erobert hat
+            var targetFor1 = Field.GetTile(TargetOffset, TargetOffset);
+            if (targetFor1.IsTargetBase && targetFor1.OwnerID == 1)
+            {
+                winnerId = 1;
+                return true;
             }
 
             winnerId = -1;
             return false;
         }
+
+
 
         // Debug-Ansicht im Text
         public string RenderAscii()
