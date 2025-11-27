@@ -15,7 +15,7 @@ namespace OOPGames
         {
             _isTwoPlayerMode = twoPlayerMode;
             _field = new A5_SnakeField(twoPlayerMode);
-            Name = twoPlayerMode ? "A5 Snake (2-Player)" : "A5 Snake (Singleplayer)";
+            Name = twoPlayerMode ? "A5 Snake (Multiplayer)" : "A5 Snake (Singleplayer)";
         }
 
         public void DoMove(IPlayMove move)

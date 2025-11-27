@@ -6,7 +6,7 @@ namespace OOPGames
     {
         private readonly Tile[,] _tiles;
 
-        public int Width  => _tiles.GetLength(0);
+        public int Width => _tiles.GetLength(0);
         public int Height => _tiles.GetLength(1);
 
         public Field(int width, int height)
@@ -31,10 +31,10 @@ namespace OOPGames
             int x = t.X;
             int y = t.Y;
 
-            if (x > 0)           yield return _tiles[x - 1, y];
-            if (x < Width - 1)   yield return _tiles[x + 1, y];
-            if (y > 0)           yield return _tiles[x, y - 1];
-            if (y < Height - 1)  yield return _tiles[x, y + 1];
+            if (x > 0) yield return _tiles[x - 1, y];
+            if (x < Width - 1) yield return _tiles[x + 1, y];
+            if (y > 0) yield return _tiles[x, y - 1];
+            if (y < Height - 1) yield return _tiles[x, y + 1];
         }
     }
 }
