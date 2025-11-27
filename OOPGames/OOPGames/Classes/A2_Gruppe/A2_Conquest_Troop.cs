@@ -3,19 +3,15 @@ namespace OOPGames
     public sealed class Troop
     {
         public int OwnerId { get; }
-        public int X { get; private set; }
-        public int Y { get; private set; }
+        public int LocalIndex { get; } // 0 oder 1 pro Spieler
 
-        public Troop(int ownerId, int x, int y)
+        public int X { get; set; }
+        public int Y { get; set; }
+
+        public Troop(int ownerId, int localIndex, int x, int y)
         {
             OwnerId = ownerId;
-            X = x;
-            Y = y;
-        }
-
-        // Für später (Movement):
-        public void SetPosition(int x, int y)
-        {
+            LocalIndex = localIndex;
             X = x;
             Y = y;
         }

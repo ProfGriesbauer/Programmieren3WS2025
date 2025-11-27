@@ -2937,6 +2937,7 @@ namespace OOPGames
     public class A3_LEA_ComputerSchiffePlayer : A3_LEA_BaseComputerSchiffePlayer
     {
         private int _playerNumber = 2;
+        private static readonly System.Random _rand = new System.Random();
         public override string Name => "A3 LEA Schiffe Computer";
         public override int PlayerNumber => _playerNumber;
         public override void SetPlayerNumber(int playerNumber) => _playerNumber = playerNumber;
@@ -2947,17 +2948,12 @@ namespace OOPGames
             var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_SchiffeRules;
             if (rules != null)
             {
-                if (!rules.IsSetupPhase && rules.Phase == 3 && rules.CurrentSetupPlayer == _playerNumber)
+                // If called with a selection wrapper, forward to the field-only decision
+                if (!rules.IsSetupPhase && rules.Phase == 3)
                 {
-                    // Computer is in playing phase and it's his turn: shoot at random field
-                    Random rand = new Random();
-                    int x, y;
-                    do
-                    {
-                        x = rand.Next(0, field.Width);
-                        y = rand.Next(0, field.Height);
-                    } while (rules.Shots2.Contains((x, y))); // avoid shooting the same cell twice
-                    return new A3_LEA_SchiffeMove(x, y, _playerNumber);
+                    var target = ChooseSmartTarget(rules, field);
+                    if (target.HasValue)
+                        return new A3_LEA_SchiffeMove(target.Value.x, target.Value.y, _playerNumber);
                 }
             }
             return null;
@@ -2996,25 +2992,109 @@ namespace OOPGames
                 return null;
             }
 
-            // Playing phase: computer should shoot at random unshot cell
+            // Playing phase: choose a smart target (neighboring cells after hits, orientation-aware)
             if (!rules.IsSetupPhase && rules.Phase == 3)
             {
-                // choose the correct shots list based on shooter
-                var shotsList = _playerNumber == 1 ? rules.Shots2 : rules.Shots;
-                Random rand = new Random();
-                int x, y;
-                int tries = 0;
-                do
-                {
-                    x = rand.Next(0, field.Width);
-                    y = rand.Next(0, field.Height);
-                    tries++;
-                    if (tries > 500) break; // fail-safe
-                } while (shotsList.Contains((x, y)));
+                var target = ChooseSmartTarget(rules, field);
+                if (target.HasValue)
+                    return new A3_LEA_SchiffeMove(target.Value.x, target.Value.y, _playerNumber);
+            }
 
-                // If we found a valid cell, return a shooting move
-                if (tries <= 500 && field.IsValidPosition(x, y))
-                    return new A3_LEA_SchiffeMove(x, y, _playerNumber);
+            return null;
+        }
+
+        // Helper: choose a smart target cell or null if none
+        private (int x, int y)? ChooseSmartTarget(A3_LEA_SchiffeRules rules, IA3_LEA_SchiffeField field)
+        {
+            // Determine my shots list and the opponent's ships (the ones I try to hit)
+            var myShots = _playerNumber == 1 ? rules.Shots2 : rules.Shots; // shots I've already made
+            var opponentShips = _playerNumber == 1 ? rules.Ships2 : rules.Ships;
+
+            // 1) Look for partially hit (but not sunk) ships and target neighbors
+            foreach (var ship in opponentShips)
+            {
+                if (ship.X < 0 || ship.Y < 0) continue; // not placed yet
+                if (ship.Hits == 0) continue; // no hits on this ship
+                if (ship.Hits >= ship.Size) continue; // already sunk
+
+                // collect hit coordinates for this ship
+                var hitCoords = new List<(int x, int y)>();
+                for (int i = 0; i < ship.Size; i++)
+                {
+                    if (ship.HitCells != null && i < ship.HitCells.Length && ship.HitCells[i])
+                    {
+                        int hx = ship.IsHorizontal ? ship.X + i : ship.X;
+                        int hy = ship.IsHorizontal ? ship.Y : ship.Y + i;
+                        hitCoords.Add((hx, hy));
+                    }
+                }
+
+                if (hitCoords.Count == 0) continue;
+
+                // If at least two hits: try to infer orientation and extend along that line
+                if (hitCoords.Count >= 2)
+                {
+                    bool sameRow = hitCoords.All(h => h.y == hitCoords[0].y);
+                    bool sameCol = hitCoords.All(h => h.x == hitCoords[0].x);
+                    if (sameRow)
+                    {
+                        int y = hitCoords[0].y;
+                        int minX = hitCoords.Min(h => h.x);
+                        int maxX = hitCoords.Max(h => h.x);
+                        var candidates = new List<(int x, int y)> { (minX - 1, y), (maxX + 1, y) };
+                        foreach (var c in candidates)
+                            if (field.IsValidPosition(c.x, c.y) && !myShots.Contains((c.x, c.y)))
+                                return c;
+                    }
+                    else if (sameCol)
+                    {
+                        int x = hitCoords[0].x;
+                        int minY = hitCoords.Min(h => h.y);
+                        int maxY = hitCoords.Max(h => h.y);
+                        var candidates = new List<(int x, int y)> { (x, minY - 1), (x, maxY + 1) };
+                        foreach (var c in candidates)
+                            if (field.IsValidPosition(c.x, c.y) && !myShots.Contains((c.x, c.y)))
+                                return c;
+                    }
+                }
+
+                // Single hit or no clear orientation: try adjacent cells (4-neighborhood)
+                var adj = new List<(int x, int y)>
+                {
+                    (hitCoords[0].x - 1, hitCoords[0].y),
+                    (hitCoords[0].x + 1, hitCoords[0].y),
+                    (hitCoords[0].x, hitCoords[0].y - 1),
+                    (hitCoords[0].x, hitCoords[0].y + 1)
+                };
+                // randomize order to add variety
+                var shuffled = adj.OrderBy(a => _rand.Next()).ToList();
+                foreach (var c in shuffled)
+                    if (field.IsValidPosition(c.x, c.y) && !myShots.Contains((c.x, c.y)))
+                        return c;
+            }
+
+            // 2) Hunt mode: choose unshot cells using parity (checkerboard) to be more efficient
+            var parityCandidates = new List<(int x, int y)>();
+            var fallbackCandidates = new List<(int x, int y)>();
+            for (int x = 0; x < field.Width; x++)
+            {
+                for (int y = 0; y < field.Height; y++)
+                {
+                    if (myShots.Contains((x, y))) continue;
+                    if (((x + y) & 1) == 0) parityCandidates.Add((x, y));
+                    else fallbackCandidates.Add((x, y));
+                }
+            }
+
+            if (parityCandidates.Count > 0)
+            {
+                var pick = parityCandidates[_rand.Next(parityCandidates.Count)];
+                return pick;
+            }
+            if (fallbackCandidates.Count > 0)
+            {
+                var pick = fallbackCandidates[_rand.Next(fallbackCandidates.Count)];
+                return pick;
             }
 
             return null;
