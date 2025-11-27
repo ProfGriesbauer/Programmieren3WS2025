@@ -82,6 +82,11 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterPlayer(new A4_ShellStrike_HumanPlayer());
             OOPGamesManager.Singleton.RegisterPlayer(new A4_ShellStrike_ComputerPlayer());
 
+            // A4 ShellStrikeLegends V2 (terrain demo: painter + minimal rules)
+            OOPGamesManager.Singleton.RegisterPainter(new A4_ShellStrikeLegendsV2_Painter());
+            OOPGamesManager.Singleton.RegisterRules(new A4_ShellStrikeLegendsV2_Rules());
+            OOPGamesManager.Singleton.RegisterPlayer(new A4_ShellStrikeLegendsV2_HumanPlayer());
+
             //A2 Painters - 
             OOPGamesManager.Singleton.RegisterPainter(new A2_Painter());
             OOPGamesManager.Singleton.RegisterRules(new A2_Rules());
