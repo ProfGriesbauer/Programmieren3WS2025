@@ -81,7 +81,12 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterRules(new A2_Rules());
             OOPGamesManager.Singleton.RegisterPlayer(new A2_HumanPlayer());
             OOPGamesManager.Singleton.RegisterPlayer(new A2_ComputerPlayer());  
-              
+            // A2 Conquest
+            OOPGamesManager.Singleton.RegisterPainter(new A2_ConquestPainter());
+            OOPGamesManager.Singleton.RegisterRules(new A2_ConquestRules());
+            OOPGamesManager.Singleton.RegisterPlayer(new A2_ConquestHumanPlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new A2_ConquestComputerPlayer());
+
 
             //A3_LEA TicTacToe
             OOPGamesManager.Singleton.RegisterPainter(new A3_LEA_TicTacToePaint());
