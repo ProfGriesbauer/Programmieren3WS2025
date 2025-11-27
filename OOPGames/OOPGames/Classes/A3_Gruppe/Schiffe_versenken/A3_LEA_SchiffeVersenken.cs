@@ -442,7 +442,8 @@ namespace OOPGames
                     Fill = new LinearGradientBrush(
                         Color.FromRgb(65, 105, 225),  // Royal Blue
                         Color.FromRgb(30, 144, 255),  // Dodger Blue
-                        90)
+                        90),
+                    IsHitTestVisible = false
                 };
                 Canvas.SetLeft(waterRect, baseX);
                 Canvas.SetTop(waterRect, baseY);
@@ -572,7 +573,8 @@ namespace OOPGames
                 Fill = new LinearGradientBrush(
                     Color.FromRgb(65, 105, 225),
                     Color.FromRgb(30, 144, 255),
-                    90)
+                    90),
+                IsHitTestVisible = false
             };
             Canvas.SetLeft(water1, topBaseX);
             Canvas.SetTop(water1, topBaseY);
@@ -592,7 +594,8 @@ namespace OOPGames
                     Fill = new LinearGradientBrush(
                         Color.FromArgb((byte)(20 + layer * 10), 0, 0, 80),
                         Color.FromArgb((byte)(25 + layer * 12), 0, 40, 120),
-                        45 + layer * 45)
+                        45 + layer * 45),
+                    IsHitTestVisible = false
                 };
                 Canvas.SetLeft(depth, topBaseX);
                 Canvas.SetTop(depth, topBaseY);
@@ -612,7 +615,8 @@ namespace OOPGames
                         {
                             Width = smallCell,
                             Height = smallCell,
-                            Fill = new SolidColorBrush(Color.FromArgb((byte)(wavePattern * 15), 0, 50, 100))
+                            Fill = new SolidColorBrush(Color.FromArgb((byte)(wavePattern * 15), 0, 50, 100)),
+                            IsHitTestVisible = false
                         };
                         Canvas.SetLeft(waveShade, topBaseX + x * smallCell);
                         Canvas.SetTop(waveShade, topBaseY + y * smallCell);
@@ -656,7 +660,8 @@ namespace OOPGames
                         Color.FromArgb(50, 255, 255, 200),
                         Color.FromArgb(10, 200, 255, 255),
                         0),
-                    StrokeThickness = 1.5
+                    StrokeThickness = 1.5,
+                    IsHitTestVisible = false
                 };
                 Canvas.SetLeft(causticPath, topBaseX);
                 Canvas.SetTop(causticPath, topBaseY);
@@ -680,7 +685,8 @@ namespace OOPGames
                     StrokeThickness = 1.5,
                     Fill = new RadialGradientBrush(
                         Color.FromArgb(0, 0, 0, 0),
-                        Color.FromArgb(10, 50, 120, 200))
+                        Color.FromArgb(10, 50, 120, 200)),
+                    IsHitTestVisible = false
                 };
                 Canvas.SetLeft(whirl, topBaseX + wx * smallCell + smallCell * 0.5 - whirlRadius / 2);
                 Canvas.SetTop(whirl, topBaseY + wy * smallCell + smallCell * 0.5 - whirlRadius / 2);
@@ -857,7 +863,8 @@ namespace OOPGames
                 Fill = new LinearGradientBrush(
                     Color.FromRgb(65, 105, 225),
                     Color.FromRgb(30, 144, 255),
-                    90)
+                    90),
+                IsHitTestVisible = false
             };
             Canvas.SetLeft(water2, bottomBaseX);
             Canvas.SetTop(water2, bottomBaseY);
@@ -877,7 +884,8 @@ namespace OOPGames
                     Fill = new LinearGradientBrush(
                         Color.FromArgb((byte)(20 + layer * 10), 0, 0, 80),
                         Color.FromArgb((byte)(25 + layer * 12), 0, 40, 120),
-                        45 + layer * 45)
+                        45 + layer * 45),
+                    IsHitTestVisible = false
                 };
                 Canvas.SetLeft(depth, bottomBaseX);
                 Canvas.SetTop(depth, bottomBaseY);
@@ -897,7 +905,8 @@ namespace OOPGames
                         {
                             Width = smallCell,
                             Height = smallCell,
-                            Fill = new SolidColorBrush(Color.FromArgb((byte)(wavePattern * 15), 0, 50, 100))
+                            Fill = new SolidColorBrush(Color.FromArgb((byte)(wavePattern * 15), 0, 50, 100)),
+                            IsHitTestVisible = false
                         };
                         Canvas.SetLeft(waveShade, bottomBaseX + x * smallCell);
                         Canvas.SetTop(waveShade, bottomBaseY + y * smallCell);
@@ -941,7 +950,8 @@ namespace OOPGames
                         Color.FromArgb(50, 255, 255, 200),
                         Color.FromArgb(10, 200, 255, 255),
                         0),
-                    StrokeThickness = 1.5
+                    StrokeThickness = 1.5,
+                    IsHitTestVisible = false
                 };
                 Canvas.SetLeft(causticPath, bottomBaseX);
                 Canvas.SetTop(causticPath, bottomBaseY);
@@ -965,7 +975,8 @@ namespace OOPGames
                     StrokeThickness = 1.5,
                     Fill = new RadialGradientBrush(
                         Color.FromArgb(0, 0, 0, 0),
-                        Color.FromArgb(10, 50, 120, 200))
+                        Color.FromArgb(10, 50, 120, 200)),
+                    IsHitTestVisible = false
                 };
                 Canvas.SetLeft(whirl, bottomBaseX + wx * smallCell + smallCell * 0.5 - whirlRadius / 2);
                 Canvas.SetTop(whirl, bottomBaseY + wy * smallCell + smallCell * 0.5 - whirlRadius / 2);
@@ -1434,8 +1445,21 @@ namespace OOPGames
             Canvas.SetLeft(btn2Text, btn2X); Canvas.SetTop(btn2Text, btn2Y + 7); canvas.Children.Add(btn2Text);
         }
 
+        // Hilfsmethode um Elemente mit IsHitTestVisible = false zum Canvas hinzuzufügen
+        private void AddNonInteractiveElement(Canvas canvas, System.Windows.UIElement element, double left, double top, int zIndex)
+        {
+            element.IsHitTestVisible = false;
+            Canvas.SetLeft(element, left);
+            Canvas.SetTop(element, top);
+            Canvas.SetZIndex(element, zIndex);
+            canvas.Children.Add(element);
+        }
+
         private void DrawWarship(Canvas canvas, A3_LEA_Ship ship, double baseX, double baseY, double cellSize, bool horizontal)
         {
+            // Merke die Anzahl der Elemente vor dem Zeichnen des Schiffs
+            int childrenCountBefore = canvas.Children.Count;
+            
             // Realistische Kriegsschiff-Farben (Vogelperspektive)
             var hullColor = new LinearGradientBrush(
                 Color.FromRgb(55, 65, 75),    // Dunkel
@@ -1468,10 +1492,7 @@ namespace OOPGames
                         Height = shipHeight * (0.6 + shadowLayer * 0.1),
                         Fill = new SolidColorBrush(Color.FromArgb((byte)(25 - shadowLayer * 8), 0, 0, 0))
                     };
-                    Canvas.SetLeft(shadow, startX + shipWidth * 0.075 - shadowLayer * 2);
-                    Canvas.SetTop(shadow, startY + yOffset + shipHeight * 0.2 + shadowLayer * 1);
-                    Canvas.SetZIndex(shadow, 10);
-                    canvas.Children.Add(shadow);
+                    AddNonInteractiveElement(canvas, shadow, startX + shipWidth * 0.075 - shadowLayer * 2, startY + yOffset + shipHeight * 0.2 + shadowLayer * 1, 10);
                 }
 
                 // Wasserverdrängung unter dem Schiff
@@ -1483,10 +1504,7 @@ namespace OOPGames
                         Color.FromArgb(40, 50, 120, 180),
                         Color.FromArgb(0, 50, 120, 180))
                 };
-                Canvas.SetLeft(waterDisplacement, startX + shipWidth * 0.025);
-                Canvas.SetTop(waterDisplacement, startY + yOffset + shipHeight * 0.08);
-                Canvas.SetZIndex(waterDisplacement, 10);
-                canvas.Children.Add(waterDisplacement);
+                AddNonInteractiveElement(canvas, waterDisplacement, startX + shipWidth * 0.025, startY + yOffset + shipHeight * 0.08, 10);
 
                 // Bugwelle mit Gischt-Effekt
                 var bowWave = new System.Windows.Shapes.Ellipse
@@ -2596,6 +2614,12 @@ namespace OOPGames
                     Canvas.SetZIndex(flag, 6);
                     canvas.Children.Add(flag);
                 }
+            }
+            
+            // Setze alle Schiffs-Elemente auf IsHitTestVisible = false, damit Klicks durchgehen
+            for (int i = childrenCountBefore; i < canvas.Children.Count; i++)
+            {
+                canvas.Children[i].IsHitTestVisible = false;
             }
         }
 
