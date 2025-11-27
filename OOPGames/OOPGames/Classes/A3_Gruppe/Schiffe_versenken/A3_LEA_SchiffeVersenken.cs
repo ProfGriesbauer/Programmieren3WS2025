@@ -1669,7 +1669,7 @@ namespace OOPGames
                         };
                         Canvas.SetLeft(rivetShadow, startX + cellSize * i + cellSize * 0.5 - 0.5);
                         Canvas.SetTop(rivetShadow, startY + yOffset + 12.5 + n * (shipHeight - 24) / 2);
-                        Canvas.SetZIndex(rivetShadow, 3);
+                        Canvas.SetZIndex(rivetShadow, 20);
                         canvas.Children.Add(rivetShadow);
 
                         // Nieten-Basis
@@ -1682,7 +1682,7 @@ namespace OOPGames
                         };
                         Canvas.SetLeft(rivet, startX + cellSize * i + cellSize * 0.5 - 1);
                         Canvas.SetTop(rivet, startY + yOffset + 12 + n * (shipHeight - 24) / 2);
-                        Canvas.SetZIndex(rivet, 4);
+                        Canvas.SetZIndex(rivet, 21);
                         canvas.Children.Add(rivet);
 
                         // Nieten-Highlight
@@ -1693,7 +1693,7 @@ namespace OOPGames
                         };
                         Canvas.SetLeft(rivetHighlight, startX + cellSize * i + cellSize * 0.5 - 0.7);
                         Canvas.SetTop(rivetHighlight, startY + yOffset + 12.2 + n * (shipHeight - 24) / 2);
-                        Canvas.SetZIndex(rivetHighlight, 15);
+                        Canvas.SetZIndex(rivetHighlight, 22);
                         canvas.Children.Add(rivetHighlight);
                     }
                 }
@@ -1708,7 +1708,7 @@ namespace OOPGames
                         Stroke = new SolidColorBrush(Color.FromRgb(80, 90, 100)),
                         StrokeThickness = 1.5
                     };
-                    Canvas.SetZIndex(anchorChain, 4);
+                    Canvas.SetZIndex(anchorChain, 20);
                     canvas.Children.Add(anchorChain);
 
                     var anchor = new System.Windows.Shapes.Polygon
@@ -1721,7 +1721,7 @@ namespace OOPGames
                     anchor.Points.Add(new System.Windows.Point(startX + cellSize * 0.18, startY + yOffset + 16));
                     anchor.Points.Add(new System.Windows.Point(startX + cellSize * 0.2, startY + yOffset + 15));
                     anchor.Points.Add(new System.Windows.Point(startX + cellSize * 0.22, startY + yOffset + 16));
-                    Canvas.SetZIndex(anchor, 14);
+                    Canvas.SetZIndex(anchor, 21);
                     canvas.Children.Add(anchor);
                 }
 
@@ -1989,7 +1989,7 @@ namespace OOPGames
                         };
                         Canvas.SetLeft(lifeboat, boatX);
                         Canvas.SetTop(lifeboat, boatY);
-                        Canvas.SetZIndex(lifeboat, 4);
+                        Canvas.SetZIndex(lifeboat, 22);
                         canvas.Children.Add(lifeboat);
 
                         // Highlight auf Rettungsboot
@@ -2339,7 +2339,7 @@ namespace OOPGames
                         };
                         Canvas.SetLeft(rivet, startX + xOffset + 12 + n * (shipWidth - 24) / 2);
                         Canvas.SetTop(rivet, startY + cellSize * i + cellSize * 0.5 - 0.75);
-                        Canvas.SetZIndex(rivet, 3);
+                        Canvas.SetZIndex(rivet, 21);
                         canvas.Children.Add(rivet);
                     }
                 }
@@ -2364,7 +2364,7 @@ namespace OOPGames
                         Stroke = new SolidColorBrush(Color.FromRgb(80, 90, 100)),
                         StrokeThickness = 1.5
                     };
-                    Canvas.SetZIndex(anchorChain, 4);
+                    Canvas.SetZIndex(anchorChain, 20);
                     canvas.Children.Add(anchorChain);
 
                     var anchor = new System.Windows.Shapes.Polygon
@@ -2377,7 +2377,7 @@ namespace OOPGames
                     anchor.Points.Add(new System.Windows.Point(startX + xOffset + 16, startY + cellSize * 0.18));
                     anchor.Points.Add(new System.Windows.Point(startX + xOffset + 15, startY + cellSize * 0.2));
                     anchor.Points.Add(new System.Windows.Point(startX + xOffset + 16, startY + cellSize * 0.22));
-                    Canvas.SetZIndex(anchor, 4);
+                    Canvas.SetZIndex(anchor, 21);
                     canvas.Children.Add(anchor);
                 }
 
@@ -2445,7 +2445,7 @@ namespace OOPGames
                         X2 = startX + xOffset + shipWidth / 2 - 5, Y2 = bridgeY,
                         Stroke = new SolidColorBrush(Color.FromRgb(120, 130, 140)), StrokeThickness = 1
                     };
-                    Canvas.SetZIndex(antenna1, 6);
+                    Canvas.SetZIndex(antenna1, 23);
                     canvas.Children.Add(antenna1);
 
                     var antenna2 = new Line
@@ -2454,7 +2454,7 @@ namespace OOPGames
                         X2 = startX + xOffset + shipWidth / 2 + 4, Y2 = bridgeY + bridgeH * 0.3,
                         Stroke = new SolidColorBrush(Color.FromRgb(120, 130, 140)), StrokeThickness = 0.8
                     };
-                    Canvas.SetZIndex(antenna2, 6);
+                    Canvas.SetZIndex(antenna2, 23);
                     canvas.Children.Add(antenna2);
                 }
 
@@ -2475,7 +2475,7 @@ namespace OOPGames
                     };
                     Canvas.SetLeft(gunBase1, gunX - cellSize * 0.1);
                     Canvas.SetTop(gunBase1, gun1Y - cellSize * 0.1);
-                    Canvas.SetZIndex(gunBase1, 3);
+                    Canvas.SetZIndex(gunBase1, 21);
                     canvas.Children.Add(gunBase1);
 
                     var gunBarrel1 = new Rectangle
@@ -2485,7 +2485,7 @@ namespace OOPGames
                     };
                     Canvas.SetLeft(gunBarrel1, gunX - 1.25);
                     Canvas.SetTop(gunBarrel1, gun1Y - cellSize * 0.2);
-                    Canvas.SetZIndex(gunBarrel1, 4);
+                    Canvas.SetZIndex(gunBarrel1, 22);
                     canvas.Children.Add(gunBarrel1);
 
                     // Hinterer Geschützturm
@@ -2500,7 +2500,7 @@ namespace OOPGames
                     };
                     Canvas.SetLeft(gunBase2, gunX - cellSize * 0.1);
                     Canvas.SetTop(gunBase2, gun2Y - cellSize * 0.1);
-                    Canvas.SetZIndex(gunBase2, 3);
+                    Canvas.SetZIndex(gunBase2, 21);
                     canvas.Children.Add(gunBase2);
 
                     var gunBarrel2 = new Rectangle
@@ -2510,7 +2510,7 @@ namespace OOPGames
                     };
                     Canvas.SetLeft(gunBarrel2, gunX - 1.25);
                     Canvas.SetTop(gunBarrel2, gun2Y - cellSize * 0.2);
-                    Canvas.SetZIndex(gunBarrel2, 4);
+                    Canvas.SetZIndex(gunBarrel2, 22);
                     canvas.Children.Add(gunBarrel2);
                 }
 
@@ -2605,7 +2605,7 @@ namespace OOPGames
                     };
                     Canvas.SetLeft(flagpole, startX + xOffset + shipWidth * 0.35);
                     Canvas.SetTop(flagpole, startY + shipHeight - 8);
-                    Canvas.SetZIndex(flagpole, 5);
+                    Canvas.SetZIndex(flagpole, 23);
                     canvas.Children.Add(flagpole);
 
                     // Wehende Flagge
@@ -2618,7 +2618,7 @@ namespace OOPGames
                     flag.Points.Add(new System.Windows.Point(startX + xOffset + shipWidth * 0.35, startY + shipHeight - 7));
                     flag.Points.Add(new System.Windows.Point(startX + xOffset + shipWidth * 0.37, startY + shipHeight - 3));
                     flag.Points.Add(new System.Windows.Point(startX + xOffset + shipWidth * 0.39, startY + shipHeight - 7));
-                    Canvas.SetZIndex(flag, 6);
+                    Canvas.SetZIndex(flag, 24);
                     canvas.Children.Add(flag);
                 }
             }
