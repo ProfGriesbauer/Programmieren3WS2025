@@ -68,6 +68,11 @@ namespace OOPGames
         // Track current player during Phase 3 (playing phase)
         public int CurrentPlayerNumber { get; set; } = 1;
 
+        // Gewinner-Animation
+        public int WinnerPlayer { get; private set; } = 0;
+        public System.DateTime? WinnerTimestamp { get; private set; } = null;
+        public double WinnerAnimationTime => WinnerTimestamp.HasValue ? (System.DateTime.Now - WinnerTimestamp.Value).TotalSeconds : 0;
+
         // Maus-Tracking (wie IQ-Puzzle)
         public int MouseX { get; set; } = -1;
         public int MouseY { get; set; } = -1;
@@ -221,9 +226,25 @@ namespace OOPGames
         public override int CheckIfPLayerWon()
         {
             // Wenn alle Schiffe von Spieler1 versenkt sind -> Spieler2 gewinnt (return 2)
-            if (_ships.All(s => s.Hits == s.Size)) return 2;
+            if (_ships.All(s => s.Hits == s.Size))
+            {
+                if (WinnerPlayer == 0)
+                {
+                    WinnerPlayer = 2;
+                    WinnerTimestamp = System.DateTime.Now;
+                }
+                return 2;
+            }
             // Wenn alle Schiffe von Spieler2 versenkt sind -> Spieler1 gewinnt (return 1)
-            if (_ships2.All(s => s.Hits == s.Size)) return 1;
+            if (_ships2.All(s => s.Hits == s.Size))
+            {
+                if (WinnerPlayer == 0)
+                {
+                    WinnerPlayer = 1;
+                    WinnerTimestamp = System.DateTime.Now;
+                }
+                return 1;
+            }
             return 0;
         }
 
@@ -252,6 +273,8 @@ namespace OOPGames
             MouseY = -1;
             SunkShipAnimationTime.Clear();
             SunkShipTimestamp.Clear();
+            WinnerPlayer = 0;
+            WinnerTimestamp = null;
         }
 
         // IGameRules2 Implementation
@@ -975,6 +998,230 @@ namespace OOPGames
             Canvas.SetLeft(player2Text, indicatorX + 20);
             Canvas.SetTop(player2Text, indicatorY2 + 15);
             canvas.Children.Add(player2Text);
+            
+            // Gewinner-Animation (Kriegsschiff-Theme)
+            if (rules.WinnerPlayer > 0)
+            {
+                double animTime = rules.WinnerAnimationTime;
+                double popScale = animTime < 0.5 ? (animTime / 0.5) : 1.0; // Pop-up in 0.5 Sekunden
+                
+                // Halbtransparenter Ozean-Hintergrund
+                var overlay = new Rectangle
+                {
+                    Width = canvas.ActualWidth > 0 ? canvas.ActualWidth : 800,
+                    Height = canvas.ActualHeight > 0 ? canvas.ActualHeight : 600,
+                    Fill = new LinearGradientBrush(
+                        Color.FromArgb(200, 20, 40, 80),   // Dunkelblau oben
+                        Color.FromArgb(200, 10, 70, 120),  // Ozeanblau unten
+                        90)
+                };
+                Canvas.SetLeft(overlay, 0);
+                Canvas.SetTop(overlay, 0);
+                Canvas.SetZIndex(overlay, 200);
+                canvas.Children.Add(overlay);
+                
+                double centerX = (canvas.ActualWidth > 0 ? canvas.ActualWidth : 800) / 2;
+                double centerY = (canvas.ActualHeight > 0 ? canvas.ActualHeight : 600) / 2;
+                
+                // Großes Kriegsschiff diagonal im Hintergrund (5 Felder lang wie im Spiel)
+                double shipCellSize = 60;
+                double rotationAngle = 45; // Diagonal
+                
+                // Rotations-Transformation für das Schiff
+                var shipGroup = new System.Windows.Controls.Canvas();
+                Canvas.SetLeft(shipGroup, centerX);
+                Canvas.SetTop(shipGroup, centerY);
+                Canvas.SetZIndex(shipGroup, 201);
+                
+                var rotateTransform = new RotateTransform(rotationAngle);
+                shipGroup.RenderTransform = rotateTransform;
+                shipGroup.RenderTransformOrigin = new System.Windows.Point(0.5, 0.5);
+                
+                // Zeichne ultra-realistisches 5-Felder Kriegsschiff
+                for (int seg = 0; seg < 5; seg++)
+                {
+                    double segX = -150 + seg * shipCellSize;
+                    double segY = 0;
+                    
+                    // Schiffsrumpf (dunkelgrau mit Metallglanz)
+                    var hull = new Rectangle
+                    {
+                        Width = shipCellSize - 4,
+                        Height = shipCellSize * 0.7,
+                        Fill = new LinearGradientBrush(
+                            Color.FromRgb(80, 90, 100),
+                            Color.FromRgb(50, 55, 60),
+                            90)
+                    };
+                    Canvas.SetLeft(hull, segX);
+                    Canvas.SetTop(hull, segY - shipCellSize * 0.35);
+                    shipGroup.Children.Add(hull);
+                    
+                    // Deck (helleres Grau)
+                    var deck = new Rectangle
+                    {
+                        Width = shipCellSize - 4,
+                        Height = shipCellSize * 0.15,
+                        Fill = new SolidColorBrush(Color.FromRgb(100, 110, 120))
+                    };
+                    Canvas.SetLeft(deck, segX);
+                    Canvas.SetTop(deck, segY - shipCellSize * 0.35);
+                    shipGroup.Children.Add(deck);
+                    
+                    // Fenster/Details
+                    if (seg % 2 == 0)
+                    {
+                        var window = new Rectangle
+                        {
+                            Width = 8,
+                            Height = 6,
+                            Fill = new SolidColorBrush(Color.FromArgb(150, 255, 255, 150))
+                        };
+                        Canvas.SetLeft(window, segX + shipCellSize / 2 - 4);
+                        Canvas.SetTop(window, segY - 5);
+                        shipGroup.Children.Add(window);
+                    }
+                }
+                
+                // Kommandoturm (auf mittlerem Segment)
+                var commandTower = new Rectangle
+                {
+                    Width = shipCellSize * 0.6,
+                    Height = shipCellSize * 0.8,
+                    Fill = new LinearGradientBrush(
+                        Color.FromRgb(90, 100, 110),
+                        Color.FromRgb(60, 65, 70),
+                        90)
+                };
+                Canvas.SetLeft(commandTower, -30);
+                Canvas.SetTop(commandTower, -shipCellSize * 0.75);
+                shipGroup.Children.Add(commandTower);
+                
+                // Radar/Antenne
+                var radar = new Ellipse
+                {
+                    Width = 15,
+                    Height = 15,
+                    Fill = new SolidColorBrush(Color.FromRgb(150, 160, 170))
+                };
+                Canvas.SetLeft(radar, -7.5);
+                Canvas.SetTop(radar, -shipCellSize * 0.85);
+                shipGroup.Children.Add(radar);
+                
+                // Geschütztürme an Bug und Heck
+                for (int gunPos = 0; gunPos < 2; gunPos++)
+                {
+                    double gunX = gunPos == 0 ? -120 : 90;
+                    var gunTurret = new Ellipse
+                    {
+                        Width = 25,
+                        Height = 25,
+                        Fill = new RadialGradientBrush(
+                            Color.FromRgb(70, 75, 80),
+                            Color.FromRgb(40, 45, 50))
+                    };
+                    Canvas.SetLeft(gunTurret, gunX - 12.5);
+                    Canvas.SetTop(gunTurret, -12.5);
+                    shipGroup.Children.Add(gunTurret);
+                    
+                    // Kanonenrohr
+                    var cannon = new Rectangle
+                    {
+                        Width = 30,
+                        Height = 6,
+                        Fill = new SolidColorBrush(Color.FromRgb(60, 65, 70))
+                    };
+                    Canvas.SetLeft(cannon, gunX + (gunPos == 0 ? -35 : 12.5));
+                    Canvas.SetTop(cannon, -3);
+                    shipGroup.Children.Add(cannon);
+                }
+                
+                canvas.Children.Add(shipGroup);
+                
+                // Gewinner-Box mit Marine-Theme (über dem Schiff)
+                double boxWidth = 450 * popScale;
+                double boxHeight = 220 * popScale;
+                
+                // Navy-blauer Rahmen mit Gold-Akzenten
+                var winnerBox = new Rectangle
+                {
+                    Width = boxWidth,
+                    Height = boxHeight,
+                    Fill = new LinearGradientBrush(
+                        Color.FromRgb(25, 50, 100),   // Marine Blau
+                        Color.FromRgb(15, 35, 70),    // Dunkles Marine Blau
+                        90),
+                    Stroke = new LinearGradientBrush(
+                        Color.FromRgb(255, 215, 0),   // Gold
+                        Color.FromRgb(218, 165, 32),  // Dunkleres Gold
+                        0),
+                    StrokeThickness = 6,
+                    RadiusX = 15,
+                    RadiusY = 15
+                };
+                Canvas.SetLeft(winnerBox, centerX - boxWidth / 2);
+                Canvas.SetTop(winnerBox, centerY - boxHeight / 2);
+                Canvas.SetZIndex(winnerBox, 205);
+                canvas.Children.Add(winnerBox);
+                
+                // Militär-Streifen (Gold)
+                for (int stripe = 0; stripe < 2; stripe++)
+                {
+                    var goldStripe = new Rectangle
+                    {
+                        Width = boxWidth - 12,
+                        Height = 3,
+                        Fill = Brushes.Gold
+                    };
+                    Canvas.SetLeft(goldStripe, centerX - boxWidth / 2 + 6);
+                    Canvas.SetTop(goldStripe, centerY - boxHeight / 2 + 12 + stripe * (boxHeight - 27));
+                    Canvas.SetZIndex(goldStripe, 206);
+                    canvas.Children.Add(goldStripe);
+                }
+                
+                // Gewinner-Text (Militär-Stil)
+                var siegText = new TextBlock
+                {
+                    Text = "⚓ SIEG! ⚓",
+                    FontSize = 32 * popScale,
+                    FontWeight = System.Windows.FontWeights.Bold,
+                    Foreground = Brushes.Gold,
+                    TextAlignment = System.Windows.TextAlignment.Center,
+                    Width = boxWidth
+                };
+                Canvas.SetLeft(siegText, centerX - boxWidth / 2);
+                Canvas.SetTop(siegText, centerY - 70 * popScale);
+                Canvas.SetZIndex(siegText, 207);
+                canvas.Children.Add(siegText);
+                
+                var playerText = new TextBlock
+                {
+                    Text = $"Spieler {rules.WinnerPlayer}",
+                    FontSize = 48 * popScale,
+                    FontWeight = System.Windows.FontWeights.Bold,
+                    Foreground = Brushes.White,
+                    TextAlignment = System.Windows.TextAlignment.Center,
+                    Width = boxWidth
+                };
+                Canvas.SetLeft(playerText, centerX - boxWidth / 2);
+                Canvas.SetTop(playerText, centerY - 25 * popScale);
+                Canvas.SetZIndex(playerText, 207);
+                canvas.Children.Add(playerText);
+                
+                var winText = new TextBlock
+                {
+                    Text = "hat gewonnen!",
+                    FontSize = 28 * popScale,
+                    FontWeight = System.Windows.FontWeights.Normal,
+                    Foreground = new SolidColorBrush(Color.FromRgb(200, 220, 255)),
+                    TextAlignment = System.Windows.TextAlignment.Center,
+                    Width = boxWidth
+                };
+                Canvas.SetLeft(winText, centerX - boxWidth / 2);
+                Canvas.SetTop(winText, centerY + 30 * popScale);
+                Canvas.SetZIndex(winText, 207);
+                canvas.Children.Add(winText);
+            }
             // draw ships as warship models if visible for Player 2
             if (rules.ShowShipsPlayer2)
             {
