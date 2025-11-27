@@ -98,7 +98,7 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterPainter(new A3_LEA_SchiffePaint());
             OOPGamesManager.Singleton.RegisterRules(new A3_LEA_SchiffeRules());
             OOPGamesManager.Singleton.RegisterPlayer(new A3_LEA_HumanSchiffePlayer());
-            //OOPGamesManager.Singleton.RegisterPlayer(new A3_LEA_ComputerSchiffePlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new A3_LEA_ComputerSchiffePlayer());
             
             
             // B3 Jarde_Roeder
@@ -236,13 +236,30 @@ namespace OOPGames
             if (_CurrentPainter != null && 
                 _CurrentRules != null && _CurrentRules.CurrentField.CanBePaintedBy(_CurrentPainter))
             {
-                _CurrentPlayer = _CurrentPlayer1;
-                Status.Text = "Game startet!";
-                Status.Text = "Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
-                _CurrentRules.ClearField();
-                PaintCanvas.Focus();
-                _CurrentPainter.PaintGameField(PaintCanvas, _CurrentRules.CurrentField);
-                DoComputerMoves();
+                try
+                {
+                    // choose a non-null current player
+                    if (_CurrentPlayer1 != null)
+                        _CurrentPlayer = _CurrentPlayer1;
+                    else if (_CurrentPlayer2 != null)
+                        _CurrentPlayer = _CurrentPlayer2;
+                    else
+                    {
+                        MessageBox.Show("Please select at least one player (Player 1 or Player 2).");
+                        return;
+                    }
+
+                    Status.Text = "Game startet!";
+                    Status.Text = "Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
+                    _CurrentRules.ClearField();
+                    PaintCanvas.Focus();
+                    _CurrentPainter.PaintGameField(PaintCanvas, _CurrentRules.CurrentField);
+                    DoComputerMoves();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error starting game: " + ex.Message + "\n" + ex.StackTrace);
+                }
             }
         }
 
@@ -253,67 +270,82 @@ namespace OOPGames
             {
                 Status.Text = "Player " + winner + " Won!";
                 ScheduleRestartIfNeeded();
+                return;
             }
-            else
+
+            // Spezialfall: Schiffeversenken Setup-Phase für Computer
+            if (_CurrentRules is A3_LEA_SchiffeRules schiffeRules && schiffeRules.IsSetupPhase && schiffeRules.CurrentSetupPlayer == 2 && _CurrentPlayer is IComputerGamePlayer)
             {
-                while (_CurrentRules.MovesPossible &&
-                       winner <= 0 &&
-                       _CurrentPlayer is IComputerGamePlayer)
+                // Computer platziert alle Schiffe automatisch
+                while (!schiffeRules.AllShipsPlaced2)
                 {
-                    IPlayMove pm = ((IComputerGamePlayer)_CurrentPlayer).GetMove(_CurrentRules.CurrentField);
+                    IPlayMove pm = ((IComputerGamePlayer)_CurrentPlayer).GetMove(schiffeRules.SchiffeField2);
                     if (pm != null)
                     {
-                        _CurrentRules.DoMove(pm);
-                        _CurrentPainter.PaintGameField(PaintCanvas, _CurrentRules.CurrentField);
-
-                        bool keepTurn = false;
-                        if (_CurrentRules is OOPGames.B1_Gruppe.MenschAergereDichNicht.B1_MAN_Rules manRules)
-                        {
-                            keepTurn = manRules.LastMoveGivesExtraTurn;
-                        }
-                        else if (_CurrentRules is A3_LEA_SchiffeRules)
-                        {
-                            keepTurn = ((A3_LEA_SchiffeRules)_CurrentRules).LastMoveGivesExtraTurn;
-                        }
-                        else if (_CurrentRules is A3_LEA_SchiffeRules)
-                        {
-                            keepTurn = ((A3_LEA_SchiffeRules)_CurrentRules).LastMoveGivesExtraTurn;
-                        }
-
-                        if (!keepTurn && !IsFlappyBird())
-                        {
-                            // Check if player should keep turn (e.g., B2 Maze dual player)
-                            if (!(_CurrentPlayer is B2_MazeDualPlayer))
-                            {
-                                _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
-                            }
-                        }
-                        else if (IsFlappyBird())
-                        {
-                            // In Flappy Bird, switch active player after each move
-                            FlappyBirdRules.ActivePlayer = (FlappyBirdRules.ActivePlayer == 1) ? 2 : 1;
-                            _CurrentPlayer = (_CurrentPlayer.PlayerNumber == 1) ? _CurrentPlayer2 : _CurrentPlayer1;
-                        }
-                        // removed unconditional extra toggle here so keepTurn is respected
-
-                        Status.Text = "Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
+                        schiffeRules.DoMove(pm);
+                        _CurrentPainter.PaintGameField(PaintCanvas, schiffeRules.SchiffeField2);
                     }
-
-                    winner = _CurrentRules.CheckIfPLayerWon();
-                    if (winner > 0)
+                    else
                     {
-                        Status.Text = "Player " + winner + " Won!";
-                        ScheduleRestartIfNeeded();
+                        // Falls kein Zug generiert werden kann, abbrechen
+                        break;
                     }
                 }
+                // Nach dem Platzieren: Phase auf 3 setzen
+                schiffeRules.Phase = 3;
+                Status.Text = "Player 1's turn!";
+                _CurrentPlayer = _CurrentPlayer1;
+                _CurrentPainter.PaintGameField(PaintCanvas, schiffeRules.SchiffeField);
+                return;
+            }
 
-                // If the board is full and there's no winner, it's a draw — schedule restart as well
-                //A4 Restart Logic
-                if (!_CurrentRules.MovesPossible && winner <= 0)
+            // Standard Computer-Zug-Logik
+            while (_CurrentRules.MovesPossible && winner <= 0 && _CurrentPlayer is IComputerGamePlayer)
+            {
+                IPlayMove pm = ((IComputerGamePlayer)_CurrentPlayer).GetMove(_CurrentRules.CurrentField);
+                if (pm != null)
                 {
-                    Status.Text = "Draw!";
+                    _CurrentRules.DoMove(pm);
+                    _CurrentPainter.PaintGameField(PaintCanvas, _CurrentRules.CurrentField);
+
+                    bool keepTurn = false;
+                    if (_CurrentRules is OOPGames.B1_Gruppe.MenschAergereDichNicht.B1_MAN_Rules manRules)
+                    {
+                        keepTurn = manRules.LastMoveGivesExtraTurn;
+                    }
+                    else if (_CurrentRules is A3_LEA_SchiffeRules)
+                    {
+                        keepTurn = ((A3_LEA_SchiffeRules)_CurrentRules).LastMoveGivesExtraTurn;
+                    }
+
+                    if (!keepTurn && !IsFlappyBird())
+                    {
+                        if (!(_CurrentPlayer is B2_MazeDualPlayer))
+                        {
+                            _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
+                        }
+                    }
+                    else if (IsFlappyBird())
+                    {
+                        FlappyBirdRules.ActivePlayer = (FlappyBirdRules.ActivePlayer == 1) ? 2 : 1;
+                        _CurrentPlayer = (_CurrentPlayer.PlayerNumber == 1) ? _CurrentPlayer2 : _CurrentPlayer1;
+                    }
+
+                    Status.Text = "Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
+                }
+
+                winner = _CurrentRules.CheckIfPLayerWon();
+                if (winner > 0)
+                {
+                    Status.Text = "Player " + winner + " Won!";
                     ScheduleRestartIfNeeded();
                 }
+            }
+
+            if (!_CurrentRules.MovesPossible && winner <= 0)
+            {
+                Status.Text = "Draw!";
+                ScheduleRestartIfNeeded();
             }
         }
 

@@ -280,6 +280,26 @@ namespace OOPGames
 
                 if (IsSetupPhase)
                 {
+                    // Only accept moves from the player who is currently in the setup phase
+                    if (m.PlayerNumber != CurrentSetupPlayer)
+                    {
+                        // ignore moves from the wrong player during setup
+                        return;
+                    }
+
+                    // Special 'advance phase' move triggered by Next-button in the UI
+                    if (m.X == -1 && m.Y == -1)
+                    {
+                        if (Phase == 1) Phase = 2;
+                        else if (Phase == 2) Phase = 3;
+                        // ensure MainWindow will switch the active player after this move
+                        LastMoveGivesExtraTurn = false;
+                        // reset mouse & manual selection
+                        ManuallySelectedShip = null;
+                        MouseX = -1; MouseY = -1;
+                        return;
+                    }
+
                     // Setup-Phase: Aktuelles Schiff platzieren (manuell ausgewählt oder nächstes)
                     var shipsList = CurrentSetupPlayer == 1 ? _ships : _ships2;
                     var currentShip = GetCurrentShip(shipsList);
@@ -291,6 +311,8 @@ namespace OOPGames
                             PlaceShip(currentShip, m.X, m.Y, horizontal);
                             // Zurücksetzen der manuellen Auswahl nach Platzierung
                             ManuallySelectedShip = null;
+                            // Keep the same player during setup after a successful placement
+                            LastMoveGivesExtraTurn = true;
                         }
                     }
                     MouseX = -1;
@@ -2340,10 +2362,10 @@ namespace OOPGames
                         if (click.XClickPos >= buttonX - 5 && click.XClickPos <= buttonX + buttonWidth + 5 && 
                             click.YClickPos >= buttonY - 5 && click.YClickPos <= buttonY + buttonHeight + 5)
                         {
-                            // advance phase
-                            if (rules.Phase == 1) rules.Phase = 2;
-                            else if (rules.Phase == 2) rules.Phase = 3;
-                            return null;
+                            // Instead of directly changing the phase here, return a special move
+                            // that signals the rules to advance the phase. This ensures MainWindow
+                            // processes the move and will switch the active player accordingly.
+                            return new A3_LEA_SchiffeMove(-1, -1, activePlayer);
                         }
                     }
 
@@ -2482,6 +2504,94 @@ namespace OOPGames
         }
     }
 
+    //Computer Player
+    public class A3_LEA_ComputerSchiffePlayer : A3_LEA_BaseComputerSchiffePlayer
+    {
+        private int _playerNumber = 2;
+        public override string Name => "A3 LEA Schiffe Computer";
+        public override int PlayerNumber => _playerNumber;
+        public override void SetPlayerNumber(int playerNumber) => _playerNumber = playerNumber;
+        public override IGamePlayer Clone() => new A3_LEA_ComputerSchiffePlayer();
+
+        public IA3_LEA_SchiffeMove GetMove(IMoveSelection selection, IA3_LEA_SchiffeField field)
+        {
+            var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_SchiffeRules;
+            if (rules != null)
+            {
+                if (!rules.IsSetupPhase && rules.Phase == 3 && rules.CurrentSetupPlayer == _playerNumber)
+                {
+                    // Computer is in playing phase and it's his turn: shoot at random field
+                    Random rand = new Random();
+                    int x, y;
+                    do
+                    {
+                        x = rand.Next(0, field.Width);
+                        y = rand.Next(0, field.Height);
+                    } while (rules.Shots2.Contains((x, y))); // avoid shooting the same cell twice
+                    return new A3_LEA_SchiffeMove(x, y, _playerNumber);
+                }
+            }
+            return null;
+        }
+
+        public override IA3_LEA_SchiffeMove GetMove(IA3_LEA_SchiffeField field)
+        {
+            var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_SchiffeRules;
+            if (rules == null) return null;
+
+            // Setup phase placement for computer (player 2)
+            if (rules.IsSetupPhase && rules.CurrentSetupPlayer == _playerNumber)
+            {
+                // Determine which ships list belongs to this computer
+                var shipsList = _playerNumber == 1 ? rules.Ships : rules.Ships2;
+                var ship = rules.GetCurrentShip(shipsList);
+                if (ship != null)
+                {
+                    Random rand = new Random();
+                    int attempts = 0;
+                    while (attempts < 200)
+                    {
+                        bool horizontal = rand.Next(0, 2) == 0;
+                        int maxX = horizontal ? field.Width - ship.Size : field.Width - 1;
+                        int maxY = horizontal ? field.Height - 1 : field.Height - ship.Size;
+                        int x = rand.Next(0, maxX + 1);
+                        int y = rand.Next(0, maxY + 1);
+                        if (rules.CanPlaceShip(ship, x, y, horizontal))
+                        {
+                            // Return placement move
+                            return new A3_LEA_SchiffeMove(x, y, _playerNumber);
+                        }
+                        attempts++;
+                    }
+                }
+                return null;
+            }
+
+            // Playing phase: computer should shoot at random unshot cell
+            if (!rules.IsSetupPhase && rules.Phase == 3)
+            {
+                // choose the correct shots list based on shooter
+                var shotsList = _playerNumber == 1 ? rules.Shots2 : rules.Shots;
+                Random rand = new Random();
+                int x, y;
+                int tries = 0;
+                do
+                {
+                    x = rand.Next(0, field.Width);
+                    y = rand.Next(0, field.Height);
+                    tries++;
+                    if (tries > 500) break; // fail-safe
+                } while (shotsList.Contains((x, y)));
+
+                // If we found a valid cell, return a shooting move
+                if (tries <= 500 && field.IsValidPosition(x, y))
+                    return new A3_LEA_SchiffeMove(x, y, _playerNumber);
+            }
+
+            return null;
+        }
+    }
+
     // Move-Klasse
     public class A3_LEA_SchiffeMove : IA3_LEA_SchiffeMove
     {
@@ -2497,101 +2607,6 @@ namespace OOPGames
             PlayerNumber = playerNumber;
         }
 
-        // Simple computer player for Schiffe versenken (placed here like A3 TicTacToe)
-        public class A3_LEA_ComputerSchiffePlayer : IComputerGamePlayer
-        {
-            private int _playerNumber = 0;
-            private Random _rand = new Random();
-            private Queue<(int x, int y)> _targetQueue = new Queue<(int x, int y)>();
-
-            public string Name => "A3 LEA Computer (Random Hunt)";
-            public int PlayerNumber => _playerNumber;
-
-            public void SetPlayerNumber(int playerNumber) => _playerNumber = playerNumber;
-
-            public bool CanBeRuledBy(IGameRules rules) => rules is A3_LEA_SchiffeRules;
-
-            public IGamePlayer Clone() => new A3_LEA_ComputerSchiffePlayer();
-
-            public IPlayMove GetMove(IGameField field)
-            {
-                var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_SchiffeRules;
-                if (rules == null) return null;
-
-                // SETUP phase: place all ships for this computer when it's its setup turn
-                if (rules.IsSetupPhase)
-                {
-                    if (rules.CurrentSetupPlayer != _playerNumber) return null;
-
-                    var shipsList = rules.CurrentSetupPlayer == 1 ? rules.Ships : rules.Ships2;
-                    var targetField = rules.CurrentSetupPlayer == 1 ? rules.SchiffeField : rules.SchiffeField2;
-
-                    var ship = shipsList.FirstOrDefault(s => s.X == 0 && s.Y == 0);
-                    if (ship == null) return null;
-
-                    // try random placements
-                    ship.IsHorizontal = _rand.Next(2) == 0;
-                    for (int tries = 0; tries < 1000; tries++)
-                    {
-                        int gx = _rand.Next(0, targetField.Width);
-                        int gy = _rand.Next(0, targetField.Height);
-                        if (rules.CanPlaceShip(ship, gx, gy, ship.IsHorizontal))
-                            return new A3_LEA_SchiffeMove(gx, gy, _playerNumber);
-                        if (tries % 8 == 0) ship.IsHorizontal = !ship.IsHorizontal;
-                    }
-
-                    // deterministic fallback
-                    for (int y = 0; y < targetField.Height; y++)
-                        for (int x = 0; x < targetField.Width; x++)
-                            if (rules.CanPlaceShip(ship, x, y, ship.IsHorizontal))
-                                return new A3_LEA_SchiffeMove(x, y, _playerNumber);
-
-                    return null;
-                }
-
-                // PLAYING phase: shooting logic
-                List<A3_LEA_Ship> oppShips = _playerNumber == 1 ? rules.Ships2 : rules.Ships;
-                var oppShots = _playerNumber == 1 ? rules.Shots2 : rules.Shots;
-                var oppField = _playerNumber == 1 ? rules.SchiffeField2 : rules.SchiffeField;
-
-                // Hunt: enqueue neighbors of partially hit ships
-                foreach (var s in oppShips)
-                {
-                    if (s.Hits > 0 && s.Hits < s.Size)
-                    {
-                        for (int i = 0; i < s.Size; i++)
-                        {
-                            if (!s.HitCells[i]) continue;
-                            int sx = s.IsHorizontal ? s.X + i : s.X;
-                            int sy = s.IsHorizontal ? s.Y : s.Y + i;
-                            var neighbors = new (int x, int y)[] { (sx+1,sy),(sx-1,sy),(sx,sy+1),(sx,sy-1) };
-                            foreach (var n in neighbors)
-                            {
-                                if (!oppField.IsValidPosition(n.x, n.y)) continue;
-                                if (oppShots.Contains((n.x, n.y))) continue;
-                                if (!_targetQueue.Contains(n)) _targetQueue.Enqueue(n);
-                            }
-                        }
-                    }
-                }
-
-                while (_targetQueue.Count > 0)
-                {
-                    var t = _targetQueue.Dequeue();
-                    if (!oppShots.Contains((t.x, t.y)) && oppField.IsValidPosition(t.x, t.y))
-                        return new A3_LEA_SchiffeMove(t.x, t.y, _playerNumber);
-                }
-
-                // random shot on an unshot cell
-                var free = new List<(int x, int y)>();
-                for (int y = 0; y < oppField.Height; y++)
-                    for (int x = 0; x < oppField.Width; x++)
-                        if (!oppShots.Contains((x, y))) free.Add((x, y));
-
-                if (free.Count == 0) return null;
-                var pick = free[_rand.Next(free.Count)];
-                return new A3_LEA_SchiffeMove(pick.x, pick.y, _playerNumber);
-            }
-        }
+        
     }
 }

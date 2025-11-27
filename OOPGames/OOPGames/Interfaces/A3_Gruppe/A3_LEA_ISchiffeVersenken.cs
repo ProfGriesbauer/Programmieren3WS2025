@@ -34,6 +34,12 @@ namespace OOPGames
         IA3_LEA_SchiffeMove GetMove(IMoveSelection selection, IA3_LEA_SchiffeField field);
     }
 
+    // Interface für den Computer Player
+    public interface IA3_LEA_ComputerSchiffePlayer : IComputerGamePlayer
+    {
+        IA3_LEA_SchiffeMove GetMove(IA3_LEA_SchiffeField field);
+    }
+
     // Interface für einen Zug
     public interface IA3_LEA_SchiffeMove : IPlayMove
     {
