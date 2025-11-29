@@ -433,7 +433,7 @@ namespace OOPGames
                 Stretch = Stretch.Fill
             };
             Canvas.SetLeft(gameOverImg, (canvas.ActualWidth - gameOverImg.Width) / 2);
-            Canvas.SetTop(gameOverImg, (canvas.ActualHeight / 2) - 190);
+            Canvas.SetTop(gameOverImg, (canvas.ActualHeight / 2) - 220);  // Y-Koordination of Highscore
             canvas.Children.Add(gameOverImg);
         }
 
@@ -449,7 +449,7 @@ namespace OOPGames
                 Stretch = Stretch.Fill
             };
             Canvas.SetLeft(img, (canvas.ActualWidth - img.Width) / 2);
-            Canvas.SetTop(img, yStart - 40);
+            Canvas.SetTop(img, yStart - 70);  // Y-Koordination of Highscore Writing
             canvas.Children.Add(img);
             yStart += 20;
             for (int i = 0; i < hs.Count; i++)
@@ -469,7 +469,7 @@ namespace OOPGames
                     StrokeThickness = 1
                 };
                 Canvas.SetLeft(medal, (canvas.ActualWidth / 2) - 70);
-                Canvas.SetTop(medal, yStart + i * 30 + 3);
+                Canvas.SetTop(medal, yStart + i * 30 - 25);  // - ... = Y-Koordination of Highscore Dots
                 canvas.Children.Add(medal);
                 var tb = new TextBlock()
                 {
@@ -479,7 +479,7 @@ namespace OOPGames
                     TextAlignment = TextAlignment.Center
                 };
                 Canvas.SetLeft(tb, (canvas.ActualWidth / 2) - 40);
-                Canvas.SetTop(tb, yStart + i * 30 - 2);
+                Canvas.SetTop(tb, yStart + i * 30 - 30);  // - ... = Y-Koordination of Highscore List
                 canvas.Children.Add(tb);
             }
         }
@@ -494,7 +494,7 @@ namespace OOPGames
         public static int FrameCount = 0;
         private FlappyBirdField _field;
         public static SoundManager SoundManagerInstance;
-        private const double Gravity = 2.9;
+        private const double Gravity = 2.3;
         private const double JumpForce = -18;
         private double _birdVelocity = 0;
         private ImageSource _rocketImage1;
