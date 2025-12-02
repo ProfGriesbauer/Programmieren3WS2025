@@ -10,6 +10,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Input;
 using System.Linq;
+using System.Windows.Media.Effects;
 
 namespace OOPGames
 {
@@ -485,15 +486,25 @@ namespace OOPGames
                 Canvas.SetLeft(medal, (canvas.ActualWidth / 2) - 70);
                 Canvas.SetTop(medal, yStart + i * 30 - 25);  // - ... = Y-Koordination of Highscore Dots
                 canvas.Children.Add(medal);
-                var tb = new TextBlock()
+                var tb= new TextBlock()
                 {
-                    Text = $"{i + 1}. {name} - {score}",
+                    Text = $"{i+1}. {name} - {score}",
                     FontSize = 20,
                     Foreground = Brushes.White,
-                    TextAlignment = TextAlignment.Center
+                    TextAlignment = TextAlignment.Center,
+                    FontWeight = FontWeights.Bold
+                };
+                tb.Effect = new DropShadowEffect()
+                {
+                    Color = Colors.Black,
+                    BlurRadius = 5,
+                    Direction = 0,
+                    ShadowDepth = 0,
+                    Opacity = 1.0,
+                    RenderingBias = RenderingBias.Performance
                 };
                 Canvas.SetLeft(tb, (canvas.ActualWidth / 2) - 40);
-                Canvas.SetTop(tb, yStart + i * 30 - 30);  // - ... = Y-Koordination of Highscore List
+                Canvas.SetTop(tb, yStart + i * 30 - 30);
                 canvas.Children.Add(tb);
             }
         }
