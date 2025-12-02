@@ -137,7 +137,10 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterRules(new B5_Shellshock_Rules());
             OOPGamesManager.Singleton.RegisterPlayer(new B5_Shellshock_HumanPlayer());
 
-            
+            // B5 Pong (Felix_Anton)
+            OOPGamesManager.Singleton.RegisterPainter(new B5_Pong_Painter());
+            OOPGamesManager.Singleton.RegisterRules(new B5_Pong_Rules());   
+            OOPGamesManager.Singleton.RegisterPlayer(new B5_Pong_HumanPlayer());    
 
             // Populate ListBoxes with registered items
             PaintList.ItemsSource = OOPGamesManager.Singleton.Painters;
