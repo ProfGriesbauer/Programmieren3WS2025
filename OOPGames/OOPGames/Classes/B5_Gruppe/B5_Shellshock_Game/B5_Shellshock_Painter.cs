@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -6,12 +7,28 @@ using System.Windows.Shapes;
 
 namespace OOPGames
 {
-    // Renders all game visuals: Terrain with height map, Tanks with color and orientation, 
-    // Flying projectile, UI (angle, power, health, wind)
+    /// <summary>
+    /// Rendering engine for Shellshock game.
+    /// Implements IPaintGame2 for framework integration with tick-based animation.
+    /// 
+    /// Renders:
+    /// - Sky background and terrain polygon
+    /// - Tank bodies with aiming barrels
+    /// - Active projectile during flight
+    /// - Health packs (red box with white cross)
+    /// - Trajectory trails (dotted lines)
+    /// - UI panels: Player info, wind indicator, movements remaining
+    /// - Game overlays: Start screen, victory screen
+    /// </summary>
     public class B5_Shellshock_Painter : IPaintGame2
     {
+        #region IPaintGame2 Implementation
+
         public string Name => "B5_Shellshock_Painter";
 
+        /// <summary>
+        /// Main rendering method. Clears canvas and redraws all game elements.
+        /// </summary>
         public void PaintGameField(Canvas canvas, IGameField currentField)
         {
             if (currentField is not B5_Shellshock_Field field) return;
@@ -61,12 +78,19 @@ namespace OOPGames
             DrawTrajectory(canvas, field.LastTrajectoryP2, scaleX, scaleY, Brushes.Blue);
         }
 
+        /// <summary>
+        /// Called every frame for animation. Repaints entire field.
+        /// </summary>
         public void TickPaintGameField(Canvas canvas, IGameField currentField)
         {
-            // Repaint entire field for smooth animation
             PaintGameField(canvas, currentField);
         }
 
+        #endregion
+
+        #region Tank Rendering
+
+        /// <summary>Draws yellow dot above the active tank.</summary>
         private void DrawActiveTankDot(Canvas canvas, B5_Shellshock_Tank tank, double scaleX, double scaleY)
         {
             if (!tank.IsAlive) return;
@@ -86,6 +110,11 @@ namespace OOPGames
             canvas.Children.Add(dot);
         }
 
+        #endregion
+
+        #region Terrain Rendering
+
+        /// <summary>Draws terrain as a filled polygon from height map.</summary>
         private void DrawTerrain(Canvas canvas, B5_Shellshock_Terrain terrain, double scaleX, double scaleY)
         {
             PointCollection points = new PointCollection();
@@ -113,6 +142,11 @@ namespace OOPGames
             canvas.Children.Add(terrainPolygon);
         }
 
+        #endregion
+
+        #region Tank Drawing
+
+        /// <summary>Draws tank body and aiming barrel.</summary>
         private void DrawTank(Canvas canvas, B5_Shellshock_Tank tank, double scaleX, double scaleY)
         {
             if (!tank.IsAlive) return;
@@ -153,6 +187,7 @@ namespace OOPGames
             // Removed angle indicator arc for cleaner look
         }
 
+        /// <summary>Draws arc indicator for tank angle (currently disabled).</summary>
         private void DrawAngleIndicator(Canvas canvas, B5_Shellshock_Tank tank, double x, double y)
         {
             // Draw a small arc showing the current angle
@@ -177,6 +212,11 @@ namespace OOPGames
             }
         }
 
+        #endregion
+
+        #region Projectile and Pickups
+
+        /// <summary>Draws projectile as a black circle with yellow border.</summary>
         private void DrawProjectile(Canvas canvas, B5_Shellshock_Projectile projectile, double scaleX, double scaleY)
         {
             double x = projectile.X * scaleX;
@@ -242,7 +282,12 @@ namespace OOPGames
             canvas.Children.Add(horizontalLine);
         }
 
-        private void DrawTrajectory(Canvas canvas, System.Collections.Generic.List<B5_Shellshock_Point> points, double scaleX, double scaleY, Brush color)
+        #endregion
+
+        #region Trajectory Visualization
+
+        /// <summary>Draws trajectory as a dotted polyline.</summary>
+        private void DrawTrajectory(Canvas canvas, List<B5_Shellshock_Point> points, double scaleX, double scaleY, Brush color)
         {
             if (points == null || points.Count < 2) return;
 
@@ -266,6 +311,11 @@ namespace OOPGames
             canvas.Children.Add(polyline);
         }
 
+        #endregion
+
+        #region UI Rendering
+
+        /// <summary>Draws all UI panels: tank info, wind, movements.</summary>
         private void DrawUI(Canvas canvas, B5_Shellshock_Field field, double canvasWidth, double canvasHeight)
         {
             // Draw tank 1 info (left edge)
@@ -280,6 +330,7 @@ namespace OOPGames
             // (Movements now integrated with wind indicator panel)
         }
 
+        /// <summary>Draws start screen or victory overlay.</summary>
         private void DrawOverlay(Canvas canvas, B5_Shellshock_Field field, double canvasWidth, double canvasHeight)
         {
             if (field.GamePhase == B5_Shellshock_GamePhase.PlayerTurn || field.GamePhase == B5_Shellshock_GamePhase.ProjectileInFlight) return;
@@ -354,6 +405,7 @@ namespace OOPGames
             }
         }
 
+        /// <summary>Draws player info panel with health, angle, power.</summary>
         private void DrawTankInfo(Canvas canvas, B5_Shellshock_Tank tank, int playerNum, double x, double y, bool alignRight)
         {
             // Background panel matching wind/moves panel style
@@ -484,6 +536,7 @@ namespace OOPGames
             canvas.Children.Add(powerText);
         }
 
+        /// <summary>Draws center panel with wind direction and remaining moves.</summary>
         private void DrawWindAndMovesIndicator(Canvas canvas, double wind, int movesRemaining, int maxMoves, double centerX, double top)
         {
             string windText = $"Wind: {wind:F1}";
@@ -571,5 +624,7 @@ namespace OOPGames
             Canvas.SetTop(moveLabel, top + panelH - 24);
             canvas.Children.Add(moveLabel);
         }
+
+        #endregion
     }
 }
