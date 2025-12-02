@@ -242,7 +242,7 @@ namespace OOPGames
             {
                 if (Obstacles.Count == 0) return true;
                 var last = Obstacles[Obstacles.Count - 1];
-                return last.X < 250;
+                return last.X < 250;  // Obstacle spacing
             }
         }
         public int Score { get; set; } = 0;
@@ -251,7 +251,7 @@ namespace OOPGames
         {
             _pipeCount++;
             double gap = 140;
-            double gapY = _rand.Next(50, (int)(FieldHeight - gap - 50));
+            double gapY = _rand.Next(50, (int)(FieldHeight - gap - 50));  //Obstacle gap up to down pipe
             Obstacles.Add(new Obstacle(480, 0, 75, gapY, true));
             double yBottom = gapY + gap;
             double heightBottom = FieldHeight - yBottom;
@@ -494,8 +494,8 @@ namespace OOPGames
         public static int FrameCount = 0;
         private FlappyBirdField _field;
         public static SoundManager SoundManagerInstance;
-        private const double Gravity = 2.3;
-        private const double JumpForce = -18;
+        private const double Gravity = 2.3;  // Gravity effect
+        private const double JumpForce = -18;  // Upward force when jumping
         private double _birdVelocity = 0;
         private ImageSource _rocketImage1;
         private ImageSource _rocketImage2;
