@@ -104,12 +104,12 @@ namespace OOPGames
             //B4 TicTacToe (Justus_Lorenz)
             OOPGamesManager.Singleton.RegisterPainter(new B4_TicTacToePaint());
             OOPGamesManager.Singleton.RegisterRules(new B4_TicTacToeRules());
-            OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeHumanPlayer_01());
-            OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeHumanPlayer_02());
+            OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeHumanPlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeHumanPlayer());
             OOPGamesManager.Singleton.RegisterPlayer(new B4_TicTacToeComputerPlayer());
 
             // B2 group (Moritz & Tobias)
-            OOPGamesManager.Singleton.RegisterPainter(new B2_TicTacToePainter());
+            OOPGamesManager.Singleton.RegisterPainter(new B2_TicTacToePaint());
             OOPGamesManager.Singleton.RegisterRules(new B2_TicTacToeRules());
             OOPGamesManager.Singleton.RegisterPlayer(new B2_HumanTicTacToePlayer());
             OOPGamesManager.Singleton.RegisterPlayer(new B2_ComputerTicTacToePlayer());
