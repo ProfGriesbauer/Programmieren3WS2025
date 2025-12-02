@@ -443,7 +443,7 @@ namespace OOPGames
     /**************************************************************************
      * MOVE - Ein Spielzug (Zeile, Spalte)
      **************************************************************************/
-    public class A3_LEA_TicTacToeMove : IA3_LEA_TicTacToeMove
+    public class A3_LEA_TicTacToeMove : A3_LEA_BaseTicTacToeMove
     {
         private int _row;
         private int _column;
@@ -456,9 +456,9 @@ namespace OOPGames
             _playerNumber = playerNumber;
         }
 
-        public int Row { get { return _row; } }
-        public int Column { get { return _column; } }
-        public int PlayerNumber { get { return _playerNumber; } }
+        public override int Row { get { return _row; } }
+        public override int Column { get { return _column; } }
+        public override int PlayerNumber { get { return _playerNumber; } }
     }
 
     /**************************************************************************
