@@ -17,13 +17,32 @@ namespace OOPGames
             X = x; Y = y; VX = vx; VY = vy;
         }
 
-        public void Tick(double gravity, double floorY, double maxX)
+        public void Tick(double gravity, A4_ShellStrike_Terrain terrain, double maxX)
         {
             if (!Active) return;
+            double prevX = X;
+            double prevY = Y;
             X += VX;
             Y += VY;
             VY += gravity;
-            if (Y >= floorY) Active = false;
+            // Terrain collision using updated position (interpolated sampling)
+            if (terrain != null)
+            {
+                int groundY = terrain.GroundYAt(X);
+                // simple hitbox radius of 3 px
+                if (Y + 3 >= groundY)
+                {
+                    Active = false;
+                }
+                else
+                {
+                    // Optional: segment collision if fast-moving; sample mid-point
+                    double midX = (prevX + X) * 0.5;
+                    double midY = (prevY + Y) * 0.5;
+                    int midGround = terrain.GroundYAt(midX);
+                    if (midY + 3 >= midGround) Active = false;
+                }
+            }
             if (X < 0 || X > maxX) Active = false;
         }
 

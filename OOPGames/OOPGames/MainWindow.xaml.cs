@@ -63,8 +63,14 @@ namespace OOPGames
 
 
             //A4 Painters
-       
+            
             OOPGamesManager.Singleton.RegisterPainter(new A4_TicTacToePaint());
+            // Test painter that draws a centered triangle
+            OOPGamesManager.Singleton.RegisterPainter(new A4_Testgame_Paint());
+            // Minimal rules + players for the test painter so MainWindow can start a "game"
+            OOPGamesManager.Singleton.RegisterRules(new A4_Testgame_Rules());
+            OOPGamesManager.Singleton.RegisterPlayer(new A4_Testgame_HumanPlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new A4_Testgame_ComputerPlayer());
             OOPGamesManager.Singleton.RegisterRules(new A4_TicTacToeRules());
             OOPGamesManager.Singleton.RegisterPlayer(new A4_TicTacToeHumanPlayer());
             // Register A4 computer players so they appear in the Player dropdowns
@@ -75,6 +81,11 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterRules(new A4_ShellStrike_Rules());
             OOPGamesManager.Singleton.RegisterPlayer(new A4_ShellStrike_HumanPlayer());
             OOPGamesManager.Singleton.RegisterPlayer(new A4_ShellStrike_ComputerPlayer());
+
+            // A4 ShellStrikeLegends V2 (terrain demo: painter + minimal rules)
+            OOPGamesManager.Singleton.RegisterPainter(new A4_ShellStrikeLegendsV2_Painter());
+            OOPGamesManager.Singleton.RegisterRules(new A4_ShellStrikeLegendsV2_Rules());
+            OOPGamesManager.Singleton.RegisterPlayer(new A4_ShellStrikeLegendsV2_HumanPlayer());
 
             //A2 Painters - 
             OOPGamesManager.Singleton.RegisterPainter(new A2_Painter());
