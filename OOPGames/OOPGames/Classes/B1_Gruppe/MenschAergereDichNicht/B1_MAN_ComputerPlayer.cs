@@ -27,19 +27,21 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
         {
             if (!(field is B1_MAN_Board board)) return null;
 
+            // Wenn der Würfel bereits gerollt wurde (über UI), verwende UI-Steuerung
+            // In diesem Fall gibt die UI die Kontrolle und wir sollten null zurückgeben
+            // um nicht mit der UI zu kollidieren
+            if (board.Dice.HasBeenRolled)
+            {
+                return null; // UI managed den Zug
+            }
+
+            // Ansonsten: Framework-Steuerung (normaler Computer-Player)
             var rules = new B1_MAN_Rules(board);
             int dice = rules.RollDice();
             var valid = rules.GetValidMoves(_PlayerNumber, dice);
             if (valid == null || valid.Count == 0) return null;
 
-            // simple heuristic: prefer moves that capture (check by simulating)
-            foreach (var p in valid)
-            {
-                // simulate
-                var copy = new B1_MAN_Board(board.Players.Count);
-                // naive: we don't deep copy; instead prefer random
-            }
-
+            // Simple Strategie: Zufällige Auswahl
             var pick = valid[_rnd.Next(valid.Count)];
             return new B1_MAN_Move(_PlayerNumber, pick.Id, dice);
         }

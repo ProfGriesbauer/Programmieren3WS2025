@@ -1,18 +1,22 @@
 using System;
 using System.Collections.Generic;
+using System.Windows;
 
 namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
 {
     // Basic rules for the game implementing IGameRules: roll dice, determine valid moves, perform moves.
     public class B1_MAN_Rules : OOPGames.IGameRules
     {
-        private readonly B1_MAN_Board _board;
+        private B1_MAN_Board _board;
         private readonly Random _rnd = new Random();
         // last dice rolled by the rules (for convenience)
         public int LastDice { get; private set; } = 0;
 
         // indicates whether the last move grants an extra turn (dice == 6)
         public bool LastMoveGivesExtraTurn { get; private set; } = false;
+        
+        // Track if player count has been selected
+        private bool _playerCountSelected = false;
 
         public B1_MAN_Rules(B1_MAN_Board board)
         {
@@ -40,7 +44,41 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
 
         public void ClearField()
         {
-            _board.Clear();
+            // Zeige Spieleranzahl-Dialog nur beim ersten Mal
+            if (!_playerCountSelected)
+            {
+                int playerCount = ShowPlayerCountDialog();
+                if (playerCount < 2 || playerCount > 4) playerCount = 4;
+                _board = new B1_MAN_Board(playerCount);
+                _playerCountSelected = true;
+            }
+            
+            if (_board != null)
+            {
+                _board.Clear();
+            }
+        }
+        
+        // Dialog zur Auswahl der Spieleranzahl (2-4)
+        private int ShowPlayerCountDialog()
+        {
+            try
+            {
+                var dialog = new PlayerCountDialog();
+                bool? result = dialog.ShowDialog();
+                
+                if (result == true && dialog.SelectedPlayerCount >= 2 && dialog.SelectedPlayerCount <= 4)
+                {
+                    return dialog.SelectedPlayerCount;
+                }
+            }
+            catch (System.Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Dialog-Fehler: {ex.Message}");
+            }
+            
+            // Standard: 4 Spieler
+            return 4;
         }
 
         public int CheckIfPLayerWon()

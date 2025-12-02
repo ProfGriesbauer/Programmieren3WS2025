@@ -150,6 +150,7 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
             canvas.Children.Clear();
             if (!(currentField is B1_MAN_Board board)) return;
 
+
             // Spielbrett-Grundmaße: nutze die gesamte verfügbare Fläche
             double w = canvas.ActualWidth > 0 ? canvas.ActualWidth : 550;
             double h = canvas.ActualHeight > 0 ? canvas.ActualHeight : 550;
@@ -357,6 +358,18 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
             double field_0_5_x = boardLeft + gridOffset + 0 * gridSize;
             double field_0_5_y = boardTop + gridOffset + 5 * gridSize;
             DrawField(canvas, field_0_5_x, field_0_5_y, Brushes.White, Brushes.Black, fieldSize);
+            
+            // Prüfe ob Figur auf Position 39 (= (0,5)) ist
+            var piece_39 = board.GetPieceAt(39);
+            if (piece_39 != null)
+            {
+                DrawPiece(canvas,
+                    field_0_5_x,
+                    field_0_5_y,
+                    PlayerColors[piece_39.Owner - 1],
+                    pieceSize,
+                    piece_39.Id + 1);
+            }
 
             // (Verbindungen entfernt auf Wunsch des Benutzers)
 
@@ -509,17 +522,24 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
             Canvas.SetTop(diceRect, controlsY);
             
             // Würfel nur klickbar wenn noch nicht gewürfelt
+            // WICHTIG: Speichere auch hier den aktuellen Spieler beim Zeichnen!
+            int diceDrawingPlayer = board.CurrentPlayer;
+            
             if (!board.Dice.HasBeenRolled)
             {
                 diceRect.MouseDown += (sender, e) => {
                     e.Handled = true; // Verhindere Event-Bubbling
-                    if (board.IsProcessing) return; // Verhindere Doppelverarbeitung
-                    if (board.Dice.HasBeenRolled) return; // Doppelcheck: Nicht nochmal würfeln
+                    
+                    // Frühe Checks BEVOR IsProcessing gesetzt wird
+                    if (board.IsProcessing) return;
+                    if (board.Dice.HasBeenRolled) return; // Doppelcheck
+                    if (board.CurrentPlayer != diceDrawingPlayer) return; // KRITISCH: Nur wenn noch derselbe Spieler!
+                    
+                    // Jetzt erst IsProcessing setzen
+                    board.IsProcessing = true;
                     
                     try
                     {
-                        board.IsProcessing = true;
-                        
                         // Würfeln - NUR würfeln, keine Figurenbewegung!
                         board.Dice.Roll();
                         board.SelectedPiece = null;
@@ -580,19 +600,26 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
                     
                     btnRect.MouseDown += (sender, e) => {
                         e.Handled = true; // Verhindere Event-Bubbling und Doppelklicks
-                        if (board.IsProcessing) return; // Verhindere Doppelverarbeitung
                         
-                        // WICHTIG: Prüfe ob dieser Button noch für den aktuellen Spieler gilt!
+                        // Sofort IsProcessing prüfen - wenn schon verarbeitet wird, KOMPLETT abbrechen
+                        if (board.IsProcessing) return;
+                        
+                        // WICHTIG: Frühe Checks BEVOR wir IsProcessing setzen!
                         if (board.CurrentPlayer != drawingPlayer) return;
-                        if (!board.Dice.HasBeenRolled) return; // Nur wenn gewürfelt wurde
+                        if (!board.Dice.HasBeenRolled) return;
+                        
+                        // Jetzt erst IsProcessing setzen, da alle Vorbedingungen erfüllt sind
+                        board.IsProcessing = true;
                         
                         try
                         {
-                            board.IsProcessing = true;
-                            
                             // Verwende GetPlayerPiece mit gespeichertem drawingPlayer für eindeutige Identifikation
                             var clickPiece = board.GetPlayerPiece(drawingPlayer, pieceIndex);
-                            if (clickPiece == null) return; // Sicherheitscheck
+                            if (clickPiece == null) return;
+                            
+                            // Prüfe nochmal ob der aktuelle Würfelwert noch gültig ist
+                            int diceValue = board.Dice.CurrentValue;
+                            if (diceValue <= 0 || diceValue > 6) return;
                             
                             // Figur auswählen und Bewegung ausführen
                             board.SelectedPiece = clickPiece;
@@ -606,6 +633,7 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
                         }
                         finally
                         {
+                            // IMMER zurücksetzen, sonst ist das Spiel blockiert
                             board.IsProcessing = false;
                         }
                     };

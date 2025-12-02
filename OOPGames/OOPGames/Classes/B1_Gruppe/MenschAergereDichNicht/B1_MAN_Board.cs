@@ -74,17 +74,23 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
         public int EntryIndexForPlayer(int playerNumber)
         {
             // Mapping based on actual track layout (im Uhrzeigersinn):
-            // Player 1 (Rot):     Index 30 -> Feld (4,10)
-            // Player 2 (Schwarz): Index 20 -> Feld (10,6)  
-            // Player 3 (Gelb):    Index 10 -> Feld (6,0)
-            // Player 4 (Grün):    Index 0  -> Feld (0,4)
+            // WICHTIG: Unabhängig von Spielerzahl bleiben die Farben an ihren Positionen
+            // Player 1: Immer Rot bei Index 30 -> Feld (4,10)
+            // Player 2: Immer Schwarz bei Index 20 -> Feld (10,6) (gegenüber von Rot)
+            // Player 3: Immer Gelb bei Index 10 -> Feld (6,0) (gegenüber von Grün)
+            // Player 4: Immer Grün bei Index 0 -> Feld (0,4) (gegenüber von Gelb)
+            
+            // Bei 2 Spielern: Spieler 1+2 (Rot + Schwarz) = gegenüberliegend
+            // Bei 3 Spielern: Spieler 1+2+3 (Rot + Schwarz + Gelb)
+            // Bei 4 Spielern: Alle
+            
             switch (playerNumber)
             {
                 case 1: return 30; // Rot starts at (4,10)
                 case 2: return 20; // Schwarz starts at (10,6)
                 case 3: return 10; // Gelb starts at (6,0)
                 case 4: return 0;  // Grün starts at (0,4)
-                default: return 0;
+                default: return 30; // Fallback
             }
         }
 
