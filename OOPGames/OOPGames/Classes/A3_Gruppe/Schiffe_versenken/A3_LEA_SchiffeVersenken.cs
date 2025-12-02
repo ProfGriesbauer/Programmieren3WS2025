@@ -2972,15 +2972,17 @@ namespace OOPGames
                 var ship = rules.GetCurrentShip(shipsList);
                 if (ship != null)
                 {
-                    Random rand = new Random();
+                    // Randomly rotate the ship before attempting placement (fixes bias towards horizontal)
+                    ship.IsHorizontal = _rand.Next(0, 2) == 0;
                     int attempts = 0;
                     while (attempts < 200)
                     {
-                        bool horizontal = rand.Next(0, 2) == 0;
+                        bool horizontal = ship.IsHorizontal;
                         int maxX = horizontal ? field.Width - ship.Size : field.Width - 1;
                         int maxY = horizontal ? field.Height - 1 : field.Height - ship.Size;
-                        int x = rand.Next(0, maxX + 1);
-                        int y = rand.Next(0, maxY + 1);
+                        if (maxX < 0 || maxY < 0) break;
+                        int x = _rand.Next(0, maxX + 1);
+                        int y = _rand.Next(0, maxY + 1);
                         if (rules.CanPlaceShip(ship, x, y, horizontal))
                         {
                             // Return placement move
@@ -2988,6 +2990,12 @@ namespace OOPGames
                         }
                         attempts++;
                     }
+                    // If random attempts fail, try the other orientation once
+                    ship.IsHorizontal = !ship.IsHorizontal;
+                    for (int x = 0; x < field.Width; x++)
+                        for (int y = 0; y < field.Height; y++)
+                            if (rules.CanPlaceShip(ship, x, y, ship.IsHorizontal))
+                                return new A3_LEA_SchiffeMove(x, y, _playerNumber);
                 }
                 return null;
             }
