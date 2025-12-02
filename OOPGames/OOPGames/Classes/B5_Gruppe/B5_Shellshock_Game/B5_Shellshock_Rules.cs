@@ -22,10 +22,22 @@ namespace OOPGames
         private int _activeTankNumber;      // Which tank (1 or 2) is currently active
         private int _movementsRemaining;    // Remaining movement actions for current turn
         private bool _pendingTurnSwitch;    // Delayed turn switch after projectile impact
+        private bool _lastMoveKeepsTurn;    // Framework flag: true = same player continues
 
         public string Name => "B5_Shellshock_Rules";
 
         public IGameField CurrentField => _field;
+
+        /// <summary>
+        /// Current player number (1 or 2). Used by framework to determine whose turn it is.
+        /// </summary>
+        public int CurrentPlayerNumber => _activeTankNumber;
+
+        /// <summary>
+        /// True if the last move should NOT switch players.
+        /// In Shellshock, players can move/aim multiple times but turn switches after shooting.
+        /// </summary>
+        public bool LastMoveGivesExtraTurn => _lastMoveKeepsTurn;
 
         /// <summary>
         /// Returns true while game is ongoing (at least one tank alive).
@@ -68,6 +80,59 @@ namespace OOPGames
             if (!_field.Tank1.IsAlive || !_field.Tank2.IsAlive) return;
             if (_field.ProjectileInFlight) return; // Block input during flight
 
+            // By default, keep the turn (movement/aiming doesn't switch players)
+            _lastMoveKeepsTurn = true;
+
+            B5_Shellshock_Tank currentTank = _activeTankNumber == 1 ? _field.Tank1 : _field.Tank2;
+
+            // Handle movement actions
+            if (shellMove.ActionType == B5_Shellshock_ActionType.MoveLeft && _field.MovementsRemaining > 0)
+            {
+                double newX = currentTank.X - 10;
+                if (newX > 20 && newX < _field.Terrain.Width - 20)
+                {
+                    currentTank.X = newX;
+                    currentTank.Y = _field.Terrain.GetHeightAt(currentTank.X);
+                    _field.MovementsRemaining--;
+                }
+                return;
+            }
+            if (shellMove.ActionType == B5_Shellshock_ActionType.MoveRight && _field.MovementsRemaining > 0)
+            {
+                double newX = currentTank.X + 10;
+                if (newX > 20 && newX < _field.Terrain.Width - 20)
+                {
+                    currentTank.X = newX;
+                    currentTank.Y = _field.Terrain.GetHeightAt(currentTank.X);
+                    _field.MovementsRemaining--;
+                }
+                return;
+            }
+
+            // Handle angle adjustments
+            if (shellMove.ActionType == B5_Shellshock_ActionType.IncreaseAngle)
+            {
+                currentTank.Angle = Math.Min(170, currentTank.Angle + 1);
+                return;
+            }
+            if (shellMove.ActionType == B5_Shellshock_ActionType.DecreaseAngle)
+            {
+                currentTank.Angle = Math.Max(10, currentTank.Angle - 1);
+                return;
+            }
+
+            // Handle power adjustments
+            if (shellMove.ActionType == B5_Shellshock_ActionType.IncreasePower)
+            {
+                currentTank.Power = Math.Min(100, currentTank.Power + 1);
+                return;
+            }
+            if (shellMove.ActionType == B5_Shellshock_ActionType.DecreasePower)
+            {
+                currentTank.Power = Math.Max(10, currentTank.Power - 1);
+                return;
+            }
+
             // Only handle Shoot via rules; movement/angle/power handled directly in HumanPlayer
             if (shellMove.ActionType == B5_Shellshock_ActionType.StartGame && _gamePhase == B5_Shellshock_GamePhase.Setup)
             {
@@ -84,17 +149,17 @@ namespace OOPGames
             }
             if (shellMove.ActionType == B5_Shellshock_ActionType.Shoot && (_field.Projectile == null || !_field.Projectile.IsActive) && _gamePhase == B5_Shellshock_GamePhase.PlayerTurn)
             {
-                B5_Shellshock_Tank currentTank = _activeTankNumber == 1 ? _field.Tank1 : _field.Tank2;
+                B5_Shellshock_Tank shootingTank = _activeTankNumber == 1 ? _field.Tank1 : _field.Tank2;
                 
                 // Calculate barrel end position for projectile spawn point
                 // Barrel extends from tank center based on firing angle
                 double barrelLengthNormalized = 0.02; // Approximately 15-20 pixels when scaled to screen
-                double angleRad = currentTank.Angle * Math.PI / 180.0;
-                double barrelEndX = currentTank.X + (barrelLengthNormalized * _field.Terrain.Width) * Math.Cos(angleRad);
-                double barrelEndY = currentTank.Y - barrelLengthNormalized * Math.Sin(angleRad);
+                double angleRad = shootingTank.Angle * Math.PI / 180.0;
+                double barrelEndX = shootingTank.X + (barrelLengthNormalized * _field.Terrain.Width) * Math.Cos(angleRad);
+                double barrelEndY = shootingTank.Y - barrelLengthNormalized * Math.Sin(angleRad);
 
                 // Use tank's Fire method to create projectile
-                _field.Projectile = currentTank.Fire(shellMove.PlayerNumber);
+                _field.Projectile = shootingTank.Fire(shellMove.PlayerNumber);
                 // Override position to barrel end (Fire uses tank center by default)
                 _field.Projectile.X = barrelEndX;
                 _field.Projectile.Y = barrelEndY;
@@ -109,6 +174,7 @@ namespace OOPGames
                 _gamePhase = B5_Shellshock_GamePhase.ProjectileInFlight;
                 _pendingTurnSwitch = true; // Switch after projectile collision
                 _field.GamePhase = _gamePhase;
+                _lastMoveKeepsTurn = false; // Switch player after this move
             }
         }
 
@@ -123,6 +189,7 @@ namespace OOPGames
             _activeTankNumber = 1;
             _movementsRemaining = _field.MaxMovesPerTurn;
             _pendingTurnSwitch = false;
+            _lastMoveKeepsTurn = true;
             _field.MovementsRemaining = _movementsRemaining;
             _field.ActiveTankNumber = _activeTankNumber;
             _field.GamePhase = _gamePhase;
@@ -237,6 +304,7 @@ namespace OOPGames
                             _field.MovementsRemaining = _movementsRemaining;
                             _field.ActiveTankNumber = _activeTankNumber;
                             _pendingTurnSwitch = false;
+                            _lastMoveKeepsTurn = true; // Allow the new player to take multiple moves
                         }
                         
                         // Randomize wind for next shot

@@ -1,6 +1,33 @@
 using System.Collections.Generic;
+using System.Linq;
+
 namespace OOPGames
 {
+    // ============= SHARED DATA MODEL =============
+    
+    /// <summary>
+    /// Repräsentiert ein Schiff im Schiffe-Versenken-Spiel
+    /// </summary>
+    public class A3_LEA_Ship
+    {
+        public int Id { get; set; }
+        public int Size { get; set; }
+        public int X { get; set; }
+        public int Y { get; set; }
+        public bool IsHorizontal { get; set; }
+        public bool[] HitCells { get; set; }
+        public int Hits { get { return HitCells.Count(h => h); } }
+        
+        public A3_LEA_Ship(int id, int size) 
+        { 
+            Id = id; 
+            Size = size; 
+            HitCells = new bool[size];
+        }
+    }
+
+    // ============= ABSTRACT BASE CLASSES =============
+    
     // Abstrakte Basis-Rules
     public abstract class A3_LEA_BaseSchiffeRules : IA3_LEA_SchiffeRules
     {
@@ -39,6 +66,24 @@ namespace OOPGames
         {
             if (field is IA3_LEA_SchiffeField)
                 return GetMove(selection, (IA3_LEA_SchiffeField)field);
+            return null;
+        }
+    }
+
+    // Abstrakte Basis-Computer Player
+    public abstract class A3_LEA_BaseComputerSchiffePlayer : IA3_LEA_ComputerSchiffePlayer
+    {
+        public abstract string Name { get; }
+        public abstract int PlayerNumber { get; }
+        public abstract void SetPlayerNumber(int playerNumber);
+        public abstract IGamePlayer Clone();
+        public abstract IA3_LEA_SchiffeMove GetMove(IA3_LEA_SchiffeField field);
+
+        public bool CanBeRuledBy(IGameRules rules) => rules is IA3_LEA_SchiffeRules;
+        public IPlayMove GetMove(IGameField field)
+        {
+            if (field is IA3_LEA_SchiffeField)
+                return GetMove((IA3_LEA_SchiffeField)field);
             return null;
         }
     }
