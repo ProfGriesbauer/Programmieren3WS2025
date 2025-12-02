@@ -74,16 +74,63 @@ This approach cleanly decouples the framework's player swapping from game logic 
 
 ### Classes
 
+#### OOP Konzepte (German/English Documentation)
+
+**Vererbungshierarchie (Inheritance Hierarchy):**
+
+```
+IRenderable (Interface)
+└── B5_Shellshock_GameEntity (abstrakte Klasse)
+    ├── B5_Shellshock_CollidableEntity (abstrakte Klasse, implements ICollidable)
+    │   ├── B5_Shellshock_Tank (konkrete Klasse)
+    │   └── B5_Shellshock_HealthPack (konkrete Klasse)
+    └── B5_Shellshock_Projectile (konkrete Klasse)
+
+ITerrainGenerator (Interface)
+└── B5_Shellshock_TerrainGeneratorBase (abstrakte Klasse)
+    ├── B5_Shellshock_FlatTerrainGenerator (konkrete Klasse)
+    ├── B5_Shellshock_HillTerrainGenerator (konkrete Klasse)
+    ├── B5_Shellshock_CurvyTerrainGenerator (konkrete Klasse)
+    └── B5_Shellshock_ValleyTerrainGenerator (konkrete Klasse)
+```
+
+**Interfaces:**
+- `ICollidable`: Ermöglicht polymorphe Kollisionserkennung
+- `IRenderable`: Definiert Position und Aktivitätsstatus für Rendering
+- `ITerrainGenerator`: Strategy Pattern für Terrain-Generierung
+
+**Abstrakte Klassen (Abstract Classes):**
+- `B5_Shellshock_GameEntity`: Basisklasse für alle Spielobjekte
+- `B5_Shellshock_CollidableEntity`: Erweitert GameEntity mit Kollisionsfähigkeit
+- `B5_Shellshock_TerrainGeneratorBase`: Template Method Pattern für Terrain
+
+**Konkrete Klassen (Concrete Classes):**
 1. **B5_Shellshock_Field**: Game state container (IGameField)
 2. **B5_Shellshock_Rules**: Game logic and physics (IGameRules, IGameRules2)
 3. **B5_Shellshock_Painter**: Rendering engine (IPaintGame2)
-4. **B5_Shellshock_Tank**: Tank object with position, angle, power, health
-5. **B5_Shellshock_Projectile**: Physics-based projectile
-6. **B5_Shellshock_Terrain**: Destructible height-mapped terrain
-7. **B5_Shellshock_Move**: Player action wrapper (IPlayMove)
-8. **B5_Shellshock_HumanPlayer**: Human player input handler (IHumanGamePlayer)
+4. **B5_Shellshock_Tank**: Tank mit Vererbung von CollidableEntity
+5. **B5_Shellshock_Projectile**: Physik-basiertes Projektil
+6. **B5_Shellshock_Terrain**: Nutzt Strategy Pattern für Generierung
+7. **B5_Shellshock_HealthPack**: Sammelbare Heilung
 
-**Note:** AI player and destructible terrain temporarily disabled for testing
+**OOP Prinzipien implementiert:**
+
+| Konzept | Implementierung |
+|---------|-----------------|
+| **Vererbung** | GameEntity → CollidableEntity → Tank/HealthPack |
+| **Polymorphie** | GetCollisionBounds() in Tank vs HealthPack |
+| **Kapselung** | Private Felder, öffentliche Properties mit Validierung |
+| **Abstrakte Klassen** | GameEntity, CollidableEntity, TerrainGeneratorBase |
+| **Interfaces** | ICollidable, IRenderable, ITerrainGenerator |
+| **Liskov-Prinzip** | Tank/HealthPack substituierbar für ICollidable |
+| **Vorbedingungen** | Dokumentiert in XML-Kommentaren |
+| **Nachbedingungen** | Dokumentiert in XML-Kommentaren |
+| **Invarianten** | Angle [0,180], Power [0,100], Health ≥ 0 |
+| **Factory Pattern** | TerrainGeneratorFactory |
+| **Strategy Pattern** | ITerrainGenerator Implementierungen |
+| **Template Method** | TerrainGeneratorBase.Generate() |
+
+**Note:** Computer player is not currently implemented - human vs human gameplay only
 
 ### Registration
 
