@@ -78,11 +78,11 @@ namespace OOPGames
             _activeRules = rules;
         }
 
-        public IEnumerable<IPaintGame> Painters { get { return _Painters; } }
+        public IEnumerable<IPaintGame> Painters { get { return _Painters.OrderBy(p => p.ToString()); } }
 
-        public IEnumerable<IGamePlayer> Players {  get { return _Players; } }
+        public IEnumerable<IGamePlayer> Players {  get { return _Players.OrderBy(p => p.ToString()); } }
 
-        public IEnumerable<IGameRules> Rules { get { return _Rules; } }
+        public IEnumerable<IGameRules> Rules { get { return _Rules.OrderBy(r => r.ToString()); } }
 
         public IGameRules ActiveRules { get { return _activeRules; } }
 

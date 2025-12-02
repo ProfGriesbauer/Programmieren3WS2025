@@ -56,22 +56,48 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterPlayer(new X_TicTacToeComputerPlayer());
 
 
+            OOPGamesManager.Singleton.RegisterPainter(new A1_TicTacToePaint());
+            OOPGamesManager.Singleton.RegisterRules(new A1_TicTacToeRules());
+            OOPGamesManager.Singleton.RegisterPlayer(new A1_HumanTicTacToePlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new A1_ComputerTicTacToePlayer());
+
+
             //A4 Painters
-       
+            
             OOPGamesManager.Singleton.RegisterPainter(new A4_TicTacToePaint());
+            // Test painter that draws a centered triangle
+            OOPGamesManager.Singleton.RegisterPainter(new A4_Testgame_Paint());
+            // Minimal rules + players for the test painter so MainWindow can start a "game"
+            OOPGamesManager.Singleton.RegisterRules(new A4_Testgame_Rules());
+            OOPGamesManager.Singleton.RegisterPlayer(new A4_Testgame_HumanPlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new A4_Testgame_ComputerPlayer());
             OOPGamesManager.Singleton.RegisterRules(new A4_TicTacToeRules());
             OOPGamesManager.Singleton.RegisterPlayer(new A4_TicTacToeHumanPlayer());
             // Register A4 computer players so they appear in the Player dropdowns
             OOPGamesManager.Singleton.RegisterPlayer(new A4_ComputerNormal());
             OOPGamesManager.Singleton.RegisterPlayer(new A4_ComputerUnbeatable());
+            // A4 ShellStrikeLegends registration (painter, rules, and computer player)
+            OOPGamesManager.Singleton.RegisterPainter(new A4_ShellStrike_Painter());
+            OOPGamesManager.Singleton.RegisterRules(new A4_ShellStrike_Rules());
+            OOPGamesManager.Singleton.RegisterPlayer(new A4_ShellStrike_HumanPlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new A4_ShellStrike_ComputerPlayer());
 
-            //A2 Painters
+            // A4 ShellStrikeLegends V2 (terrain demo: painter + minimal rules)
+            OOPGamesManager.Singleton.RegisterPainter(new A4_ShellStrikeLegendsV2_Painter());
+            OOPGamesManager.Singleton.RegisterRules(new A4_ShellStrikeLegendsV2_Rules());
+            OOPGamesManager.Singleton.RegisterPlayer(new A4_ShellStrikeLegendsV2_HumanPlayer());
+
+            //A2 Painters - 
             OOPGamesManager.Singleton.RegisterPainter(new A2_Painter());
             OOPGamesManager.Singleton.RegisterRules(new A2_Rules());
             OOPGamesManager.Singleton.RegisterPlayer(new A2_HumanPlayer());
             OOPGamesManager.Singleton.RegisterPlayer(new A2_ComputerPlayer());  
-            //OOPGamesManager.Singleton.RegisterPlayer(new A2_HumanPlayer());  
-              
+            // A2 Conquest
+            OOPGamesManager.Singleton.RegisterPainter(new A2_ConquestPainter());
+            OOPGamesManager.Singleton.RegisterRules(new A2_ConquestRules());
+            OOPGamesManager.Singleton.RegisterPlayer(new A2_ConquestHumanPlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new A2_ConquestComputerPlayer());
+
 
             //A3_LEA TicTacToe
             OOPGamesManager.Singleton.RegisterPainter(new A3_LEA_TicTacToePaint());
@@ -88,6 +114,7 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterPainter(new A3_LEA_SchiffePaint());
             OOPGamesManager.Singleton.RegisterRules(new A3_LEA_SchiffeRules());
             OOPGamesManager.Singleton.RegisterPlayer(new A3_LEA_HumanSchiffePlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new A3_LEA_ComputerSchiffePlayer());
             
             
             // B3 Jarde_Roeder
@@ -121,10 +148,17 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterPlayer(new B2_ComputerTicTacToePlayer());
             OOPGamesManager.Singleton.RegisterPlayer(new B2_SmartComputerTicTacToePlayer());
 
+            // B1 group: Mensch Ärgere Dich Nicht
+            OOPGamesManager.Singleton.RegisterPainter(new OOPGames.B1_Gruppe.MenschAergereDichNicht.B1_MAN_Paint());
+            // register rules with a fresh board (default 4 players) so it appears in list
+            OOPGamesManager.Singleton.RegisterRules(new OOPGames.B1_Gruppe.MenschAergereDichNicht.B1_MAN_Rules(new OOPGames.B1_Gruppe.MenschAergereDichNicht.B1_MAN_Board()));
+            OOPGamesManager.Singleton.RegisterPlayer(new OOPGames.B1_Gruppe.MenschAergereDichNicht.B1_MAN_HumanPlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new OOPGames.B1_Gruppe.MenschAergereDichNicht.B1_MAN_ComputerPlayer());
+
             // B2 group (Moritz & Tobias) - Maze Game (2 Players)
             OOPGamesManager.Singleton.RegisterPainter(new B2_MazePainter2Player());
             OOPGamesManager.Singleton.RegisterRules(new B2_MazeRules());
-            OOPGamesManager.Singleton.RegisterPlayer(new B2_MazeHumanPlayer());
+            OOPGamesManager.Singleton.RegisterPlayer(new B2_MazeDualPlayer());
 
             //b5 TicTacToe (Felix_Anton)test
             OOPGamesManager.Singleton.RegisterPainter(new B5_TicTacToe_Painter());
@@ -149,7 +183,8 @@ namespace OOPGames
             RulesList.ItemsSource = OOPGamesManager.Singleton.Rules;
             
             _PaintTimer = new System.Windows.Threading.DispatcherTimer();
-            _PaintTimer.Interval = new TimeSpan(0, 0, 0, 0, 40);
+            // ~60 FPS (16ms). For smoother animation of ShellStrike projectiles & movement
+            _PaintTimer.Interval = new TimeSpan(0, 0, 0, 0, 16);
             _PaintTimer.Tick += _PaintTimer_Tick; 
             _PaintTimer.Start();
         }
@@ -220,13 +255,30 @@ namespace OOPGames
             if (_CurrentPainter != null && 
                 _CurrentRules != null && _CurrentRules.CurrentField.CanBePaintedBy(_CurrentPainter))
             {
-                _CurrentPlayer = _CurrentPlayer1;
-                Status.Text = "Game startet!";
-                Status.Text = "Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
-                _CurrentRules.ClearField();
-                PaintCanvas.Focus();
-                _CurrentPainter.PaintGameField(PaintCanvas, _CurrentRules.CurrentField);
-                DoComputerMoves();
+                try
+                {
+                    // choose a non-null current player
+                    if (_CurrentPlayer1 != null)
+                        _CurrentPlayer = _CurrentPlayer1;
+                    else if (_CurrentPlayer2 != null)
+                        _CurrentPlayer = _CurrentPlayer2;
+                    else
+                    {
+                        MessageBox.Show("Please select at least one player (Player 1 or Player 2).");
+                        return;
+                    }
+
+                    Status.Text = "Game startet!";
+                    Status.Text = "Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
+                    _CurrentRules.ClearField();
+                    PaintCanvas.Focus();
+                    _CurrentPainter.PaintGameField(PaintCanvas, _CurrentRules.CurrentField);
+                    DoComputerMoves();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Error starting game: " + ex.Message + "\n" + ex.StackTrace);
+                }
             }
         }
 
@@ -237,37 +289,82 @@ namespace OOPGames
             {
                 Status.Text = "Player " + winner + " Won!";
                 ScheduleRestartIfNeeded();
+                return;
             }
-            else
+
+            // Spezialfall: Schiffeversenken Setup-Phase für Computer
+            if (_CurrentRules is A3_LEA_SchiffeRules schiffeRules && schiffeRules.IsSetupPhase && schiffeRules.CurrentSetupPlayer == 2 && _CurrentPlayer is IComputerGamePlayer)
             {
-                while (_CurrentRules.MovesPossible &&
-                       winner <= 0 &&
-                       _CurrentPlayer is IComputerGamePlayer)
+                // Computer platziert alle Schiffe automatisch
+                while (!schiffeRules.AllShipsPlaced2)
                 {
-                    IPlayMove pm = ((IComputerGamePlayer)_CurrentPlayer).GetMove(_CurrentRules.CurrentField);
+                    IPlayMove pm = ((IComputerGamePlayer)_CurrentPlayer).GetMove(schiffeRules.SchiffeField2);
                     if (pm != null)
                     {
-                        _CurrentRules.DoMove(pm);
-                        _CurrentPainter.PaintGameField(PaintCanvas, _CurrentRules.CurrentField);
-                        _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
-                        Status.Text = "Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
+                        schiffeRules.DoMove(pm);
+                        _CurrentPainter.PaintGameField(PaintCanvas, schiffeRules.SchiffeField2);
                     }
-
-                    winner = _CurrentRules.CheckIfPLayerWon();
-                    if (winner > 0)
+                    else
                     {
-                        Status.Text = "Player " + winner + " Won!";
-                        ScheduleRestartIfNeeded();
+                        // Falls kein Zug generiert werden kann, abbrechen
+                        break;
                     }
                 }
+                // Nach dem Platzieren: Phase auf 3 setzen
+                schiffeRules.Phase = 3;
+                Status.Text = "Player 1's turn!";
+                _CurrentPlayer = _CurrentPlayer1;
+                _CurrentPainter.PaintGameField(PaintCanvas, schiffeRules.SchiffeField);
+                return;
+            }
 
-                // If the board is full and there's no winner, it's a draw — schedule restart as well
-                //A4 Restart Logic
-                if (!_CurrentRules.MovesPossible && winner <= 0)
+            // Standard Computer-Zug-Logik
+            while (_CurrentRules.MovesPossible && winner <= 0 && _CurrentPlayer is IComputerGamePlayer)
+            {
+                IPlayMove pm = ((IComputerGamePlayer)_CurrentPlayer).GetMove(_CurrentRules.CurrentField);
+                if (pm != null)
                 {
-                    Status.Text = "Draw!";
+                    _CurrentRules.DoMove(pm);
+                    _CurrentPainter.PaintGameField(PaintCanvas, _CurrentRules.CurrentField);
+
+                    bool keepTurn = false;
+                    if (_CurrentRules is OOPGames.B1_Gruppe.MenschAergereDichNicht.B1_MAN_Rules manRules)
+                    {
+                        keepTurn = manRules.LastMoveGivesExtraTurn;
+                    }
+                    else if (_CurrentRules is A3_LEA_SchiffeRules)
+                    {
+                        keepTurn = ((A3_LEA_SchiffeRules)_CurrentRules).LastMoveGivesExtraTurn;
+                    }
+
+                    if (!keepTurn && !IsFlappyBird())
+                    {
+                        if (!(_CurrentPlayer is B2_MazeDualPlayer))
+                        {
+                            _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
+                        }
+                    }
+                    else if (IsFlappyBird())
+                    {
+                        FlappyBirdRules.ActivePlayer = (FlappyBirdRules.ActivePlayer == 1) ? 2 : 1;
+                        _CurrentPlayer = (_CurrentPlayer.PlayerNumber == 1) ? _CurrentPlayer2 : _CurrentPlayer1;
+                    }
+
+                    Status.Text = "Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
+                }
+
+                winner = _CurrentRules.CheckIfPLayerWon();
+                if (winner > 0)
+                {
+                    Status.Text = "Player " + winner + " Won!";
                     ScheduleRestartIfNeeded();
                 }
+            }
+
+            if (!_CurrentRules.MovesPossible && winner <= 0)
+            {
+                Status.Text = "Draw!";
+                ScheduleRestartIfNeeded();
             }
         }
 
@@ -287,18 +384,42 @@ namespace OOPGames
                     var px = (int)e.GetPosition(PaintCanvas).X;
                     var py = (int)e.GetPosition(PaintCanvas).Y;
                     var btn = (int)e.ChangedButton;
-                        sel = new A3_LEA_ClickSelection(px, py, btn);
-
-                    IPlayMove pm = null;
-
-                    // Let the player's GetMove method handle the click mapping
-                    pm = ((IHumanGamePlayer)_CurrentPlayer).GetMove(sel, _CurrentRules.CurrentField);
                     
+                    // Use appropriate ClickSelection based on player type
+                    if (_CurrentPlayer != null && _CurrentPlayer.GetType().Name.StartsWith("A4_"))
+                    {
+                        sel = new A4_ClickSelection(px, py, btn, (int)PaintCanvas.ActualWidth, (int)PaintCanvas.ActualHeight);
+                    }
+                    else if (_CurrentPlayer != null && _CurrentPlayer.GetType().Name.StartsWith("A3_LEA_"))
+                    {
+                        sel = new A3_LEA_ClickSelection(px, py, btn);
+                    }
+                    else
+                    {
+                        sel = new ClickSelection(px, py, btn);
+                    }
+
+                    IPlayMove pm = ((IHumanGamePlayer)_CurrentPlayer).GetMove(sel, _CurrentRules.CurrentField);
                     if (pm != null)
                     {
                         _CurrentRules.DoMove(pm);
                         _CurrentPainter.PaintGameField(PaintCanvas, _CurrentRules.CurrentField);
-                        _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
+
+                        bool keepTurn = false;
+                        if (_CurrentRules is OOPGames.B1_Gruppe.MenschAergereDichNicht.B1_MAN_Rules manRules)
+                        {
+                            keepTurn = manRules.LastMoveGivesExtraTurn;
+                        }
+                        else if (_CurrentRules is A3_LEA_SchiffeRules)
+                        {
+                            keepTurn = ((A3_LEA_SchiffeRules)_CurrentRules).LastMoveGivesExtraTurn;
+                        }
+
+                        if (!keepTurn && !IsFlappyBird())
+                        {
+                            _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
+                        }
+
                         Status.Text = "Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
                     }
 
@@ -330,7 +451,22 @@ namespace OOPGames
                 {
                     _CurrentRules.DoMove(pm);
                     _CurrentPainter.PaintGameField(PaintCanvas, _CurrentRules.CurrentField);
-                    _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
+
+                    bool keepTurn = false;
+                    if (_CurrentRules is OOPGames.B1_Gruppe.MenschAergereDichNicht.B1_MAN_Rules manRules)
+                    {
+                        keepTurn = manRules.LastMoveGivesExtraTurn;
+                    }
+                    else if (_CurrentRules is A3_LEA_SchiffeRules)
+                    {
+                        keepTurn = ((A3_LEA_SchiffeRules)_CurrentRules).LastMoveGivesExtraTurn;
+                    }
+
+                    if (!keepTurn)
+                    {
+                        _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
+                    }
+
                     Status.Text = "Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
                     DoComputerMoves();
                 }
@@ -369,12 +505,66 @@ namespace OOPGames
                 if (_CurrentRules.MovesPossible &&
                     _CurrentPlayer is IHumanGamePlayer)
                 {
-                    IPlayMove pm = ((IHumanGamePlayer)_CurrentPlayer).GetMove(new KeySelection(e.Key), _CurrentRules.CurrentField);
-                    if (pm != null)
+                    // Snake 2-Player: Handle both players simultaneously
+                    if (IsSnakeGame())
                     {
-                        _CurrentRules.DoMove(pm);
-                        _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
-                        Status.Text = "Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
+                        // Try Player 1 (WASD)
+                        if (_CurrentPlayer1 is IHumanGamePlayer humanPlayer1)
+                        {
+                            IPlayMove pm1 = humanPlayer1.GetMove(new KeySelection(e.Key), _CurrentRules.CurrentField);
+                            if (pm1 != null)
+                            {
+                                _CurrentRules.DoMove(pm1);
+                            }
+                        }
+                        
+                        // Try Player 2 (Arrow Keys)
+                        if (_CurrentPlayer2 is IHumanGamePlayer humanPlayer2)
+                        {
+                            IPlayMove pm2 = humanPlayer2.GetMove(new KeySelection(e.Key), _CurrentRules.CurrentField);
+                            if (pm2 != null)
+                            {
+                                _CurrentRules.DoMove(pm2);
+                            }
+                        }
+                        
+                        // Verhindere Pfeiltasten-Navigation in UI
+                        if (e.Key == Key.Left || e.Key == Key.Right || e.Key == Key.Up || e.Key == Key.Down || 
+                            e.Key == Key.W || e.Key == Key.A || e.Key == Key.S || e.Key == Key.D)
+                        {
+                            e.Handled = true;
+                        }
+                    }
+                    else
+                    {
+                        IPlayMove pm = ((IHumanGamePlayer)_CurrentPlayer).GetMove(new KeySelection(e.Key), _CurrentRules.CurrentField);
+                        if (pm != null)
+                        {
+                            _CurrentRules.DoMove(pm);
+
+                            bool keepTurn = false;
+                            if (_CurrentRules is OOPGames.B1_Gruppe.MenschAergereDichNicht.B1_MAN_Rules manRules)
+                            {
+                                keepTurn = manRules.LastMoveGivesExtraTurn;
+                            }
+
+                            if (!keepTurn && !IsFlappyBird())
+                            {
+                                // Check if player should keep turn (e.g., B2 Maze dual player)
+                                if (!(_CurrentPlayer is B2_MazeDualPlayer))
+                                {
+                                    _CurrentPlayer = _CurrentPlayer == _CurrentPlayer1 ? _CurrentPlayer2 : _CurrentPlayer1;
+                                }
+                            }
+
+                            Status.Text = "Player " + _CurrentPlayer.PlayerNumber + "'s turn!";
+                            
+                            // Verhindere Pfeiltasten-Navigation in UI
+                            if (e.Key == Key.Left || e.Key == Key.Right || e.Key == Key.Up || e.Key == Key.Down)
+                            {
+                                e.Handled = true;
+                            }
+                        }
                     }
                     //Restart Logic for Gruppe A4 :)
                     DoComputerMoves();
@@ -431,6 +621,18 @@ namespace OOPGames
             {
                 Status.Text = "Game restarted!";
             }
+        }
+
+        private bool IsFlappyBird()
+        {
+            return _CurrentRules != null &&
+                _CurrentRules.GetType().Name.Contains("FlappyBird");
+        }
+
+        private bool IsSnakeGame()
+        {
+            return _CurrentRules != null &&
+                _CurrentRules.GetType().Name.Contains("A5_SnakeRules");
         }
     }
 }

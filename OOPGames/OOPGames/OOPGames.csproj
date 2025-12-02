@@ -13,7 +13,16 @@
     <None Include="Assets\**\*.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-</ItemGroup>
+
+  <None Include="Assets\**\*.mp3">
+    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+  </None>
+  </ItemGroup>
+
+  <!-- Exclude A2_Game files with compilation errors (missing Player/Field types) -->
+  <ItemGroup>
+    <Compile Remove="Classes\A2_Gruppe\A2_Game\**\*.cs" />
+  </ItemGroup>
   
   <ItemGroup>
     <Content Include="Assets\Snake\grass_new.png">
@@ -29,6 +38,15 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Assets\Snake\strawberry.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Snake\snake2_head.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Snake\snake2_body.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Assets\Snake\snake2_rattle.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
