@@ -512,6 +512,8 @@ namespace OOPGames
 
     public class FlappyBirdRules : IGameRules2
     {
+
+        
         public static FlappyBirdRules Instance; // Singleton für Zugang
         public string Name => "Flappy Bird Rules";
         public static bool GameStarted = false;
