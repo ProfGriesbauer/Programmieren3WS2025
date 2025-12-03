@@ -9,9 +9,23 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Input;
+using System.Linq;
+using System.Windows.Media.Effects;
 
 namespace OOPGames
 {
+        public class HighscoreEntry
+    {
+        public string Name { get; set; }
+        public int Score { get; set; }
+        public HighscoreEntry() { }
+        public HighscoreEntry(string name, int score)
+        {
+            Name = name;
+            Score = score;
+        }
+    }
+
     public abstract class PipePart
     {
         public abstract void Draw(Canvas canvas, double x, double y, double width, double height, bool isTop);
@@ -242,7 +256,7 @@ namespace OOPGames
             {
                 if (Obstacles.Count == 0) return true;
                 var last = Obstacles[Obstacles.Count - 1];
-                return last.X < 250;
+                return last.X < 250;  // Obstacle spacing
             }
         }
         public int Score { get; set; } = 0;
@@ -251,7 +265,7 @@ namespace OOPGames
         {
             _pipeCount++;
             double gap = 140;
-            double gapY = _rand.Next(50, (int)(FieldHeight - gap - 50));
+            double gapY = _rand.Next(50, (int)(FieldHeight - gap - 50));  //Obstacle gap up to down pipe
             Obstacles.Add(new Obstacle(480, 0, 75, gapY, true));
             double yBottom = gapY + gap;
             double heightBottom = FieldHeight - yBottom;
@@ -433,7 +447,7 @@ namespace OOPGames
                 Stretch = Stretch.Fill
             };
             Canvas.SetLeft(gameOverImg, (canvas.ActualWidth - gameOverImg.Width) / 2);
-            Canvas.SetTop(gameOverImg, (canvas.ActualHeight / 2) - 190);
+            Canvas.SetTop(gameOverImg, (canvas.ActualHeight / 2) - 220);  // Y-Koordination of Highscore
             canvas.Children.Add(gameOverImg);
         }
 
@@ -449,12 +463,13 @@ namespace OOPGames
                 Stretch = Stretch.Fill
             };
             Canvas.SetLeft(img, (canvas.ActualWidth - img.Width) / 2);
-            Canvas.SetTop(img, yStart - 40);
+            Canvas.SetTop(img, yStart - 70);  // Y-Koordination of Highscore Writing
             canvas.Children.Add(img);
             yStart += 20;
             for (int i = 0; i < hs.Count; i++)
             {
-                int score = hs[i];
+                string name = hs[i].Name;
+                int score = hs[i].Score;
                 Brush medalColor;
                 if (score >= 50) medalColor = Brushes.Gold;
                 else if (score >= 20) medalColor = Brushes.Silver;
@@ -469,17 +484,27 @@ namespace OOPGames
                     StrokeThickness = 1
                 };
                 Canvas.SetLeft(medal, (canvas.ActualWidth / 2) - 70);
-                Canvas.SetTop(medal, yStart + i * 30 + 3);
+                Canvas.SetTop(medal, yStart + i * 30 - 25);  // - ... = Y-Koordination of Highscore Dots
                 canvas.Children.Add(medal);
-                var tb = new TextBlock()
+                var tb= new TextBlock()
                 {
-                    Text = $"{i + 1}. {score}",
+                    Text = $"{i+1}. {name} - {score}",
                     FontSize = 20,
                     Foreground = Brushes.White,
-                    TextAlignment = TextAlignment.Center
+                    TextAlignment = TextAlignment.Center,
+                    FontWeight = FontWeights.Bold
+                };
+                tb.Effect = new DropShadowEffect()
+                {
+                    Color = Colors.Black,
+                    BlurRadius = 5,
+                    Direction = 0,
+                    ShadowDepth = 0,
+                    Opacity = 1.0,
+                    RenderingBias = RenderingBias.Performance
                 };
                 Canvas.SetLeft(tb, (canvas.ActualWidth / 2) - 40);
-                Canvas.SetTop(tb, yStart + i * 30 - 2);
+                Canvas.SetTop(tb, yStart + i * 30 - 30);
                 canvas.Children.Add(tb);
             }
         }
@@ -487,6 +512,8 @@ namespace OOPGames
 
     public class FlappyBirdRules : IGameRules2
     {
+
+        
         public static FlappyBirdRules Instance; // Singleton für Zugang
         public string Name => "Flappy Bird Rules";
         public static bool GameStarted = false;
@@ -494,14 +521,15 @@ namespace OOPGames
         public static int FrameCount = 0;
         private FlappyBirdField _field;
         public static SoundManager SoundManagerInstance;
-        private const double Gravity = 2.9;
-        private const double JumpForce = -18;
+        private const double Gravity = 2.3;  // Gravity effect
+        private const double JumpForce = -18;  // Upward force when jumping
         private double _birdVelocity = 0;
         private ImageSource _rocketImage1;
         private ImageSource _rocketImage2;
         public IGameField CurrentField => _field;
         public bool MovesPossible { get; private set; } = true;
-        public static readonly List<int> Highscores = new List<int>();
+        public static readonly List<HighscoreEntry> Highscores = new List<HighscoreEntry>();
+
         public static bool GameOver = false;
         private readonly SoundManager soundManager;
 
@@ -629,12 +657,32 @@ namespace OOPGames
             soundManager.PlayHit();
             soundManager.StopMusic();
             soundManager.StopRocket();
-            Highscores.Add(_field.Score);
-            Highscores.Sort((a, b) => b.CompareTo(a));
-            if (Highscores.Count > 10) Highscores.RemoveAt(Highscores.Count - 1);
-            SaveHighscores();
+
+            int score = _field.Score;
+
+            // Prüfe, ob in Top 10
+            if (Highscores.Count < 10 || score > Highscores.Min(e => e.Score))
+            {
+                    string playerName = PromptForName(); // eigene Methode, z.B. mittels Window, Dialog oder InputBox
+                    if (string.IsNullOrWhiteSpace(playerName)) playerName = "Anonymous";
+                    Highscores.Add(new HighscoreEntry(playerName, score));
+                    Highscores.Sort((a, b) => b.Score.CompareTo(a.Score));
+                    if (Highscores.Count > 10)
+                        Highscores.RemoveAt(Highscores.Count - 1);
+                    SaveHighscores();
+            }
             ActivePlayer = (ActivePlayer == 1 ? 2 : 1);
         }
+
+        // Beispiel für eine einfache Prompteingabe (kannst du verbessern)
+        private string PromptForName()
+        {
+            return Microsoft.VisualBasic.Interaction.InputBox(
+            "Neuer Highscore! Bitte gib deinen Namen ein:",
+            "Highscore-Eintrag",
+            ""
+        );
+    }
         public void LoadHighscores()
         {
             string file = System.IO.Path.Combine(GetProjectFolderPath(), "Classes", "B4_Gruppe", "Graphic", "FlappyBirdHighscore.json");
@@ -643,7 +691,7 @@ namespace OOPGames
                 try
                 {
                     string json = File.ReadAllText(file);
-                    var loaded = JsonSerializer.Deserialize<List<int>>(json);
+                    var loaded = JsonSerializer.Deserialize<List<HighscoreEntry>>(json);
                     if (loaded != null)
                     {
                         Highscores.Clear();

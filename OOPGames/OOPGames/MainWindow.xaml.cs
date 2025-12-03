@@ -82,6 +82,11 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterPlayer(new A4_ShellStrike_HumanPlayer());
             OOPGamesManager.Singleton.RegisterPlayer(new A4_ShellStrike_ComputerPlayer());
 
+            // A4 ShellStrikeLegends V2 (terrain demo: painter + minimal rules)
+            OOPGamesManager.Singleton.RegisterPainter(new A4_ShellStrikeLegendsV2_Painter());
+            OOPGamesManager.Singleton.RegisterRules(new A4_ShellStrikeLegendsV2_Rules());
+            OOPGamesManager.Singleton.RegisterPlayer(new A4_ShellStrikeLegendsV2_HumanPlayer());
+
             //A2 Painters - 
             OOPGamesManager.Singleton.RegisterPainter(new A2_Painter());
             OOPGamesManager.Singleton.RegisterRules(new A2_Rules());
@@ -166,7 +171,10 @@ namespace OOPGames
             OOPGamesManager.Singleton.RegisterRules(new B5_Shellshock_Rules());
             OOPGamesManager.Singleton.RegisterPlayer(new B5_Shellshock_HumanPlayer());
 
-            
+            // B5 Pong (Felix_Anton)
+            OOPGamesManager.Singleton.RegisterPainter(new B5_Pong_Painter());
+            OOPGamesManager.Singleton.RegisterRules(new B5_Pong_Rules());   
+            OOPGamesManager.Singleton.RegisterPlayer(new B5_Pong_HumanPlayer());    
 
             // Populate ListBoxes with registered items
             PaintList.ItemsSource = OOPGamesManager.Singleton.Painters;

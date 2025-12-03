@@ -9,6 +9,7 @@
         Closed="Window_Closed" KeyDown="Window_KeyDown" 
         FocusManager.FocusedElement="{Binding ElementName=PaintCanvas}"
         Focusable="True">
+
     
     <Window.Resources>
         <Style TargetType="Button">

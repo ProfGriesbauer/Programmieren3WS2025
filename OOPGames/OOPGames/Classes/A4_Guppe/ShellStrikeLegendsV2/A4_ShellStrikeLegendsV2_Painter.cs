@@ -1,0 +1,219 @@
+using System;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Shapes;
+using System.Windows.Media.Imaging;
+
+namespace OOPGames
+{
+    // Painter draws only: a fixed sine-ground, no game logic.
+    public class A4_ShellStrikeLegendsV2_Painter : IPaintGame, IPaintGame2
+    {
+        public string Name => "A4 ShellStrikeLegends V2 Painter";
+
+        private Path _cachedTerrainPath;
+        private int _cachedW, _cachedH;
+        private int _cachedHash;
+
+        public void PaintGameField(Canvas canvas, IGameField currentField)
+        {
+            if (canvas == null) return;
+            canvas.Children.Clear();
+
+            // Background (dark sky like reference)
+            canvas.Background = new SolidColorBrush(Color.FromRgb(16, 18, 26));
+
+            double w = canvas.ActualWidth; if (w <= 0) w = 800;
+            double h = canvas.ActualHeight; if (h <= 0) h = 400;
+            int wi = (int)Math.Round(w);
+            int hi = (int)Math.Round(h);
+
+            if (currentField is not A4_ShellStrikeLegendsV2_GameField field)
+            {
+                // If no field is supplied, draw a default sine terrain anyway (render-only)
+                var temp = new A4_ShellStrikeLegendsV2_Terrain();
+                temp.BuildFixedSine(wi, hi);
+                DrawTerrain(canvas, temp);
+                return;
+            }
+
+            field.EnsureSetup(wi, hi);
+            DrawTerrain(canvas, field.Terrain);
+            if (field.Tank1 != null)
+            {
+                DrawHull(canvas, field.Terrain, field.Tank1);
+				DrawBarrel(canvas, field.Tank1); // Barrel zeichnen
+            }
+        }
+
+        public void TickPaintGameField(Canvas canvas, IGameField currentField) => PaintGameField(canvas, currentField);
+
+        private void DrawTerrain(Canvas canvas, A4_ShellStrikeLegendsV2_Terrain terrain)
+        {
+            if (terrain.Heights == null || terrain.Heights.Length == 0) return;
+
+            int wi = terrain.CanvasWidth;
+            int hi = terrain.CanvasHeight;
+            int hash = QuickHash(terrain.Heights);
+            if (_cachedTerrainPath == null || _cachedW != wi || _cachedH != hi || _cachedHash != hash)
+            {
+                _cachedW = wi; _cachedH = hi; _cachedHash = hash;
+                var geom = new StreamGeometry();
+                using (var ctx = geom.Open())
+                {
+                    ctx.BeginFigure(new Point(0, hi), isFilled: true, isClosed: true);
+                    ctx.LineTo(new Point(0, terrain.Heights[0]), true, false);
+                    for (int x = 1; x < terrain.Heights.Length; x++)
+                    {
+                        ctx.LineTo(new Point(x, terrain.Heights[x]), true, false);
+                    }
+                    ctx.LineTo(new Point(wi - 1, hi), true, false);
+                }
+                geom.Freeze();
+
+                // Bright cyan-ish ground fill to resemble the screenshot
+                _cachedTerrainPath = new Path
+                {
+                    Data = geom,
+                    Fill = new SolidColorBrush(Color.FromRgb(0x5A, 0xD5, 0xFF)),
+                    Stroke = null,
+                    StrokeThickness = 0
+                };
+            }
+            canvas.Children.Add(_cachedTerrainPath);
+        }
+
+        private static int QuickHash(int[] arr)
+        {
+            unchecked
+            {
+                int h = 17;
+                int step = Math.Max(1, arr.Length / 97);
+                for (int i = 0; i < arr.Length; i += step) h = h * 31 + arr[i];
+                return h;
+            }
+        }
+
+        private readonly System.Collections.Generic.Dictionary<string, ImageSource> _cache = new();
+        private ImageSource LoadImage(string path)
+        {
+            if (_cache.TryGetValue(path, out var src)) return src;
+            // 1) Try absolute disk path under output directory
+            try
+            {
+                string baseDir = AppContext.BaseDirectory;
+                string full = System.IO.Path.Combine(baseDir, path.Replace('/', System.IO.Path.DirectorySeparatorChar));
+                if (System.IO.File.Exists(full))
+                {
+                    var bi = new BitmapImage();
+                    bi.BeginInit();
+                    bi.UriSource = new Uri(full, UriKind.Absolute);
+                    bi.CacheOption = BitmapCacheOption.OnLoad;
+                    bi.EndInit();
+                    bi.Freeze();
+                    _cache[path] = bi;
+                    return bi;
+                }
+            }
+            catch { }
+
+            // 2) Try pack URI (requires Resource build action)
+            try
+            {
+                var bi = new BitmapImage();
+                bi.BeginInit();
+                bi.UriSource = new Uri($"pack://application:,,,/{path}", UriKind.Absolute);
+                bi.CacheOption = BitmapCacheOption.OnLoad;
+                bi.EndInit();
+                bi.Freeze();
+                _cache[path] = bi;
+                return bi;
+            }
+            catch { return null; }
+        }
+
+        private void DrawHull(Canvas canvas, A4_ShellStrikeLegendsV2_Terrain terrain, A4_ShellStrikeLegendsV2_Tank tank)
+        {
+            if (string.IsNullOrWhiteSpace(tank.HullSpritePath)) return;
+
+            var src = LoadImage(tank.HullSpritePath);
+            if (src == null)
+            {
+                // Fallback: einfacher Kasten ohne Rotation
+                double fw = A4_ShellStrikeLegendsV2_Config.TankBodyWidthPx;
+                double fh = A4_ShellStrikeLegendsV2_Config.TankBodyHeightPx;
+                double fx = tank.X;
+                double fyTop = tank.Y;
+
+                var rect = new Rectangle
+                {
+                    Width = fw,
+                    Height = fh,
+                    Fill = Brushes.DarkGreen
+                };
+
+                Canvas.SetLeft(rect, fx - fw / 2.0);
+                Canvas.SetTop(rect, fyTop);
+                canvas.Children.Add(rect);
+                Canvas.SetZIndex(rect, 10);
+                return;
+            }
+
+            // Größe und Position aus Der Config von Skallierungsfaktor 
+            double w = A4_ShellStrikeLegendsV2_Config.TankBodyWidthPx * A4_ShellStrikeLegendsV2_Config.TankScale;
+			double h = A4_ShellStrikeLegendsV2_Config.TankBodyHeightPx * A4_ShellStrikeLegendsV2_Config.TankScale;
+
+            var img = new Image
+            {
+                Source = src,
+                Width = w,
+                Height = h
+            };
+
+            // Tank.Y ist die Oberkante des Tanks.
+            // Wir setzen das Bild mit seiner Oberkante an Tank.Y
+            Canvas.SetLeft(img, tank.X - w / 2.0);
+            Canvas.SetTop(img, tank.Y);
+
+            // Rotation um die Bildmitte (0.5, 0.5 = Mitte in X/Y)
+            img.RenderTransformOrigin = new Point(0.5, 0.5);
+
+            double angleDeg = tank.RotationRad * 180.0 / Math.PI;
+            img.RenderTransform = new RotateTransform(angleDeg);
+
+            canvas.Children.Add(img);
+            Canvas.SetZIndex(img, 10);
+		}
+        //Barrel Zeichnen
+        private void DrawBarrel(Canvas canvas, A4_ShellStrikeLegendsV2_Tank tank)
+        {
+            if (string.IsNullOrWhiteSpace(tank.BarrelSpritePath)) return;
+
+            var src = LoadImage(tank.BarrelSpritePath);
+            if (src == null) return;
+			// Größe und Position aus Der Config von Skallierungsfaktor
+			double w = A4_ShellStrikeLegendsV2_Config.BarrelWidthPx * A4_ShellStrikeLegendsV2_Config.TankScale;
+    		double h = A4_ShellStrikeLegendsV2_Config.BarrelHeightPx * A4_ShellStrikeLegendsV2_Config.TankScale;
+
+            double angleDeg = (tank.RotationRad + tank.BarrelAngleRad) * 180.0 / Math.PI;
+
+            var img = new Image
+            {
+                Source = src,
+                Width = w,
+                Height = h,
+                RenderTransformOrigin = new Point(0.0, 0.5)  // Rotation links in der Mitte
+            };
+
+            img.RenderTransform = new RotateTransform(angleDeg);
+
+            Canvas.SetLeft(img, tank.BarrelPivotX);
+            Canvas.SetTop(img, tank.BarrelPivotY - h / 2.0);
+
+            canvas.Children.Add(img);
+            Canvas.SetZIndex(img, 9); // Unter dem Tank-Hull zeichnen da kleinerer Z wert wie Bei DrawHull
+        }
+	}
+}
+

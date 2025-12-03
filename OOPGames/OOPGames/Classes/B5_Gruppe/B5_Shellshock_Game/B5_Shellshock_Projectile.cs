@@ -3,24 +3,39 @@ using System;
 namespace OOPGames
 {
     /// <summary>
-    /// Represents a projectile (artillery shell) in flight.
+    /// Konkrete Klasse: Represents a projectile (artillery shell) in flight.
     /// Implements realistic ballistic physics with gravity and wind effects.
     /// Power affects gravity scaling rather than launch speed for consistent visual trajectory.
+    /// 
+    /// Inheritance Hierarchy:
+    /// - B5_Shellshock_GameEntity (abstrakte Oberklasse/Superklasse)
+    ///   - B5_Shellshock_Projectile (konkrete Implementierung)
+    /// 
+    /// Note: Does NOT inherit from CollidableEntity because projectiles are
+    /// the "colliders" that hit other objects, not the "collidees" that get hit.
+    /// This follows the Single Responsibility Principle.
+    /// 
+    /// OOP Concepts demonstrated:
+    /// - Vererbung: Extends B5_Shellshock_GameEntity for position/active state
+    /// - Kapselung: Physics constants are private, behavior is public
+    /// - Polymorphie: Overrides EntityType from base class
+    /// 
+    /// Invarianten:
+    /// - _powerNorm is always in range [0, 1]
+    /// - Physics constants are immutable
+    /// - IsActive becomes false when projectile hits something
     /// </summary>
-    public class B5_Shellshock_Projectile
+    public class B5_Shellshock_Projectile : B5_Shellshock_GameEntity
     {
-        // Position and velocity
-        private double _x;
-        private double _y;
+        // Velocity components
         private double _velocityX;
         private double _velocityY;
         
-        // State
-        private bool _isActive;
-        private int _playerNumber;
+        // Ownership
+        private readonly int _playerNumber;
         
         // Physics parameters
-        private double _powerNorm; // Normalized power [0, 1] for gravity scaling
+        private readonly double _powerNorm; // Normalized power [0, 1] for gravity scaling
 
         #region Physics Constants
         
@@ -45,19 +60,17 @@ namespace OOPGames
         
         #endregion
 
+        #region Overridden Properties
+
+        /// <summary>
+        /// Entity type identifier for debugging.
+        /// Implements abstract property from B5_Shellshock_GameEntity.
+        /// </summary>
+        public override string EntityType => $"Projectile (P{_playerNumber})";
+
+        #endregion
+
         #region Properties
-
-        public double X
-        {
-            get => _x;
-            set => _x = value;
-        }
-
-        public double Y
-        {
-            get => _y;
-            set => _y = value;
-        }
 
         public double VelocityX
         {
@@ -71,22 +84,30 @@ namespace OOPGames
             set => _velocityY = value;
         }
 
-        public bool IsActive
-        {
-            get => _isActive;
-            set => _isActive = value;
-        }
-
         public int PlayerNumber => _playerNumber;
 
         #endregion
 
+        #region Constructor
+
+        /// <summary>
+        /// Creates a projectile at the specified position with given angle and power.
+        /// 
+        /// Vorbedingung: 
+        /// - angle should be in [0, 180]
+        /// - power should be in [0, 100]
+        /// - playerNumber should be 1 or 2
+        /// 
+        /// Nachbedingung:
+        /// - Projectile is active
+        /// - Velocity calculated from angle
+        /// - Power normalized to [0, 1]
+        /// </summary>
         public B5_Shellshock_Projectile(double x, double y, double angle, double power, int playerNumber)
+            : base(x, y)  // Call base constructor (Vererbung)
         {
-            _x = x;
-            _y = y;
             _playerNumber = playerNumber;
-            _isActive = true;
+            // Base constructor sets _isActive = true
             _powerNorm = Math.Max(0.0, Math.Min(1.0, power / 100.0));
 
             // Calculate initial velocity from firing angle
@@ -97,10 +118,18 @@ namespace OOPGames
             _velocityY = -LaunchSpeed * Math.Sin(angleRad) / 500.0;
         }
 
+        #endregion
+
+        #region Physics Methods
+
         /// <summary>
         /// Updates projectile position based on ballistic physics simulation.
         /// Implements gravity and wind effects with power-based gravity scaling.
         /// Higher power = reduced gravity = flatter, longer trajectory.
+        /// 
+        /// Vorbedingung: deltaTime > 0
+        /// Nachbedingung: Position updated according to physics equations
+        /// Invariante: Only modifies position/velocity if IsActive
         /// </summary>
         /// <param name="gravity">Gravity constant (typically 9.8 m/s²)</param>
         /// <param name="wind">Wind force (positive = right, negative = left)</param>
@@ -126,5 +155,7 @@ namespace OOPGames
             _x += _velocityX * deltaTime;
             _y += _velocityY * deltaTime;
         }
+
+        #endregion
     }
 }

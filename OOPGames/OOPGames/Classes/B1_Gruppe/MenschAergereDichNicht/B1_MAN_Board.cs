@@ -12,6 +12,18 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
         public const int HomeBaseStart = 100; // home slots start index
 
         public List<B1_MAN_Player> Players { get; } = new List<B1_MAN_Player>();
+        
+        // Dice for the game
+        public B1_MAN_Dice Dice { get; } = new B1_MAN_Dice();
+        
+        // Current player (1-4)
+        public int CurrentPlayer { get; set; } = 1;
+        
+        // Selected piece for movement (null if none selected)
+        public B1_MAN_Piece SelectedPiece { get; set; } = null;
+        
+        // Flag to prevent double-processing of events
+        public bool IsProcessing { get; set; } = false;
 
         // Helper map: track index -> piece (only one piece allowed per track square)
         private Dictionary<int, B1_MAN_Piece> _trackMap = new Dictionary<int, B1_MAN_Piece>();
@@ -62,17 +74,23 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
         public int EntryIndexForPlayer(int playerNumber)
         {
             // Mapping based on actual track layout (im Uhrzeigersinn):
-            // Player 1 (Rot):     Index 30 -> Feld (4,10)
-            // Player 2 (Schwarz): Index 20 -> Feld (10,6)  
-            // Player 3 (Gelb):    Index 10 -> Feld (6,0)
-            // Player 4 (Grün):    Index 0  -> Feld (0,4)
+            // WICHTIG: Unabhängig von Spielerzahl bleiben die Farben an ihren Positionen
+            // Player 1: Immer Rot bei Index 30 -> Feld (4,10)
+            // Player 2: Immer Schwarz bei Index 20 -> Feld (10,6) (gegenüber von Rot)
+            // Player 3: Immer Gelb bei Index 10 -> Feld (6,0) (gegenüber von Grün)
+            // Player 4: Immer Grün bei Index 0 -> Feld (0,4) (gegenüber von Gelb)
+            
+            // Bei 2 Spielern: Spieler 1+2 (Rot + Schwarz) = gegenüberliegend
+            // Bei 3 Spielern: Spieler 1+2+3 (Rot + Schwarz + Gelb)
+            // Bei 4 Spielern: Alle
+            
             switch (playerNumber)
             {
                 case 1: return 30; // Rot starts at (4,10)
                 case 2: return 20; // Schwarz starts at (10,6)
                 case 3: return 10; // Gelb starts at (6,0)
                 case 4: return 0;  // Grün starts at (0,4)
-                default: return 0;
+                default: return 30; // Fallback
             }
         }
 
@@ -189,6 +207,24 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
 
             return (false, false, null);
         }
+        
+        // Try to move selected piece with the current dice value
+        public bool TryMoveSelectedPiece()
+        {
+            if (SelectedPiece == null || !Dice.HasBeenRolled) return false;
+            
+            var result = MovePiece(SelectedPiece, Dice.CurrentValue);
+            // SelectedPiece wird in EndTurn() zurückgesetzt
+            return result.moved;
+        }
+        
+        // End current turn and switch to next player
+        public void EndTurn()
+        {
+            Dice.Reset();
+            SelectedPiece = null;
+            CurrentPlayer = (CurrentPlayer % Players.Count) + 1;
+        }
 
         // Clears the board: send all pieces back to base and clear track map
         public void Clear()
@@ -201,6 +237,9 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
                     pc.SetPosition(-1);
                 }
             }
+            Dice.Reset();
+            CurrentPlayer = 1;
+            SelectedPiece = null;
         }
 
         // IGameField implementation: simple painter acceptance check

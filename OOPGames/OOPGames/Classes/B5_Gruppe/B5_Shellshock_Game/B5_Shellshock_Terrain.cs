@@ -4,132 +4,72 @@ namespace OOPGames
 {
     /// <summary>
     /// Represents the game terrain (battlefield ground).
-    /// Generates procedural terrain based on type (Flat, Hill, Curvy).
+    /// Uses Strategy Pattern via ITerrainGenerator for terrain generation.
     /// Supports destructible terrain via crater creation from projectile impacts.
     /// Uses height map for efficient collision detection and rendering.
+    /// 
+    /// OOP Concepts:
+    /// - Komposition über Vererbung: Uses ITerrainGenerator instead of inheriting
+    /// - Strategy Pattern: Terrain generation algorithm is pluggable
+    /// - Kapselung: Height map is encapsulated, modified only via public methods
+    /// 
+    /// Invarianten:
+    /// - _heightMap.Length == _width
+    /// - All height values are in range [0.0, 1.0]
+    /// - Width is immutable after construction
     /// </summary>
     public class B5_Shellshock_Terrain
     {
         private double[] _heightMap;          // Y-coordinates (normalized 0-1) for each X position
         private readonly int _width;          // Terrain width in pixels
         private readonly B5_Shellshock_TerrainType _terrainType;
+        private readonly ITerrainGenerator _generator; // Strategy pattern
 
         public double[] HeightMap => _heightMap;
         public int Width => _width;
         public B5_Shellshock_TerrainType TerrainType => _terrainType;
 
+        /// <summary>
+        /// Creates terrain using the specified type.
+        /// Uses Factory to create appropriate generator (Strategy Pattern).
+        /// 
+        /// Vorbedingung: width > 0
+        /// Nachbedingung: Terrain generated and ready for gameplay
+        /// </summary>
         public B5_Shellshock_Terrain(int width, B5_Shellshock_TerrainType terrainType)
         {
             _width = width;
             _terrainType = terrainType;
             _heightMap = new double[width];
+            
+            // Use Factory to get appropriate generator (Strategy Pattern)
+            _generator = B5_Shellshock_TerrainGeneratorFactory.Create(terrainType);
+            GenerateTerrain();
+        }
+
+        /// <summary>
+        /// Creates terrain with a custom generator (Dependency Injection).
+        /// Allows for testing and custom terrain algorithms.
+        /// 
+        /// Demonstriert: Dependency Injection für bessere Testbarkeit
+        /// </summary>
+        public B5_Shellshock_Terrain(int width, ITerrainGenerator generator)
+        {
+            _width = width;
+            _terrainType = B5_Shellshock_TerrainType.Flat; // Default
+            _heightMap = new double[width];
+            _generator = generator ?? throw new ArgumentNullException(nameof(generator));
             GenerateTerrain();
         }
 
         #region Terrain Generation
 
         /// <summary>
-        /// Generates terrain based on type.
-        /// Flat: Nearly horizontal with minimal noise.
-        /// Hill: Single hill with randomized position, size, and slope angles.
-        /// Curvy: Multiple rolling hills using layered sine waves.
-        /// All types are smoothed to prevent sharp edges.
+        /// Delegates terrain generation to the generator strategy.
         /// </summary>
         private void GenerateTerrain()
         {
-            Random rand = new Random();
-            
-            switch (_terrainType)
-            {
-                case B5_Shellshock_TerrainType.Flat:
-                    // Plain terrain with very slight noise
-                    for (int i = 0; i < _width; i++)
-                    {
-                        _heightMap[i] = 0.8 + (rand.NextDouble() * 0.01 - 0.005);
-                    }
-                    // Smooth to eliminate any sharp changes
-                    SmoothTerrain(3);
-                    break;
-
-                case B5_Shellshock_TerrainType.Hill:
-                    // Single hill with random angle and position
-                    double hillCenter = 0.3 + rand.NextDouble() * 0.4; // Random center between 30-70%
-                    double hillHeight = 0.15 + rand.NextDouble() * 0.15; // Random height
-                    double hillWidth = 0.2 + rand.NextDouble() * 0.3; // Random width
-                    double leftSlope = 0.5 + rand.NextDouble() * 1.5; // Random left slope steepness
-                    double rightSlope = 0.5 + rand.NextDouble() * 1.5; // Random right slope steepness
-                    
-                    for (int i = 0; i < _width; i++)
-                    {
-                        double x = (double)i / _width;
-                        double distFromCenter = Math.Abs(x - hillCenter);
-                        
-                        if (distFromCenter < hillWidth)
-                        {
-                            // On the hill - use different slopes for left/right
-                            double slope = x < hillCenter ? leftSlope : rightSlope;
-                            double normalizedDist = distFromCenter / hillWidth;
-                            double hillFactor = Math.Pow(1 - normalizedDist, slope);
-                            _heightMap[i] = 0.85 - hillHeight * hillFactor;
-                        }
-                        else
-                        {
-                            // Flat ground - no noise
-                            _heightMap[i] = 0.85;
-                        }
-                    }
-                    // Smooth to ensure gentle transitions
-                    SmoothTerrain(5);
-                    break;
-
-                case B5_Shellshock_TerrainType.Curvy:
-                    // Curvy landscape with gentle rolling hills - no sharp cliffs
-                    double[] noise = new double[_width];
-                    
-                    // Generate smooth rolling terrain with reduced frequency
-                    double phase1 = rand.NextDouble() * 10;
-                    double phase2 = rand.NextDouble() * 10;
-                    
-                    for (int i = 0; i < _width; i++)
-                    {
-                        double value = 0;
-                        double frequency = 0.008; // Reduced for gentler slopes
-                        double amplitude = 0.12; // Reduced amplitude
-                        
-                        // Layer 1: Large rolling hills
-                        value += Math.Sin(i * frequency * 2 + phase1) * amplitude;
-                        
-                        // Layer 2: Medium hills
-                        value += Math.Sin(i * frequency * 4 + phase2) * amplitude * 0.4;
-                        
-                        noise[i] = value;
-                    }
-                    
-                    // Apply multiple smoothing passes for very gentle terrain
-                    for (int i = 0; i < _width; i++)
-                    {
-                        _heightMap[i] = 0.75 + noise[i];
-                    }
-                    
-                    // Heavy smoothing to eliminate all sharp changes
-                    SmoothTerrain(8);
-                    
-                    // Clamp to valid range
-                    for (int i = 0; i < _width; i++)
-                    {
-                        _heightMap[i] = Math.Max(0.5, Math.Min(0.92, _heightMap[i]));
-                    }
-                    break;
-                    
-                case B5_Shellshock_TerrainType.Valley:
-                    // Valley in the middle (kept for compatibility)
-                    for (int i = 0; i < _width; i++)
-                    {
-                        double x = (double)i / _width;
-                        _heightMap[i] = 0.5 + Math.Abs(x - 0.5) * 0.6;
-                    }
-                    break;
-            }
+            _generator.Generate(_heightMap, _width);
         }
 
         /// <summary>
