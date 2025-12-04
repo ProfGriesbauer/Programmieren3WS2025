@@ -500,12 +500,43 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
             double buttonSize = 50;
             double buttonSpacing = 10;
             
-            // Gesamtbreite: Würfel + Abstand + 4 Buttons mit Spacing
-            double totalWidth = diceSize + 30 + (4 * buttonSize) + (3 * buttonSpacing);
+            // Gesamtbreite: Spieler-Anzeige + Würfel + Abstand + 4 Buttons mit Spacing
+            double playerIndicatorSize = 40;
+            double totalWidth = playerIndicatorSize + 20 + diceSize + 30 + (4 * buttonSize) + (3 * buttonSpacing);
             double controlsStartX = (w - totalWidth) / 2;
             
-            // Würfel zeichnen - zentriert
-            double diceX = controlsStartX;
+            // Spieler-Anzeige (farbiger Kreis) links vom Würfel
+            double playerIndicatorX = controlsStartX;
+            double playerIndicatorY = controlsY + (diceSize - playerIndicatorSize) / 2;
+            
+            Ellipse playerIndicator = new Ellipse
+            {
+                Width = playerIndicatorSize,
+                Height = playerIndicatorSize,
+                Fill = PlayerColors[board.CurrentPlayer - 1],
+                Stroke = Brushes.Black,
+                StrokeThickness = 3
+            };
+            Canvas.SetLeft(playerIndicator, playerIndicatorX);
+            Canvas.SetTop(playerIndicator, playerIndicatorY);
+            canvas.Children.Add(playerIndicator);
+            
+            // Spielernummer im Kreis
+            TextBlock playerNumberText = new TextBlock
+            {
+                Text = $"P{board.CurrentPlayer}",
+                FontSize = 18,
+                FontWeight = FontWeights.Bold,
+                Foreground = Brushes.White,
+                TextAlignment = TextAlignment.Center
+            };
+            playerNumberText.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            Canvas.SetLeft(playerNumberText, playerIndicatorX + playerIndicatorSize/2 - playerNumberText.DesiredSize.Width/2);
+            Canvas.SetTop(playerNumberText, playerIndicatorY + playerIndicatorSize/2 - playerNumberText.DesiredSize.Height/2);
+            canvas.Children.Add(playerNumberText);
+            
+            // Würfel zeichnen - rechts von der Spieler-Anzeige
+            double diceX = playerIndicatorX + playerIndicatorSize + 20;
             
             // Würfel-Hintergrund
             Rectangle diceRect = new Rectangle
@@ -544,6 +575,79 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
                         board.Dice.Roll();
                         board.SelectedPiece = null;
                         
+                        // Prüfe ob der Spieler 3-Würfel-Regel braucht
+                        var currentPlayerObj = board.Players.FirstOrDefault(p => p.PlayerNumber == board.CurrentPlayer);
+                        if (currentPlayerObj != null)
+                        {
+                            bool allInBase = currentPlayerObj.Pieces.All(pc => pc.IsInBase);
+                            bool anyOnTrack = currentPlayerObj.Pieces.Any(pc => pc.IsOnTrack);
+                            bool anyInBase = currentPlayerObj.Pieces.Any(pc => pc.IsInBase);
+                            
+                            bool needs3Rolls = false;
+                            
+                            if (allInBase)
+                            {
+                                needs3Rolls = true;
+                            }
+                            else if (!anyOnTrack && anyInBase)
+                            {
+                                // Prüfe ob alle Haus-Figuren auf Endpositionen sind
+                                int baseHome = board.HomeBaseForPlayer(board.CurrentPlayer);
+                                var homePieces = currentPlayerObj.Pieces.Where(pc => pc.IsInHome).ToList();
+                                
+                                bool allHomeOnFinalPositions = true;
+                                
+                                if (homePieces.Count > 0)
+                                {
+                                    var sortedHome = homePieces.OrderByDescending(pc => pc.Position).ToList();
+                                    
+                                    // Die hinterste Figur muss auf Slot 3 (d) sein
+                                    if (sortedHome[0].Position != baseHome + 3)
+                                    {
+                                        allHomeOnFinalPositions = false;
+                                    }
+                                    else if (sortedHome.Count >= 2 && sortedHome[1].Position != baseHome + 2)
+                                    {
+                                        allHomeOnFinalPositions = false;
+                                    }
+                                    else if (sortedHome.Count >= 3 && sortedHome[2].Position != baseHome + 1)
+                                    {
+                                        allHomeOnFinalPositions = false;
+                                    }
+                                }
+                                
+                                needs3Rolls = allHomeOnFinalPositions;
+                            }
+                            
+                            if (needs3Rolls)
+                            {
+                                // Spieler braucht 3 Versuche
+                                if (board.RollAttemptsRemaining == 0)
+                                {
+                                    // Erster Wurf -> 3 Versuche geben
+                                    board.RollAttemptsRemaining = 3;
+                                }
+                                
+                                board.RollAttemptsRemaining--;
+                                
+                                if (board.Dice.CurrentValue == 6)
+                                {
+                                    // 6 gewürfelt -> Versuche zurücksetzen, Spieler kann ziehen
+                                    board.RollAttemptsRemaining = 0;
+                                }
+                                else if (board.RollAttemptsRemaining > 0)
+                                {
+                                    // Keine 6, aber noch Versuche übrig -> Würfel zurücksetzen für nächsten Versuch
+                                    board.Dice.Reset();
+                                }
+                                else
+                                {
+                                    // Keine 6 nach 3 Versuchen -> Turn beenden
+                                    board.EndTurn();
+                                }
+                            }
+                        }
+                        
                         // Neuzeichnen
                         PaintGameField(canvas, board);
                     }
@@ -555,10 +659,21 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
             }
             canvas.Children.Add(diceRect);
             
-            // Würfel-Wert anzeigen
+            // Würfel-Wert anzeigen - zeige LastRolledValue wenn bei 3-Versuche-Regel
+            string diceText = "?";
+            if (board.Dice.HasBeenRolled)
+            {
+                diceText = board.Dice.CurrentValue.ToString();
+            }
+            else if (board.RollAttemptsRemaining > 0 && board.RollAttemptsRemaining < 3 && board.Dice.LastRolledValue > 0)
+            {
+                // Zeige letzten Wurf während 3-Versuche-Regel
+                diceText = board.Dice.LastRolledValue.ToString();
+            }
+            
             TextBlock diceValue = new TextBlock
             {
-                Text = board.Dice.HasBeenRolled ? board.Dice.CurrentValue.ToString() : "?",
+                Text = diceText,
                 FontSize = 40,
                 FontWeight = FontWeights.Bold,
                 Foreground = Brushes.Black,
@@ -569,6 +684,23 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
             Canvas.SetTop(diceValue, controlsY + diceSize/2 - diceValue.DesiredSize.Height/2);
             canvas.Children.Add(diceValue);
             
+            // Zeige Würfelversuche wenn Spieler alle Figuren in der Basis hat
+            if (board.RollAttemptsRemaining > 0)
+            {
+                TextBlock attemptsText = new TextBlock
+                {
+                    Text = $"Versuche: {board.RollAttemptsRemaining}/3",
+                    FontSize = 14,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = Brushes.Black,
+                    TextAlignment = TextAlignment.Center
+                };
+                attemptsText.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+                Canvas.SetLeft(attemptsText, diceX + diceSize/2 - attemptsText.DesiredSize.Width/2);
+                Canvas.SetTop(attemptsText, controlsY + diceSize + 5);
+                canvas.Children.Add(attemptsText);
+            }
+            
             // Figurenauswahl-Buttons (1-4) - nur sichtbar und klickbar wenn gewürfelt wurde
             if (board.Dice.HasBeenRolled)
             {
@@ -578,27 +710,47 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
                 // Speichere den aktuellen Spieler beim Zeichnen für eindeutige Identifikation
                 int drawingPlayer = board.CurrentPlayer;
                 
+                // Prüfe ob irgendeine Figur bewegt werden kann
+                bool anyMovePossible = false;
+                for (int i = 0; i < 4; i++)
+                {
+                    var checkPiece = board.GetPlayerPiece(board.CurrentPlayer, i);
+                    if (checkPiece != null && board.CanMovePiece(checkPiece, board.Dice.CurrentValue))
+                    {
+                        anyMovePossible = true;
+                        break;
+                    }
+                }
+                
                 for (int i = 0; i < 4; i++)
                 {
                     int pieceIndex = i; // Kopie für Lambda - wichtig!
                     
                     double btnX = buttonsStartX + i * (buttonSize + buttonSpacing);
                     
-                    // Button-Hintergrund
+                    // Prüfe ob diese Figur bewegt werden kann
+                    var checkPiece = board.GetPlayerPiece(board.CurrentPlayer, pieceIndex);
+                    bool canMove = checkPiece != null && board.CanMovePiece(checkPiece, board.Dice.CurrentValue);
+                    
+                    // Button-Hintergrund - ausgegraut wenn nicht bewegbar
                     Rectangle btnRect = new Rectangle
                     {
                         Width = buttonSize,
                         Height = buttonSize,
-                        Fill = PlayerColors[board.CurrentPlayer - 1],
+                        Fill = canMove ? PlayerColors[board.CurrentPlayer - 1] : Brushes.Gray,
                         Stroke = Brushes.Black,
                         StrokeThickness = 2,
                         RadiusX = 5,
-                        RadiusY = 5
+                        RadiusY = 5,
+                        Opacity = canMove ? 1.0 : 0.4
                     };
                     Canvas.SetLeft(btnRect, btnX);
                     Canvas.SetTop(btnRect, buttonsY);
                     
-                    btnRect.MouseDown += (sender, e) => {
+                    // Nur klickbar machen wenn bewegbar
+                    if (canMove)
+                    {
+                        btnRect.MouseDown += (sender, e) => {
                         e.Handled = true; // Verhindere Event-Bubbling und Doppelklicks
                         
                         // Sofort IsProcessing prüfen - wenn schon verarbeitet wird, KOMPLETT abbrechen
@@ -625,8 +777,20 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
                             board.SelectedPiece = clickPiece;
                             bool moved = board.TryMoveSelectedPiece();
                             
-                            // Nach Bewegungsversuch automatisch Spielerwechsel (egal ob erfolgreich oder nicht)
-                            board.EndTurn();
+                            // Prüfe ob eine 6 gewürfelt wurde -> Spieler darf nochmal würfeln
+                            bool rolledSix = (diceValue == 6);
+                            
+                            if (rolledSix)
+                            {
+                                // Bei 6: Würfel zurücksetzen für nächsten Wurf, Spieler bleibt
+                                board.Dice.FullReset();
+                                board.SelectedPiece = null;
+                            }
+                            else
+                            {
+                                // Keine 6: Spielerwechsel
+                                board.EndTurn();
+                            }
                             
                             // Neuzeichnen
                             PaintGameField(canvas, board);
@@ -637,22 +801,82 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
                             board.IsProcessing = false;
                         }
                     };
+                    }
                     canvas.Children.Add(btnRect);
                     
-                    // Button-Text (Figurnummer)
+                    // Button-Text (Figurnummer) - auch ausgegraut wenn nicht bewegbar
                     TextBlock btnText = new TextBlock
                     {
                         Text = (i + 1).ToString(),
                         FontSize = 24,
                         FontWeight = FontWeights.Bold,
-                        Foreground = (board.CurrentPlayer - 1 == 0 || board.CurrentPlayer - 1 == 2 || board.CurrentPlayer - 1 == 3) ? Brushes.Black : Brushes.White,
+                        Foreground = canMove ? 
+                            ((board.CurrentPlayer - 1 == 0 || board.CurrentPlayer - 1 == 2 || board.CurrentPlayer - 1 == 3) ? Brushes.Black : Brushes.White) 
+                            : Brushes.DarkGray,
                         TextAlignment = TextAlignment.Center,
-                        IsHitTestVisible = false  // Text blockiert keine Klicks
+                        IsHitTestVisible = false,  // Text blockiert keine Klicks
+                        Opacity = canMove ? 1.0 : 0.4
                     };
                     btnText.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
                     Canvas.SetLeft(btnText, btnX + buttonSize/2 - btnText.DesiredSize.Width/2);
                     Canvas.SetTop(btnText, buttonsY + buttonSize/2 - btnText.DesiredSize.Height/2);
                     canvas.Children.Add(btnText);
+                }
+                
+                // "Zug beenden" Button - nur anzeigen wenn kein Zug möglich ist
+                if (!anyMovePossible)
+                {
+                    double skipBtnWidth = 120;
+                    double skipBtnHeight = 40;
+                    double skipBtnX = buttonsStartX + 4 * (buttonSize + buttonSpacing) + 20;
+                    double skipBtnY = controlsY + diceSize/2 - skipBtnHeight/2;
+                    
+                    Rectangle skipBtnRect = new Rectangle
+                    {
+                        Width = skipBtnWidth,
+                        Height = skipBtnHeight,
+                        Fill = Brushes.Orange,
+                        Stroke = Brushes.Black,
+                        StrokeThickness = 2,
+                        RadiusX = 5,
+                        RadiusY = 5
+                    };
+                    Canvas.SetLeft(skipBtnRect, skipBtnX);
+                    Canvas.SetTop(skipBtnRect, skipBtnY);
+                    
+                    skipBtnRect.MouseDown += (sender, e) => {
+                        e.Handled = true;
+                        if (board.IsProcessing) return;
+                        if (board.CurrentPlayer != drawingPlayer) return;
+                        if (!board.Dice.HasBeenRolled) return;
+                        
+                        board.IsProcessing = true;
+                        try
+                        {
+                            // Spielerwechsel ohne Bewegung
+                            board.EndTurn();
+                            PaintGameField(canvas, board);
+                        }
+                        finally
+                        {
+                            board.IsProcessing = false;
+                        }
+                    };
+                    canvas.Children.Add(skipBtnRect);
+                    
+                    TextBlock skipBtnText = new TextBlock
+                    {
+                        Text = "Zug beenden",
+                        FontSize = 14,
+                        FontWeight = FontWeights.Bold,
+                        Foreground = Brushes.Black,
+                        TextAlignment = TextAlignment.Center,
+                        IsHitTestVisible = false
+                    };
+                    skipBtnText.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+                    Canvas.SetLeft(skipBtnText, skipBtnX + skipBtnWidth/2 - skipBtnText.DesiredSize.Width/2);
+                    Canvas.SetTop(skipBtnText, skipBtnY + skipBtnHeight/2 - skipBtnText.DesiredSize.Height/2);
+                    canvas.Children.Add(skipBtnText);
                 }
             }
         }
