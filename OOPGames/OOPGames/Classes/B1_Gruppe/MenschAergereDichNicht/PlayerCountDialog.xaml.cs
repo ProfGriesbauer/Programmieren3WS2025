@@ -7,6 +7,7 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
     {
         public int SelectedPlayerCount { get; private set; } = 4;
         public bool[] IsComputerPlayer { get; private set; } = new bool[4]; // true = Computer, false = Human
+        public bool AdvancedMode { get; private set; } = false;
 
         public PlayerCountDialog()
         {
@@ -78,6 +79,9 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
                 IsComputerPlayer[1] = Player2Computer.IsChecked == true;
                 IsComputerPlayer[2] = Player3Computer.IsChecked == true;
                 IsComputerPlayer[3] = Player4Computer.IsChecked == true;
+
+                // Bestimme Spielmodus
+                AdvancedMode = AdvancedModeCheckBox?.IsChecked == true;
 
                 DialogResult = true;
                 Close();

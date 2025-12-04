@@ -38,7 +38,7 @@ namespace OOPGames
     
     public class B2_MazeDualPlayer : B2_AbstractMazeHumanPlayer
     {
-        public B2_MazeDualPlayer(string name = "B2 - Maze Dual Controller")
+        public B2_MazeDualPlayer(string name = "B2 - Labyrinth Dual Controller")
         {
             Name = name;
         }

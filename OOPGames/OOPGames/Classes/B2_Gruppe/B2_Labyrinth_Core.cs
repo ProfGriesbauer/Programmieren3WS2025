@@ -441,7 +441,7 @@ namespace OOPGames
         {
         }
 
-        public override string Name => "B2 - Maze Game Rules";
+        public override string Name => "B2 - Labyrinth Rules";
 
         public override int CheckIfPLayerWon()
         {

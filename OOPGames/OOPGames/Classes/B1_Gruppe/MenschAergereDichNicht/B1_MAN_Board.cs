@@ -4,6 +4,17 @@ using System.Linq;
 
 namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
 {
+    // Special field types for advanced mode
+    public enum SpecialFieldType
+    {
+        None,           // Normal field
+        Skip,           // Aussetzen (miss next turn)
+        RollAgain,      // Nochmal würfeln
+        Forward2,       // 2 Felder vorwärts
+        Backward2,      // 2 Felder rückwärts
+        BackToStart     // Zurück zum Start (in die Basis)
+    }
+    
     // Simplified board model for "Mensch ärgere dich nicht".
     // Track positions: 0..39 main ring; each player's home slots are 100 + (player-1)*4 .. 100+(player-1)*4+3
     public class B1_MAN_Board : OOPGames.IGameField
@@ -24,17 +35,61 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
         
         // Flag to prevent double-processing of events
         public bool IsProcessing { get; set; } = false;
+        
+        // Track number of rolls when player has all pieces in base (max 3)
+        public int RollAttemptsRemaining { get; set; } = 0;
+        
+        // Advanced mode flag for special rules
+        public bool AdvancedMode { get; set; } = false;
+        
+        // Special fields for advanced mode (track position -> field type)
+        private Dictionary<int, SpecialFieldType> _specialFields = new Dictionary<int, SpecialFieldType>();
+        
+        // Flag to track if player must skip next turn
+        public bool MustSkipNextTurn { get; set; } = false;
+        
+        // Flag to indicate if player can roll again after current move
+        public bool CanRollAgain { get; set; } = false;
 
         // Helper map: track index -> piece (only one piece allowed per track square)
         private Dictionary<int, B1_MAN_Piece> _trackMap = new Dictionary<int, B1_MAN_Piece>();
 
-        public B1_MAN_Board(int players = 4)
+        public B1_MAN_Board(int players = 4, bool advancedMode = false)
         {
             if (players < 2 || players > 4) throw new ArgumentException("players must be 2..4");
+            AdvancedMode = advancedMode;
             for (int p = 1; p <= players; p++)
             {
                 Players.Add(new B1_MAN_Player(p, $"Player{p}"));
             }
+            
+            // Initialize special fields if advanced mode
+            if (AdvancedMode)
+            {
+                InitializeSpecialFields();
+            }
+        }
+        
+        private void InitializeSpecialFields()
+        {
+            // Distribute special fields on track (avoiding start positions 0, 10, 20, 30)
+            _specialFields[5] = SpecialFieldType.RollAgain;      // Nochmal würfeln
+            _specialFields[12] = SpecialFieldType.Forward2;      // 2 vor
+            _specialFields[18] = SpecialFieldType.Skip;          // Aussetzen
+            _specialFields[25] = SpecialFieldType.Backward2;     // 2 zurück
+            _specialFields[32] = SpecialFieldType.BackToStart;   // Zurück zum Start
+            _specialFields[37] = SpecialFieldType.RollAgain;     // Nochmal würfeln
+        }
+        
+        public SpecialFieldType GetSpecialFieldType(int position)
+        {
+            if (!AdvancedMode || position < 0 || position >= TrackLength) 
+                return SpecialFieldType.None;
+            
+            if (_specialFields.TryGetValue(position, out var fieldType))
+                return fieldType;
+            
+            return SpecialFieldType.None;
         }
 
         public B1_MAN_Piece GetPieceAt(int trackIndex)
@@ -106,6 +161,102 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
             return HomeBaseStart + (playerNumber - 1) * 4;
         }
 
+        // Check if a piece can be moved with the given dice value
+        public bool CanMovePiece(B1_MAN_Piece piece, int diceValue)
+        {
+            if (piece == null) return false;
+            
+            // In base: only move on 6
+            if (piece.IsInBase)
+            {
+                if (diceValue != 6) return false;
+                int entry = EntryIndexForPlayer(piece.Owner);
+                // Check if entry is blocked by own piece
+                if (_trackMap.TryGetValue(entry, out var occ))
+                {
+                    if (occ.Owner == piece.Owner) return false;
+                }
+                return true;
+            }
+            
+            // On track: check if can move
+            if (piece.IsOnTrack)
+            {
+                int owner = piece.Owner;
+                int homeEntry = (EntryIndexForPlayer(owner) + TrackLength - 1) % TrackLength;
+                int stepsToHomeEntry = (homeEntry - piece.Position + TrackLength) % TrackLength;
+                
+                if (diceValue <= stepsToHomeEntry)
+                {
+                    // stays on track
+                    int newPos = (piece.Position + diceValue) % TrackLength;
+                    if (_trackMap.TryGetValue(newPos, out var occ))
+                    {
+                        if (occ.Owner == owner) return false; // blocked by own
+                    }
+                    return true;
+                }
+                else
+                {
+                    // would enter home
+                    int stepsIntoHome = diceValue - stepsToHomeEntry - 1;
+                    if (stepsIntoHome < 0) return false;
+                    
+                    if (stepsIntoHome > 3)
+                    {
+                        // too many steps -> continues on track
+                        int newPos = (piece.Position + diceValue) % TrackLength;
+                        if (_trackMap.TryGetValue(newPos, out var occ))
+                        {
+                            if (occ.Owner == owner) return false;
+                        }
+                        return true;
+                    }
+                    
+                    int targetHome = HomeBaseForPlayer(owner) + stepsIntoHome;
+                    var pl = Players.FirstOrDefault(p => p.PlayerNumber == owner);
+                    if (pl == null) return false;
+                    bool occupied = pl.Pieces.Exists(pc => pc.IsInHome && pc.Position == targetHome);
+                    if (occupied)
+                    {
+                        // home occupied -> continues on track
+                        int newPos = (piece.Position + diceValue) % TrackLength;
+                        if (_trackMap.TryGetValue(newPos, out var occ))
+                        {
+                            if (occ.Owner == owner) return false;
+                        }
+                        return true;
+                    }
+                    return true;
+                }
+            }
+            
+            // In home: check if can move within home
+            if (piece.IsInHome)
+            {
+                int owner = piece.Owner;
+                int baseHome = HomeBaseForPlayer(owner);
+                int curSlot = piece.Position - baseHome;
+                int newSlot = curSlot + diceValue;
+                if (newSlot < 0 || newSlot > 3) return false;
+                
+                // Check if any piece blocks the path
+                var pl = Players.FirstOrDefault(p => p.PlayerNumber == owner);
+                if (pl == null) return false;
+                
+                for (int slot = curSlot + 1; slot <= newSlot; slot++)
+                {
+                    int checkPos = baseHome + slot;
+                    bool blocked = pl.Pieces.Exists(pc => pc.IsInHome && pc.Position == checkPos);
+                    if (blocked) return false;
+                }
+                
+                return true;
+            }
+            
+            return false;
+        }
+
         // Simple move procedure (does not enforce dice or full rules) -- returns capture info
         // Returns (moved, captured, capturedPiece)
         public (bool moved, bool captured, B1_MAN_Piece capturedPiece) MovePiece(B1_MAN_Piece piece, int steps)
@@ -165,6 +316,13 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
                     else
                     {
                         PlacePiece(piece, newPos);
+                        
+                        // Apply special field effects in advanced mode
+                        if (AdvancedMode)
+                        {
+                            ApplySpecialFieldEffect(piece, newPos);
+                        }
+                        
                         return (true, false, null);
                     }
                 }
@@ -173,14 +331,75 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
                     // attempt to enter home
                     int stepsIntoHome = steps - stepsToHomeEntry - 1; // 0 = first home slot
                     if (stepsIntoHome < 0) return (false, false, null);
-                    if (stepsIntoHome > 3) return (false, false, null); // cannot move beyond home
+                    
+                    if (stepsIntoHome > 3)
+                    {
+                        // Zu viele Schritte um ins Haus zu gehen -> laufe am Haus vorbei weiter auf der Strecke
+                        int newPos = (piece.Position + steps) % TrackLength;
+                        if (_trackMap.TryGetValue(newPos, out var occ))
+                        {
+                            if (occ.Owner == owner)
+                            {
+                                // blocked by own piece
+                                return (false, false, null);
+                            }
+                            else
+                            {
+                                SendToBase(occ);
+                                PlacePiece(piece, newPos);
+                                return (true, true, occ);
+                            }
+                        }
+                        else
+                        {
+                            PlacePiece(piece, newPos);
+                            
+                            // Apply special field effects in advanced mode
+                            if (AdvancedMode)
+                            {
+                                ApplySpecialFieldEffect(piece, newPos);
+                            }
+                            
+                            return (true, false, null);
+                        }
+                    }
 
                     int targetHome = HomeBaseForPlayer(owner) + stepsIntoHome;
                     // check if target home slot free
                     var pl = Players.FirstOrDefault(p => p.PlayerNumber == owner);
                     if (pl == null) return (false, false, null);
                     bool occupied = pl.Pieces.Exists(pc => pc.IsInHome && pc.Position == targetHome);
-                    if (occupied) return (false, false, null);
+                    if (occupied)
+                    {
+                        // Zielfeld im Haus besetzt -> laufe am Haus vorbei weiter auf der Strecke
+                        int newPos = (piece.Position + steps) % TrackLength;
+                        if (_trackMap.TryGetValue(newPos, out var occ2))
+                        {
+                            if (occ2.Owner == owner)
+                            {
+                                // blocked by own piece
+                                return (false, false, null);
+                            }
+                            else
+                            {
+                                SendToBase(occ2);
+                                PlacePiece(piece, newPos);
+                                return (true, true, occ2);
+                            }
+                        }
+                        else
+                        {
+                            PlacePiece(piece, newPos);
+                            
+                            // Apply special field effects in advanced mode
+                            if (AdvancedMode)
+                            {
+                                ApplySpecialFieldEffect(piece, newPos);
+                            }
+                            
+                            return (true, false, null);
+                        }
+                    }
 
                     // moving into home: remove from track map and set position
                     PlacePiece(piece, targetHome);
@@ -196,16 +415,92 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
                 int curSlot = piece.Position - baseHome;
                 int newSlot = curSlot + steps;
                 if (newSlot < 0 || newSlot > 3) return (false, false, null);
+                
+                // Prüfe dass keine Figur übersprungen wird
                 int targetHome = baseHome + newSlot;
                 var pl = Players.FirstOrDefault(p => p.PlayerNumber == owner);
                 if (pl == null) return (false, false, null);
-                bool occupied = pl.Pieces.Exists(pc => pc.IsInHome && pc.Position == targetHome);
-                if (occupied) return (false, false, null);
+                
+                // Prüfe alle Positionen zwischen curSlot und newSlot
+                for (int slot = curSlot + 1; slot <= newSlot; slot++)
+                {
+                    int checkPos = baseHome + slot;
+                    bool blocked = pl.Pieces.Exists(pc => pc.IsInHome && pc.Position == checkPos);
+                    if (blocked) return (false, false, null); // Kann nicht überspringen
+                }
+                
                 PlacePiece(piece, targetHome);
                 return (true, false, null);
             }
 
             return (false, false, null);
+        }
+        
+        // Apply special field effects (Advanced Mode only)
+        private void ApplySpecialFieldEffect(B1_MAN_Piece piece, int position)
+        {
+            if (!AdvancedMode || !piece.IsOnTrack) return;
+            
+            var fieldType = GetSpecialFieldType(position);
+            
+            switch (fieldType)
+            {
+                case SpecialFieldType.Skip:
+                    // Aussetzen - player must skip next turn
+                    MustSkipNextTurn = true;
+                    break;
+                    
+                case SpecialFieldType.RollAgain:
+                    // Nochmal würfeln - player can roll again
+                    CanRollAgain = true;
+                    break;
+                    
+                case SpecialFieldType.Forward2:
+                    // 2 Felder vorwärts
+                    int forwardPos = (position + 2) % TrackLength;
+                    if (_trackMap.TryGetValue(forwardPos, out var fwdOcc))
+                    {
+                        if (fwdOcc.Owner != piece.Owner)
+                        {
+                            SendToBase(fwdOcc); // Capture opponent
+                        }
+                        else
+                        {
+                            // Blocked by own piece, stay at current position
+                            break;
+                        }
+                    }
+                    PlacePiece(piece, forwardPos);
+                    break;
+                    
+                case SpecialFieldType.Backward2:
+                    // 2 Felder rückwärts
+                    int backwardPos = (position - 2 + TrackLength) % TrackLength;
+                    if (_trackMap.TryGetValue(backwardPos, out var bwdOcc))
+                    {
+                        if (bwdOcc.Owner != piece.Owner)
+                        {
+                            SendToBase(bwdOcc); // Capture opponent
+                        }
+                        else
+                        {
+                            // Blocked by own piece, stay at current position
+                            break;
+                        }
+                    }
+                    PlacePiece(piece, backwardPos);
+                    break;
+                    
+                case SpecialFieldType.BackToStart:
+                    // Zurück zur Basis
+                    SendToBase(piece);
+                    break;
+                    
+                case SpecialFieldType.None:
+                default:
+                    // No special effect
+                    break;
+            }
         }
         
         // Try to move selected piece with the current dice value
@@ -221,9 +516,90 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
         // End current turn and switch to next player
         public void EndTurn()
         {
-            Dice.Reset();
+            Dice.FullReset();
             SelectedPiece = null;
+            
+            // Don't change player if "roll again" is active
+            if (CanRollAgain)
+            {
+                CanRollAgain = false; // Reset flag
+                // Player stays the same and can roll again
+                return;
+            }
+            
+            // Change to next player
             CurrentPlayer = (CurrentPlayer % Players.Count) + 1;
+            
+            // Check if new player must skip turn due to special field
+            if (MustSkipNextTurn)
+            {
+                MustSkipNextTurn = false; // Reset flag
+                // Skip this player's turn - move to next player immediately
+                CurrentPlayer = (CurrentPlayer % Players.Count) + 1;
+            }
+            
+            // Prüfe ob der neue Spieler 3 Würfelversuche braucht
+            var currentPlayerObj = Players.FirstOrDefault(p => p.PlayerNumber == CurrentPlayer);
+            if (currentPlayerObj != null)
+            {
+                // Alle Figuren in der Basis -> 3 Versuche
+                bool allInBase = currentPlayerObj.Pieces.All(pc => pc.IsInBase);
+                
+                if (allInBase)
+                {
+                    RollAttemptsRemaining = 3;
+                }
+                else
+                {
+                    // Prüfe ob nur Figuren auf Endpositionen im Haus sind und mindestens eine in der Basis
+                    bool anyOnTrack = currentPlayerObj.Pieces.Any(pc => pc.IsOnTrack);
+                    bool anyInBase = currentPlayerObj.Pieces.Any(pc => pc.IsInBase);
+                    
+                    if (!anyOnTrack && anyInBase)
+                    {
+                        // Keine auf Track, mindestens eine in Basis
+                        // Prüfe ob alle Haus-Figuren auf Endpositionen sind
+                        int baseHome = HomeBaseForPlayer(CurrentPlayer);
+                        var homePieces = currentPlayerObj.Pieces.Where(pc => pc.IsInHome).ToList();
+                        
+                        bool allHomeOnFinalPositions = true;
+                        
+                        // Prüfe ob Figuren lückenlos von hinten (Slot 3) nach vorne besetzt sind
+                        if (homePieces.Count > 0)
+                        {
+                            // Sortiere Figuren nach Position (höchste zuerst = hinten im Haus)
+                            var sortedHome = homePieces.OrderByDescending(pc => pc.Position).ToList();
+                            
+                            // Die hinterste Figur muss auf Slot 3 sein
+                            if (sortedHome[0].Position != baseHome + 3)
+                            {
+                                allHomeOnFinalPositions = false;
+                            }
+                            else if (sortedHome.Count >= 2 && sortedHome[1].Position != baseHome + 2)
+                            {
+                                allHomeOnFinalPositions = false;
+                            }
+                            else if (sortedHome.Count >= 3 && sortedHome[2].Position != baseHome + 1)
+                            {
+                                allHomeOnFinalPositions = false;
+                            }
+                        }
+                        
+                        if (allHomeOnFinalPositions)
+                        {
+                            RollAttemptsRemaining = 3;
+                        }
+                        else
+                        {
+                            RollAttemptsRemaining = 0;
+                        }
+                    }
+                    else
+                    {
+                        RollAttemptsRemaining = 0;
+                    }
+                }
+            }
         }
 
         // Clears the board: send all pieces back to base and clear track map

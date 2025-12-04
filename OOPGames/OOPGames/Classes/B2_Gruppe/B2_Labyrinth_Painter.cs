@@ -55,7 +55,7 @@ namespace OOPGames
     {
         private const int ViewRadius = 2; // Sichtradius um Spieler (2 = 5x5 Sichtfeld)
         
-        public override string Name => "B2 - Maze Painter (2 Players)";
+        public override string Name => "B2 - Labyrinth Painter (2 Players)";
 
         protected override void PaintMazeField(Canvas canvas, B2_AbstractMazeField field, IB2_MazeGameState gameState)
         {

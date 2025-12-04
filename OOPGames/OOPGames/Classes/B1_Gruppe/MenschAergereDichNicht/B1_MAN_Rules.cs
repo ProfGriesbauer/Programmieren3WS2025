@@ -47,9 +47,9 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
             // Zeige Spieleranzahl-Dialog nur beim ersten Mal
             if (!_playerCountSelected)
             {
-                int playerCount = ShowPlayerCountDialog();
-                if (playerCount < 2 || playerCount > 4) playerCount = 4;
-                _board = new B1_MAN_Board(playerCount);
+                var config = ShowPlayerCountDialog();
+                if (config.playerCount < 2 || config.playerCount > 4) config.playerCount = 4;
+                _board = new B1_MAN_Board(config.playerCount, config.advancedMode);
                 _playerCountSelected = true;
             }
             
@@ -59,8 +59,8 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
             }
         }
         
-        // Dialog zur Auswahl der Spieleranzahl (2-4)
-        private int ShowPlayerCountDialog()
+        // Dialog zur Auswahl der Spieleranzahl (2-4) und Spielmodus
+        private (int playerCount, bool advancedMode) ShowPlayerCountDialog()
         {
             try
             {
@@ -69,7 +69,7 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
                 
                 if (result == true && dialog.SelectedPlayerCount >= 2 && dialog.SelectedPlayerCount <= 4)
                 {
-                    return dialog.SelectedPlayerCount;
+                    return (dialog.SelectedPlayerCount, dialog.AdvancedMode);
                 }
             }
             catch (System.Exception ex)
@@ -77,8 +77,8 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
                 System.Windows.MessageBox.Show($"Dialog-Fehler: {ex.Message}");
             }
             
-            // Standard: 4 Spieler
-            return 4;
+            // Standard: 4 Spieler, kein Advanced Mode
+            return (4, false);
         }
 
         public int CheckIfPLayerWon()

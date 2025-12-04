@@ -677,12 +677,109 @@ namespace OOPGames
         // Beispiel für eine einfache Prompteingabe (kannst du verbessern)
         private string PromptForName()
         {
-            return Microsoft.VisualBasic.Interaction.InputBox(
-            "Neuer Highscore! Bitte gib deinen Namen ein:",
-            "Highscore-Eintrag",
-            ""
-        );
-    }
+            Window dialog = new Window()
+            {
+                Width = 360,
+                Height = 210,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                ResizeMode = ResizeMode.NoResize,
+                WindowStyle = WindowStyle.None,
+                Background = new SolidColorBrush(Color.FromRgb(40, 40, 48)),
+                AllowsTransparency = true,
+                Owner = Application.Current?.MainWindow,
+            };
+
+            Border border = new Border()
+            {
+                Background = new SolidColorBrush(Color.FromRgb(50, 50, 58)),
+                CornerRadius = new CornerRadius(14),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(90, 90, 100)),
+                BorderThickness = new Thickness(2),
+                Padding = new Thickness(20)
+            };
+
+            StackPanel content = new StackPanel()
+            {
+                Margin = new Thickness(0),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            TextBlock title = new TextBlock()
+            {
+                Text = "🏆 Neuer Highscore!",
+                FontSize = 22,
+                FontWeight = FontWeights.Bold,
+                Foreground = Brushes.White,
+                Margin = new Thickness(0, 0, 0, 12)
+            };
+
+            TextBlock message = new TextBlock()
+            {
+                Text = "Bitte gib deinen Namen ein:",
+                FontSize = 16,
+                Foreground = Brushes.White,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+
+            TextBox input = new TextBox()
+            {
+                FontSize = 16,
+                Height = 34,
+                Foreground = Brushes.White,
+                Background = new SolidColorBrush(Color.FromRgb(30, 30, 36)),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(120, 120, 130)),
+                BorderThickness = new Thickness(1.5),
+                Padding = new Thickness(6),
+                Margin = new Thickness(0, 0, 0, 14)
+            };
+
+            Button okButton = new Button()
+            {
+                Content = "OK",
+                FontSize = 16,
+                Height = 38,
+                Background = new SolidColorBrush(Color.FromRgb(0, 150, 80)),
+                Foreground = Brushes.White,
+                FontWeight = FontWeights.SemiBold,
+                Cursor = Cursors.Hand,
+                BorderThickness = new Thickness(0),
+                Padding = new Thickness(12, 0, 12, 0)
+            };
+
+            okButton.Click += (s, e) =>
+            {
+                dialog.DialogResult = true;
+                dialog.Close();
+            };
+
+            // ENTER bestätigt den OK-Button
+            dialog.KeyDown += (s, e) =>
+            {
+                if (e.Key == Key.Enter)
+                {
+                    okButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                }
+                if (e.Key == Key.Escape)
+                {
+                    dialog.DialogResult = false;
+                    dialog.Close();
+                }
+            };
+
+            content.Children.Add(title);
+            content.Children.Add(message);
+            content.Children.Add(input);
+            content.Children.Add(okButton);
+
+            border.Child = content;
+            dialog.Content = border;
+
+            if (dialog.ShowDialog() == true)
+                return input.Text.Trim();
+
+            return "Anonymous";
+        }
+
         public void LoadHighscores()
         {
             string file = System.IO.Path.Combine(GetProjectFolderPath(), "Classes", "B4_Gruppe", "Graphic", "FlappyBirdHighscore.json");
