@@ -142,6 +142,46 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
                 DrawField(canvas, x, y, color, Brushes.Black, fieldSize);
             }
         }
+        
+        // Get color for special field type
+        private Brush GetSpecialFieldColor(SpecialFieldType type)
+        {
+            switch (type)
+            {
+                case SpecialFieldType.Skip:
+                    return Brushes.LightCoral;      // Rot - Aussetzen
+                case SpecialFieldType.RollAgain:
+                    return Brushes.LightGreen;      // Grün - Nochmal würfeln
+                case SpecialFieldType.Forward2:
+                    return Brushes.LightBlue;       // Blau - 2 vor
+                case SpecialFieldType.Backward2:
+                    return Brushes.Orange;          // Orange - 2 zurück
+                case SpecialFieldType.BackToStart:
+                    return Brushes.Purple;          // Lila - Zurück zum Start
+                default:
+                    return Brushes.White;
+            }
+        }
+        
+        // Get symbol for special field type
+        private string GetSpecialFieldSymbol(SpecialFieldType type)
+        {
+            switch (type)
+            {
+                case SpecialFieldType.Skip:
+                    return "X";         // Aussetzen
+                case SpecialFieldType.RollAgain:
+                    return "↻";         // Nochmal würfeln
+                case SpecialFieldType.Forward2:
+                    return "↑2";        // 2 vor
+                case SpecialFieldType.Backward2:
+                    return "↓2";        // 2 zurück
+                case SpecialFieldType.BackToStart:
+                    return "⌂";         // Zurück zum Start
+                default:
+                    return "";
+            }
+        }
 
         public string Name => "B1_MAN_Paint";
 
@@ -190,10 +230,12 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
             canvas.Children.Add(boardRect);
 
             // Startfelder (2x2) in den Ecken mit Padding
-            DrawStartFields(canvas, boardLeft + CORNER_PADDING, boardTop + CORNER_PADDING, gridSize, PlayerColors[3], fieldSize);                           // Grün oben links
-            DrawStartFields(canvas, boardLeft + size - CORNER_PADDING - gridSize, boardTop + CORNER_PADDING, gridSize, PlayerColors[2], fieldSize);      // gelb oben rechts
-            DrawStartFields(canvas, boardLeft + CORNER_PADDING, boardTop + size - CORNER_PADDING - gridSize, gridSize, PlayerColors[0], fieldSize);      // rot unten links
-            DrawStartFields(canvas, boardLeft + size - CORNER_PADDING - gridSize, boardTop + size - CORNER_PADDING - gridSize, gridSize, PlayerColors[1], fieldSize); // Schwarz unten rechts
+            // Die 2x2 Felder sollten zentriert auf den Grid-Positionen 0,1 (bzw. 9,10) sein
+            // Nutze gridOffset für korrekte Positionierung wie bei Track-Feldern
+            DrawStartFields(canvas, boardLeft + gridOffset, boardTop + gridOffset, gridSize, PlayerColors[3], fieldSize);                           // Grün oben links
+            DrawStartFields(canvas, boardLeft + gridOffset + 9 * gridSize, boardTop + gridOffset, gridSize, PlayerColors[2], fieldSize);      // gelb oben rechts
+            DrawStartFields(canvas, boardLeft + gridOffset, boardTop + gridOffset + 9 * gridSize, gridSize, PlayerColors[0], fieldSize);      // rot unten links
+            DrawStartFields(canvas, boardLeft + gridOffset + 9 * gridSize, boardTop + gridOffset + 9 * gridSize, gridSize, PlayerColors[1], fieldSize); // Schwarz unten rechts
 
             // Laufstrecke: 40 Felder die ein Kreuz-Muster bilden
             // Korrigiert nach Pfeilen: rechte Seite muss auf x=6 sein, nicht x=10
@@ -338,7 +380,19 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
                 }
                 else
                 {
-                    DrawField(canvas, trackPoints[i].X, trackPoints[i].Y, Brushes.White, Brushes.Black, fieldSize);
+                    // Check if this is a special field in advanced mode
+                    var specialType = board.GetSpecialFieldType(i);
+                    if (board.AdvancedMode && specialType != SpecialFieldType.None)
+                    {
+                        // Draw special field with appropriate color and symbol
+                        Brush specialColor = GetSpecialFieldColor(specialType);
+                        string specialSymbol = GetSpecialFieldSymbol(specialType);
+                        DrawFieldWithLabel(canvas, trackPoints[i].X, trackPoints[i].Y, specialColor, Brushes.Black, fieldSize, specialSymbol);
+                    }
+                    else
+                    {
+                        DrawField(canvas, trackPoints[i].X, trackPoints[i].Y, Brushes.White, Brushes.Black, fieldSize);
+                    }
                 }
 
                 // Zeichne Figur wenn vorhanden
@@ -420,21 +474,21 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
                     double baseAnchorX = 0, baseAnchorY = 0;
                     switch (player.PlayerNumber)
                     {
-                        case 1: // Rot -> unten links, Start bei CORNER_PADDING
-                            baseAnchorX = boardLeft + CORNER_PADDING;
-                            baseAnchorY = boardTop + size - CORNER_PADDING - gridSize;
+                        case 1: // Rot -> unten links
+                            baseAnchorX = boardLeft + gridOffset;
+                            baseAnchorY = boardTop + gridOffset + 9 * gridSize;
                             break;
                         case 2: // Schwarz -> unten rechts
-                            baseAnchorX = boardLeft + size - CORNER_PADDING - gridSize;
-                            baseAnchorY = boardTop + size - CORNER_PADDING - gridSize;
+                            baseAnchorX = boardLeft + gridOffset + 9 * gridSize;
+                            baseAnchorY = boardTop + gridOffset + 9 * gridSize;
                             break;
                         case 3: // Gelb -> oben rechts
-                            baseAnchorX = boardLeft + size - CORNER_PADDING - gridSize;
-                            baseAnchorY = boardTop + CORNER_PADDING;
+                            baseAnchorX = boardLeft + gridOffset + 9 * gridSize;
+                            baseAnchorY = boardTop + gridOffset;
                             break;
                         case 4: // Grün -> oben links
-                            baseAnchorX = boardLeft + CORNER_PADDING;
-                            baseAnchorY = boardTop + CORNER_PADDING;
+                            baseAnchorX = boardLeft + gridOffset;
+                            baseAnchorY = boardTop + gridOffset;
                             break;
                     }
                     double baseX = baseAnchorX + colIndex * gridSize;
@@ -475,11 +529,23 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
             string statusText = "";
             if (!board.Dice.HasBeenRolled)
             {
-                statusText = $"Spieler {board.CurrentPlayer}: Klicke auf den Würfel";
+                if (board.MustSkipNextTurn)
+                {
+                    statusText = $"Spieler {board.CurrentPlayer}: AUSSETZEN! (Spezialfeld)";
+                }
+                else
+                {
+                    statusText = $"Spieler {board.CurrentPlayer}: Klicke auf den Würfel";
+                }
             }
             else
             {
                 statusText = $"Spieler {board.CurrentPlayer}: Würfel = {board.Dice.CurrentValue} - Wähle Figur 1-4 zum Bewegen";
+                
+                if (board.CanRollAgain)
+                {
+                    statusText += " (Nochmal würfeln!)";
+                }
             }
             
             TextBlock status = new TextBlock
@@ -780,15 +846,24 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
                             // Prüfe ob eine 6 gewürfelt wurde -> Spieler darf nochmal würfeln
                             bool rolledSix = (diceValue == 6);
                             
-                            if (rolledSix)
+                            // Prüfe ob Spezialfeld "Nochmal würfeln" aktiv ist (Advanced Mode)
+                            bool canRollAgain = board.CanRollAgain;
+                            
+                            if (rolledSix || canRollAgain)
                             {
-                                // Bei 6: Würfel zurücksetzen für nächsten Wurf, Spieler bleibt
+                                // Bei 6 oder RollAgain: Würfel zurücksetzen für nächsten Wurf, Spieler bleibt
                                 board.Dice.FullReset();
                                 board.SelectedPiece = null;
+                                
+                                // Reset special field flag if it was used
+                                if (canRollAgain)
+                                {
+                                    board.CanRollAgain = false;
+                                }
                             }
                             else
                             {
-                                // Keine 6: Spielerwechsel
+                                // Keine 6 und kein RollAgain: Spielerwechsel (berücksichtigt Skip automatisch in EndTurn)
                                 board.EndTurn();
                             }
                             

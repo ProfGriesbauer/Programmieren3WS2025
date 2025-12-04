@@ -10,6 +10,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
@@ -51,8 +52,21 @@
             </StackPanel>
         </StackPanel>
         
+        <!-- Spielmodus -->
+        <StackPanel Grid.Row="2" Margin="0,0,0,20">
+            <TextBlock Text="Spielmodus:" 
+                       FontSize="14" 
+                       FontWeight="Bold"
+                       Margin="0,0,0,10"/>
+            <CheckBox x:Name="AdvancedModeCheckBox" 
+                      Content="Advanced Modus (mit Sonderregeln)" 
+                      FontSize="12"
+                      Margin="10,0"
+                      HorizontalAlignment="Center"/>
+        </StackPanel>
+        
         <!-- Spieler-Typen -->
-        <StackPanel Grid.Row="2" x:Name="PlayerTypesPanel" Visibility="Collapsed">
+        <StackPanel Grid.Row="3" x:Name="PlayerTypesPanel" Visibility="Collapsed">
             <TextBlock Text="Spieler-Typen:" 
                        FontSize="14" 
                        FontWeight="Bold"
@@ -108,7 +122,7 @@
         </StackPanel>
         
         <!-- Start Button -->
-        <Button Grid.Row="3" 
+        <Button Grid.Row="4" 
                 Content="Spiel starten" 
                 Width="120" 
                 Height="35" 
