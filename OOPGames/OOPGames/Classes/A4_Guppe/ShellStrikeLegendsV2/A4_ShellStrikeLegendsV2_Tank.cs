@@ -59,6 +59,18 @@ namespace OOPGames
                 return cy + sin * lx + cos * ly;
             }
         }
+        public void GetMuzzleWorldPosition(double barrelLength, out double mx, out double my) ///Berechnung der Mündung Position mit Hilfsmethode
+        {
+            double angle = RotationRad + BarrelAngleRad;
+
+            // Startpunkt = Barrel-Pivot
+            double px = BarrelPivotX;
+            double py = BarrelPivotY;
+
+            mx = px + Math.Cos(angle) * barrelLength;
+            my = py + Math.Sin(angle) * barrelLength;
+        }
+
 
         public double BarrelAngleRad { get; set; } = 0;   // 0 = waagrecht rechts
 

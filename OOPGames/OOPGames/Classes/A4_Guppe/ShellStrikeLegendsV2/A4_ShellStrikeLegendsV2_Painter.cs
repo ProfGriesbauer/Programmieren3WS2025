@@ -43,7 +43,12 @@ namespace OOPGames
             if (field.Tank1 != null)
             {
                 DrawHull(canvas, field.Terrain, field.Tank1);
-				DrawBarrel(canvas, field.Tank1); // Barrel zeichnen
+                DrawBarrel(canvas, field.Tank1); // Barrel zeichnen
+                if (field.Projectile != null)
+                {
+                    DrawProjectile(canvas, field.Projectile);
+                }
+
             }
         }
 
@@ -162,7 +167,7 @@ namespace OOPGames
 
             // Größe und Position aus Der Config von Skallierungsfaktor 
             double w = A4_ShellStrikeLegendsV2_Config.TankBodyWidthPx * A4_ShellStrikeLegendsV2_Config.TankScale;
-			double h = A4_ShellStrikeLegendsV2_Config.TankBodyHeightPx * A4_ShellStrikeLegendsV2_Config.TankScale;
+            double h = A4_ShellStrikeLegendsV2_Config.TankBodyHeightPx * A4_ShellStrikeLegendsV2_Config.TankScale;
 
             var img = new Image
             {
@@ -184,7 +189,7 @@ namespace OOPGames
 
             canvas.Children.Add(img);
             Canvas.SetZIndex(img, 10);
-		}
+        }
         //Barrel Zeichnen
         private void DrawBarrel(Canvas canvas, A4_ShellStrikeLegendsV2_Tank tank)
         {
@@ -192,9 +197,9 @@ namespace OOPGames
 
             var src = LoadImage(tank.BarrelSpritePath);
             if (src == null) return;
-			// Größe und Position aus Der Config von Skallierungsfaktor
-			double w = A4_ShellStrikeLegendsV2_Config.BarrelWidthPx * A4_ShellStrikeLegendsV2_Config.TankScale;
-    		double h = A4_ShellStrikeLegendsV2_Config.BarrelHeightPx * A4_ShellStrikeLegendsV2_Config.TankScale;
+            // Größe und Position aus Der Config von Skallierungsfaktor
+            double w = A4_ShellStrikeLegendsV2_Config.BarrelWidthPx * A4_ShellStrikeLegendsV2_Config.TankScale;
+            double h = A4_ShellStrikeLegendsV2_Config.BarrelHeightPx * A4_ShellStrikeLegendsV2_Config.TankScale;
 
             double angleDeg = (tank.RotationRad + tank.BarrelAngleRad) * 180.0 / Math.PI;
 
@@ -214,6 +219,27 @@ namespace OOPGames
             canvas.Children.Add(img);
             Canvas.SetZIndex(img, 9); // Unter dem Tank-Hull zeichnen da kleinerer Z wert wie Bei DrawHull
         }
-	}
+
+        private void DrawProjectile(Canvas canvas, A4_ShellStrikeLegendsV2_Projectile proj)
+        {
+            if (proj == null || !proj.IsActive) return;
+
+            double r = proj.Radius;
+
+            var ellipse = new Ellipse
+            {
+                Width = 2 * r,
+                Height = 2 * r,
+                Fill = Brushes.OrangeRed
+            };
+
+            Canvas.SetLeft(ellipse, proj.X - r);
+            Canvas.SetTop(ellipse, proj.Y - r);
+
+            canvas.Children.Add(ellipse);
+            Canvas.SetZIndex(ellipse, 30); // über Tank & Terrain
+        }
+
+    }
 }
 

@@ -40,7 +40,7 @@ namespace OOPGames
             double groundRightY = _field.Terrain.GroundYAt(rightPivotX);
 
             // Oberkante des Tanks, bei der die Pivots genau auf dem Boden liegen würden
-            double topLimitLeft  = groundLeftY  - A4_ShellStrikeLegendsV2_Config.TankPivotLeftYOffsetScaled;
+            double topLimitLeft = groundLeftY - A4_ShellStrikeLegendsV2_Config.TankPivotLeftYOffsetScaled;
             double topLimitRight = groundRightY - A4_ShellStrikeLegendsV2_Config.TankPivotRightYOffsetScaled;
 
             // strengstes Limit wählen, damit keine Seite in den Boden clippt
@@ -54,17 +54,50 @@ namespace OOPGames
                 t.Y = nextY;
                 return;   // keine Drehung während des Falls!
             }
-            
+
             // ----------------------------------------------------------
             // 4) TANK LANDET: Auf Boden setzen + Rotation übernehmen
             // ----------------------------------------------------------
             t.Y = topLimit;
             t.FallVelocity = 0;                    // wichtig: Geschwindigkeit zurücksetzen
             t.UpdateFromTerrain(_field.Terrain);   // Pivots und Rotation berechnen
+
+            // ----------------------------------------------------------
+            // 5) Projektil-Physik
+            // ----------------------------------------------------------
+            var proj = _field.Projectile;
+            if (proj != null && proj.IsActive)
+            {
+                // Gravitation anwenden
+                proj.VY += A4_ShellStrikeLegendsV2_Config.ProjectileGravityPx;
+
+                // Position updaten
+                proj.X += proj.VX;
+                proj.Y += proj.VY;
+
+                // Bounds / Terrain prüfen
+                // Bildschirmgrenzen grob: [0, CanvasWidth)
+                if (proj.X < 0 || proj.X >= _field.Terrain.CanvasWidth ||
+                    proj.Y >= _field.Terrain.CanvasHeight)
+                {
+                    proj.IsActive = false;
+                }
+                else
+                {
+                    int groundY = _field.Terrain.GroundYAt(proj.X);
+                    if (proj.Y >= groundY)
+                    {
+                        // Kollision mit Terrain -> Projektile deaktivieren
+                        proj.IsActive = false;
+                        // TODO: später Explosion / Terrain-Deformation hier
+                    }
+                }
+            }
+
         }
 
 
-        //Methode um die Tasteneingaben aus HumanPlayer zu verarbeiten
+        // Methode um die Tasteneingaben aus HumanPlayer zu verarbeiten
         public void DoMove(IPlayMove move)
         {
             if (move is not A4_ShellStrikeLegendsV2_Move m)
@@ -85,6 +118,7 @@ namespace OOPGames
                     t.MoveRight();
                     t.UpdateFromTerrain(_field.Terrain);
                     break;
+
                 case SSLV2Action.BarrelUp:
                     t.BarrelAngleRad -= 0.02;   // ↑
                     break;
@@ -93,12 +127,36 @@ namespace OOPGames
                     t.BarrelAngleRad += 0.02;   // ↓
                     break;
 
+                case SSLV2Action.Fire:
+                    {
+                        var p = _field.Projectile;
+                        if (p == null) break;
+
+                        // Nur ein Projektil gleichzeitig
+                        if (p.IsActive) break;
+
+                        double barrelLen = A4_ShellStrikeLegendsV2_Config.BarrelWidthPx *
+                                           A4_ShellStrikeLegendsV2_Config.TankScale;
+
+                        t.GetMuzzleWorldPosition(barrelLen, out double mx, out double my);
+
+                        double angle = t.RotationRad + t.BarrelAngleRad;
+
+                        p.X = mx;
+                        p.Y = my;
+                        p.VX = Math.Cos(angle) * A4_ShellStrikeLegendsV2_Config.ProjectileStartSpeedPx;
+                        p.VY = Math.Sin(angle) * A4_ShellStrikeLegendsV2_Config.ProjectileStartSpeedPx;
+                        p.IsActive = true;
+                        break;
+                    }
+
                 case SSLV2Action.None:
                 default:
                     // nichts tun
                     break;
             }
         }
+
 
 
 

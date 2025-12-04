@@ -26,9 +26,9 @@ namespace OOPGames
         public const int TankPivotRightYOffsetPx = 17;   // wheel center ~2px above bottom
 
         // skalierte Ketten-Pivot-Offsets
-        public static double TankPivotLeftXOffsetScaled  => TankPivotLeftXOffsetPx  * TankScale;
+        public static double TankPivotLeftXOffsetScaled => TankPivotLeftXOffsetPx * TankScale;
         public static double TankPivotRightXOffsetScaled => TankPivotRightXOffsetPx * TankScale;
-        public static double TankPivotLeftYOffsetScaled  => TankPivotLeftYOffsetPx  * TankScale;
+        public static double TankPivotLeftYOffsetScaled => TankPivotLeftYOffsetPx * TankScale;
         public static double TankPivotRightYOffsetScaled => TankPivotRightYOffsetPx * TankScale;
 
         // Horizontalgeschwindigkeit des Tanks (Pixel pro Move)
@@ -42,5 +42,11 @@ namespace OOPGames
 
         // Skallierungsfaktor für den Panzer
         public static double TankScale = 1.6;
+
+        // Anfangsgeschwindigkeit des Projektils (Pixel pro Tick)
+        public static double ProjectileStartSpeedPx = 10.0;
+
+        // Gravitation für Projektil (Pixel pro Tick^2)
+        public static double ProjectileGravityPx = 0.35;
     }
 }
