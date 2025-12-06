@@ -674,7 +674,7 @@ namespace OOPGames
             ActivePlayer = (ActivePlayer == 1 ? 2 : 1);
         }
 
-        // Beispiel für eine einfache Prompteingabe (kannst du verbessern)
+        // Beispiel für eine einfache Prompteingabe
         private string PromptForName()
         {
             Window dialog = new Window()
