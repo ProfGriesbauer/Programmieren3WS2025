@@ -14,7 +14,8 @@ namespace OOPGames
 
         //Tank Spawn Position
         // Tank Startposition (von hier fällt er herunter)
-        public static double TankSpawnX = 50;   // kannst du frei ändern
+        public static double TankSpawnX_Player1 = 80;    // links
+        public static double TankSpawnX_Player2 = 800;   // rechts 
         public static double TankSpawnY = -10;  // negativ = über dem Screen 
 
 

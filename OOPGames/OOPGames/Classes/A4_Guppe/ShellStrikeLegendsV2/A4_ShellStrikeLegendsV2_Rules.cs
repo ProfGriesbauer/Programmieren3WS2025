@@ -16,54 +16,62 @@ namespace OOPGames
             // nothing dynamic yet; terrain generated on-demand by painter
         }
 
-        public void TickGameCall()
+        // Hilfsmethode: Tank-Fallphysik und Terrain-Update abrufbar in dieser Methode
+        private void UpdateTankFallAndTerrain(A4_ShellStrikeLegendsV2_Tank t)
         {
-            // Terrain & Tank vorhanden?
-            if (_field?.Terrain == null) return;
-            if (_field.Tank1 == null) return;
+            if (t == null || _field?.Terrain == null) return;
 
-            var t = _field.Tank1;
-
-            // ----------------------------------------------------------
-            // 1) FALLPHYSIK: Geschwindigkeit erhöht sich durch Gravitation
-            // ----------------------------------------------------------
-            t.FallVelocity += t.FallAccelerationPx;       // z.B. 0.5 px pro Tick^2
+            // 1) FALLPHYSIK
+            t.FallVelocity += t.FallAccelerationPx;
             double nextY = t.Y + t.FallVelocity;
 
-            // ----------------------------------------------------------
             // 2) Bodenhöhe unter beiden Pivot-Punkten bestimmen
-            // ----------------------------------------------------------
-            double leftPivotX = t.X + A4_ShellStrikeLegendsV2_Config.TankPivotLeftXOffsetPx;
-            double rightPivotX = t.X + A4_ShellStrikeLegendsV2_Config.TankPivotRightXOffsetPx;
+            double leftPivotX = t.X + A4_ShellStrikeLegendsV2_Config.TankPivotLeftXOffsetScaled;
+            double rightPivotX = t.X + A4_ShellStrikeLegendsV2_Config.TankPivotRightXOffsetScaled;
 
             double groundLeftY = _field.Terrain.GroundYAt(leftPivotX);
             double groundRightY = _field.Terrain.GroundYAt(rightPivotX);
 
             // Oberkante des Tanks, bei der die Pivots genau auf dem Boden liegen würden
-            double topLimitLeft = groundLeftY - A4_ShellStrikeLegendsV2_Config.TankPivotLeftYOffsetScaled;
-            double topLimitRight = groundRightY - A4_ShellStrikeLegendsV2_Config.TankPivotRightYOffsetScaled;
+            double topLimitLeft =
+                groundLeftY - A4_ShellStrikeLegendsV2_Config.TankPivotLeftYOffsetScaled;
+            double topLimitRight =
+                groundRightY - A4_ShellStrikeLegendsV2_Config.TankPivotRightYOffsetScaled;
 
-            // strengstes Limit wählen, damit keine Seite in den Boden clippt
             double topLimit = Math.Min(topLimitLeft, topLimitRight);
 
-            // ----------------------------------------------------------
             // 3) TANK IST NOCH IN DER LUFT → weiterfallen lassen
-            // ----------------------------------------------------------
             if (nextY < topLimit)
             {
                 t.Y = nextY;
                 return;   // keine Drehung während des Falls!
             }
 
-            // ----------------------------------------------------------
             // 4) TANK LANDET: Auf Boden setzen + Rotation übernehmen
-            // ----------------------------------------------------------
             t.Y = topLimit;
-            t.FallVelocity = 0;                    // wichtig: Geschwindigkeit zurücksetzen
-            t.UpdateFromTerrain(_field.Terrain);   // Pivots und Rotation berechnen
+            t.FallVelocity = 0;
+            t.UpdateFromTerrain(_field.Terrain);
+        }
+        //Hauptmethode die bei jedem Tick aufgerufen wird
+        public void TickGameCall()
+        {
+            if (_field?.Terrain == null) return;
 
             // ----------------------------------------------------------
-            // 5) Projektil-Physik
+            // 1) Beide Tanks updaten (Fallphysik + Terrain-Ausrichtung)
+            // ----------------------------------------------------------
+            if (_field.Tank1 != null)
+            {
+                UpdateTankFallAndTerrain(_field.Tank1);
+            }
+
+            if (_field.Tank2 != null)
+            {
+                UpdateTankFallAndTerrain(_field.Tank2);
+            }
+
+            // ----------------------------------------------------------
+            // 2) Projektil-Physik
             // ----------------------------------------------------------
             var proj = _field.Projectile;
             if (proj != null && proj.IsActive)
@@ -76,7 +84,6 @@ namespace OOPGames
                 proj.Y += proj.VY;
 
                 // Bounds / Terrain prüfen
-                // Bildschirmgrenzen grob: [0, CanvasWidth)
                 if (proj.X < 0 || proj.X >= _field.Terrain.CanvasWidth ||
                     proj.Y >= _field.Terrain.CanvasHeight)
                 {
@@ -87,23 +94,26 @@ namespace OOPGames
                     int groundY = _field.Terrain.GroundYAt(proj.X);
                     if (proj.Y >= groundY)
                     {
-                        // Kollision mit Terrain -> Projektile deaktivieren
                         proj.IsActive = false;
                         // TODO: später Explosion / Terrain-Deformation hier
                     }
                 }
             }
-
         }
 
-
-        // Methode um die Tasteneingaben aus HumanPlayer zu verarbeiten
         public void DoMove(IPlayMove move)
         {
             if (move is not A4_ShellStrikeLegendsV2_Move m)
                 return;
 
-            var t = _field.Tank1;
+            // Welcher Tank? Player 1 -> Tank1, Player 2 -> Tank2
+            A4_ShellStrikeLegendsV2_Tank t = null;
+
+            if (m.PlayerNumber == 1)
+                t = _field.Tank1;
+            else if (m.PlayerNumber == 2)
+                t = _field.Tank2;
+
             if (t == null || _field.Terrain == null)
                 return;
 
@@ -120,20 +130,18 @@ namespace OOPGames
                     break;
 
                 case SSLV2Action.BarrelUp:
-                    t.BarrelAngleRad -= 0.02;   // ↑
+                    t.BarrelAngleRad -= 0.02;
                     break;
 
                 case SSLV2Action.BarrelDown:
-                    t.BarrelAngleRad += 0.02;   // ↓
+                    t.BarrelAngleRad += 0.02;
                     break;
 
                 case SSLV2Action.Fire:
                     {
                         var p = _field.Projectile;
                         if (p == null) break;
-
-                        // Nur ein Projektil gleichzeitig
-                        if (p.IsActive) break;
+                        if (p.IsActive) break;  // nur ein Schuss gleichzeitig
 
                         double barrelLen = A4_ShellStrikeLegendsV2_Config.BarrelWidthPx *
                                            A4_ShellStrikeLegendsV2_Config.TankScale;
@@ -152,10 +160,10 @@ namespace OOPGames
 
                 case SSLV2Action.None:
                 default:
-                    // nichts tun
                     break;
             }
         }
+
 
 
 
@@ -164,7 +172,7 @@ namespace OOPGames
         {
             if (_field?.Tank1 != null)
             {
-                _field.Tank1.X = A4_ShellStrikeLegendsV2_Config.TankSpawnX;
+                _field.Tank1.X = A4_ShellStrikeLegendsV2_Config.TankSpawnX_Player1;
                 _field.Tank1.Y = A4_ShellStrikeLegendsV2_Config.TankSpawnY;
                 _field.Tank1.FallVelocity = 0;
             }
