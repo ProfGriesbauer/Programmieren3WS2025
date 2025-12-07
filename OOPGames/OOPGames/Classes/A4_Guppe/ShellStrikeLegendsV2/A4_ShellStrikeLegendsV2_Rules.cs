@@ -6,6 +6,9 @@ namespace OOPGames
     public class A4_ShellStrikeLegendsV2_Rules : IGameRules2
     {
         private readonly A4_ShellStrikeLegendsV2_GameField _field = new();
+        // -1 = keiner, 1 = Spieler 1, 2 = Spieler 2, 0 = Unentschieden
+        private int _winner = -1;
+
 
         // -------------------- TURN-SYSTEM ------------------------
         private enum TurnPhase
@@ -47,7 +50,7 @@ namespace OOPGames
 
         public string Name => "A4 ShellStrikeLegends V2 Rules (Terrain Demo)";
         public IGameField CurrentField => _field;
-        public bool MovesPossible => true; // no blocking
+        public bool MovesPossible => _winner == -1; // nur wenn noch kein Sieger feststeht move möglich
         public void StartedGameCall()
         {
             // Beim Start immer bei Spieler 1 beginnen
@@ -61,8 +64,9 @@ namespace OOPGames
             }
         }
 
+        //-------------------- HILFSMETHODEN FÜR SPIELLOGIK ------------------------
 
-        // Hilfsmethode: Tank-Fallphysik und Terrain-Update abrufbar in dieser Methode
+        // Hilfsmethode 1: Tank-Fallphysik und Terrain-Update abrufbar in dieser Methode
         private void UpdateTankFallAndTerrain(A4_ShellStrikeLegendsV2_Tank t)
         {
             if (t == null || _field?.Terrain == null) return;
@@ -120,6 +124,66 @@ namespace OOPGames
             p.VY = Math.Sin(angle) * A4_ShellStrikeLegendsV2_Config.ProjectileStartSpeedPx;
             p.IsActive = true;
         }
+        // Hilfsmethode 3: Schadenskollision auf Tank prüfen
+        // Prüft, ob das Projektil einen Tank trifft (vereinfachte Rechteck-Kollision)
+        private bool IsProjectileHittingTank(A4_ShellStrikeLegendsV2_Tank tank,
+                                             A4_ShellStrikeLegendsV2_Projectile proj)
+        {
+            if (tank == null || proj == null) return false;
+            if (!proj.IsActive) return false;
+            if (tank.IsDestroyed) return false;
+
+            // Tankrechteck (ungefähr): basierend auf Tank.X (Mitte) und Tank.Y (Oberkante)
+            double w = A4_ShellStrikeLegendsV2_Config.TankBodyWidthPx * A4_ShellStrikeLegendsV2_Config.TankScale;
+            double h = A4_ShellStrikeLegendsV2_Config.TankBodyHeightPx * A4_ShellStrikeLegendsV2_Config.TankScale;
+
+            double left = tank.X - w / 2.0;
+            double right = tank.X + w / 2.0;
+            double top = tank.Y;
+            double bottom = tank.Y + h;
+
+            // Ein bisschen "Toleranz", damit man nicht Pixel-genau treffen muss
+            double margin = 2.0;
+            left -= margin;
+            right += margin;
+            top -= margin;
+            bottom += margin;
+
+            return (proj.X >= left && proj.X <= right &&
+                    proj.Y >= top && proj.Y <= bottom);
+        }
+        // Hilfsmethode 4: Schaden auf Tank anwenden mit Spielende-Prüfung
+        private void ApplyDamageToTank(A4_ShellStrikeLegendsV2_Tank tank, int damage)
+        {
+            if (tank == null) return;
+            tank.Health -= damage;
+            if (tank.Health < 0) tank.Health = 0;
+
+            // Wenn wir schon einen Gewinner haben, nichts mehr tun
+            if (_winner != -1) return;
+
+            // Tank1 gehört Spieler 1, Tank2 gehört Spieler 2
+            bool tank1Dead = _field.Tank1 == null || _field.Tank1.IsDestroyed;
+            bool tank2Dead = _field.Tank2 == null || _field.Tank2.IsDestroyed;
+
+            if (tank1Dead && !tank2Dead)
+            {
+                _winner = 2; // Spieler 2 gewinnt
+                _field.WinnerText = "Player 2 hat gewonnen!";
+            }
+            else if (tank2Dead && !tank1Dead)
+            {
+                _winner = 1; // Spieler 1 gewinnt
+                _field.WinnerText = "Player 1 hat gewonnen!";
+            }
+            else if (tank1Dead && tank2Dead)
+            {
+                _winner = 0; // Unentschieden
+                _field.WinnerText = "Unentschieden!";
+            }
+        }
+
+        //-------------------- HAUPTMETHODEN DES SPIELREGELN-INTERFACES ------------------------
 
         //Hauptmethode die bei jedem Tick aufgerufen wird
         public void TickGameCall()
@@ -168,7 +232,7 @@ namespace OOPGames
                 proj.X += proj.VX;
                 proj.Y += proj.VY;
 
-                // Bounds / Terrain prüfen
+                // 1) Bildschirmgrenzen prüfen
                 if (proj.X < 0 || proj.X >= _field.Terrain.CanvasWidth ||
                     proj.Y >= _field.Terrain.CanvasHeight)
                 {
@@ -176,14 +240,40 @@ namespace OOPGames
                 }
                 else
                 {
-                    int groundY = _field.Terrain.GroundYAt(proj.X);
-                    if (proj.Y >= groundY)
+                    bool hit = false;
+
+                    // 2) Treffer auf Tank1?
+                    if (IsProjectileHittingTank(_field.Tank1, proj))
                     {
+                        ApplyDamageToTank(_field.Tank1, A4_ShellStrikeLegendsV2_Config.DirectHitDamage);
+                        hit = true;
+                    }
+
+                    // 3) Treffer auf Tank2?
+                    if (IsProjectileHittingTank(_field.Tank2, proj))
+                    {
+                        ApplyDamageToTank(_field.Tank2, A4_ShellStrikeLegendsV2_Config.DirectHitDamage);
+                        hit = true;
+                    }
+
+                    if (hit)
+                    {
+                        // Bei Treffern Projektil deaktivieren
                         proj.IsActive = false;
-                        // TODO: Explosion / Schaden
+                    }
+                    else
+                    {
+                        // 4) Wenn kein Tank getroffen wurde -> Terrain-Kollision prüfen
+                        int groundY = _field.Terrain.GroundYAt(proj.X);
+                        if (proj.Y >= groundY)
+                        {
+                            proj.IsActive = false;
+                            // TODO: später Explosion / Terrain-Deformation hier
+                        }
                     }
                 }
             }
+
 
             // 4) HUD-Infos ins GameField schreiben
             string phaseName = _phase == TurnPhase.Driving ? "Driving" : "Aiming";
@@ -286,7 +376,7 @@ namespace OOPGames
 
         public int CheckIfPLayerWon()
         {
-            return -1; // no win condition in terrain-only demo
+            return _winner;  // -1 = keiner, 1/2 = Sieger, 0 = Unentschieden
         }
     }
 }

@@ -18,7 +18,6 @@ namespace OOPGames
         public static double TankSpawnX_Player2 = 800;   // rechts 
         public static double TankSpawnY = -10;  // negativ = über dem Screen 
 
-
         // Tank wheel pivot points (relative to tank origin: X=center, Y=top)
         // Adjust to match the sprite's track wheel location.
         public const int TankPivotLeftXOffsetPx = -12;   // left wheel ~10px left of center
@@ -31,8 +30,6 @@ namespace OOPGames
         public static double TankPivotRightXOffsetScaled => TankPivotRightXOffsetPx * TankScale;
         public static double TankPivotLeftYOffsetScaled => TankPivotLeftYOffsetPx * TankScale;
         public static double TankPivotRightYOffsetScaled => TankPivotRightYOffsetPx * TankScale;
-
-        
 
         //Position des Barrels auf dem Tank
         public static double BarrelPivotOffsetX = -2;   // relativ zur Tankmitte
@@ -52,5 +49,12 @@ namespace OOPGames
 
         // Gravitation für Projektil (Pixel pro Tick^2)
         public static double ProjectileGravityPx = 0.35;
+
+        // --- Treffer & Schaden ---
+        // Lebenspunkte pro Tank
+        public static int TankMaxHealth = 100;
+
+        // Schaden bei direktem Treffer (Punkt- oder Rechteck-Treffer)
+        public static int DirectHitDamage = 100;
     }
 }

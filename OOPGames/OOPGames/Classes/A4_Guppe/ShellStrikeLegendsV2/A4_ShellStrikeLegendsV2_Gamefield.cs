@@ -11,6 +11,8 @@ namespace OOPGames
         // HUD-Infos
         public string PhaseHUDText { get; set; } = "";
         public double PhaseTimeRemainingSeconds { get; set; } = 0.0;
+        public string WinnerText { get; set; } = null;
+
 
         // Ensure terrain exists for the current canvas size (fixed map shape)
         //Hier wird das Terrain und der Tank initialisiert!!!

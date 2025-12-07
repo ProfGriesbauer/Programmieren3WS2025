@@ -59,6 +59,14 @@ namespace OOPGames
                 }
                 // HUD oben in der Mitte zeichnen
                 DrawHUD(canvas, field, w);
+                // --- Game Over Overlay zeichnen, falls Winner gesetzt ---
+                if (currentField is A4_ShellStrikeLegendsV2_GameField gf)
+                {
+                    if (gf.WinnerText != null)
+                    {
+                        DrawWinnerOverlay(canvas, gf.WinnerText);
+                    }
+                }
             }
         }
 
@@ -278,6 +286,31 @@ namespace OOPGames
             canvas.Children.Add(tb);
             Canvas.SetZIndex(tb, 100); // ganz oben
         }
+        private void DrawWinnerOverlay(Canvas canvas, string text)
+        {
+            var tb = new TextBlock
+            {
+                Text = text,
+                Foreground = Brushes.White,
+                FontSize = 48,
+                FontWeight = FontWeights.Bold,
+                TextAlignment = TextAlignment.Center
+            };
+
+            // Canvas Mitte bestimmen
+            double cx = canvas.ActualWidth / 2;
+            double cy = canvas.ActualHeight / 2;
+
+            // Damit die Textbreite berechnet wird
+            tb.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+
+            Canvas.SetLeft(tb, cx - tb.DesiredSize.Width / 2);
+            Canvas.SetTop(tb, cy - tb.DesiredSize.Height / 2);
+
+            canvas.Children.Add(tb);
+            Canvas.SetZIndex(tb, 1000); // ganz oben
+        }
+
     }
 }
 
