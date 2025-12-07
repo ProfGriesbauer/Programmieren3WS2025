@@ -44,14 +44,16 @@ namespace OOPGames
             {
                 if (field.Tank1 != null)
                 {
-                    DrawHull(canvas, field.Terrain, field.Tank1);//Tank 1 Zeichnen
+                    DrawHull(canvas, field.Terrain, field.Tank1);
                     DrawBarrel(canvas, field.Tank1);
+                    DrawTankUI(canvas, field.Tank1, "P1");
                 }
 
                 if (field.Tank2 != null)
                 {
-                    DrawHull(canvas, field.Terrain, field.Tank2);//Tank 2 Zeichnen
+                    DrawHull(canvas, field.Terrain, field.Tank2);
                     DrawBarrel(canvas, field.Tank2);
+                    DrawTankUI(canvas, field.Tank2, "P2");
                 }
                 if (field.Projectile != null)
                 {
@@ -309,6 +311,77 @@ namespace OOPGames
 
             canvas.Children.Add(tb);
             Canvas.SetZIndex(tb, 1000); // ganz oben
+        }
+        private void DrawTankUI(Canvas canvas, A4_ShellStrikeLegendsV2_Tank tank, string label)
+        {
+            if (tank == null) return;
+
+            // Basisdaten
+            double tankX = tank.X;
+            double tankTopY = tank.Y;
+
+            // Health-Werte
+            int maxHP = A4_ShellStrikeLegendsV2_Config.TankMaxHealth;
+            int hp = Math.Max(0, Math.Min(maxHP, tank.Health));
+            double ratio = maxHP > 0 ? (double)hp / maxHP : 0.0;
+
+            // Abmessungen der HP-Leiste
+            double barWidth = 60.0;
+            double barHeight = 6.0;
+
+            // Position der Leiste: etwas über dem Tank
+            double barX = tankX - barWidth / 2.0;
+            double barY = tankTopY - 40.0;   // 40px über Tankoberkante
+
+            // Hintergrund der HP-Leiste (grau)
+            var barBg = new System.Windows.Shapes.Rectangle
+            {
+                Width = barWidth,
+                Height = barHeight,
+                Fill = Brushes.DarkGray,
+                RadiusX = 2,
+                RadiusY = 2
+            };
+            Canvas.SetLeft(barBg, barX);
+            Canvas.SetTop(barBg, barY);
+            canvas.Children.Add(barBg);
+            Canvas.SetZIndex(barBg, 50);
+
+            // Vordergrund der HP-Leiste (grün → rot bei wenig HP)
+            // Einfach: grün bei viel HP, rot bei wenig (linear mischen)
+            byte r = (byte)(255 * (1.0 - ratio));
+            byte g = (byte)(255 * ratio);
+            var barFg = new System.Windows.Shapes.Rectangle
+            {
+                Width = barWidth * ratio,
+                Height = barHeight,
+                Fill = new SolidColorBrush(Color.FromRgb(r, g, 0)),
+                RadiusX = 2,
+                RadiusY = 2
+            };
+            Canvas.SetLeft(barFg, barX);
+            Canvas.SetTop(barFg, barY);
+            canvas.Children.Add(barFg);
+            Canvas.SetZIndex(barFg, 51);
+
+            // Spielerlabel unter der HP-Leiste
+            var tb = new TextBlock
+            {
+                Text = $"{label} ({hp}/{maxHP})",
+                Foreground = Brushes.White,
+                FontSize = 12,
+                FontWeight = FontWeights.Bold,
+                TextAlignment = TextAlignment.Center
+            };
+
+            tb.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            double textX = tankX - tb.DesiredSize.Width / 2.0;
+            double textY = barY + barHeight + 2.0; // direkt unter der Leiste
+
+            Canvas.SetLeft(tb, textX);
+            Canvas.SetTop(tb, textY);
+            canvas.Children.Add(tb);
+            Canvas.SetZIndex(tb, 52);
         }
 
     }
