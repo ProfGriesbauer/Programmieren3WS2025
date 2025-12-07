@@ -42,11 +42,20 @@ namespace OOPGames
             DrawTerrain(canvas, field.Terrain);
             if (field.Tank1 != null)
             {
-                DrawHull(canvas, field.Terrain, field.Tank1);
-                DrawBarrel(canvas, field.Tank1); // Barrel zeichnen
+                if (field.Tank1 != null)
+                {
+                    DrawHull(canvas, field.Terrain, field.Tank1);//Tank 1 Zeichnen
+                    DrawBarrel(canvas, field.Tank1);
+                }
+
+                if (field.Tank2 != null)
+                {
+                    DrawHull(canvas, field.Terrain, field.Tank2);//Tank 2 Zeichnen
+                    DrawBarrel(canvas, field.Tank2);
+                }
                 if (field.Projectile != null)
                 {
-                    DrawProjectile(canvas, field.Projectile);
+                    DrawProjectile(canvas, field.Projectile);//Projektil Zeichnen
                 }
 
             }
