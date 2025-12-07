@@ -191,16 +191,9 @@ namespace OOPGames
             if (move is not A4_ShellStrikeLegendsV2_Move m)
                 return;
 
-            // Nur der AKTIVE Spieler darf überhaupt was machen
-            if (m.PlayerNumber != _activePlayer)
-                return;
-
-            // Welcher Tank?
-            A4_ShellStrikeLegendsV2_Tank t = null;
-            if (m.PlayerNumber == 1)
-                t = _field.Tank1;
-            else if (m.PlayerNumber == 2)
-                t = _field.Tank2;
+            // Tank anhand unseres Turn-Systems auswählen, NICHT anhand des Moves
+            A4_ShellStrikeLegendsV2_Tank t =
+                _activePlayer == 1 ? _field.Tank1 : _field.Tank2;
 
             if (t == null || _field.Terrain == null)
                 return;
