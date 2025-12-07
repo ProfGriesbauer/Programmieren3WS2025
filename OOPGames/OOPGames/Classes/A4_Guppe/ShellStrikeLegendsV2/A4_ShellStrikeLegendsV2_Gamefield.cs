@@ -8,7 +8,9 @@ namespace OOPGames
         public A4_ShellStrikeLegendsV2_Tank Tank2 { get; private set; }
         public A4_ShellStrikeLegendsV2_Projectile Projectile { get; private set; }
 
-
+        // HUD-Infos
+        public string PhaseHUDText { get; set; } = "";
+        public double PhaseTimeRemainingSeconds { get; set; } = 0.0;
 
         // Ensure terrain exists for the current canvas size (fixed map shape)
         //Hier wird das Terrain und der Tank initialisiert!!!

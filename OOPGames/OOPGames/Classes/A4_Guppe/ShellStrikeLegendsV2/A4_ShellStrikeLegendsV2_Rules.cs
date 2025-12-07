@@ -20,8 +20,8 @@ namespace OOPGames
 
         // Timer (Tick ~40ms => ca. 25 Ticks/Sek.)
         private const int TicksPerSecond = 25;
-        private const int DrivingPhaseSeconds = 20;
-        private const int AimingPhaseSeconds = 20;
+        private const int DrivingPhaseSeconds = 15;
+        private const int AimingPhaseSeconds = 12;
 
         // Wie viele Ticks bleiben noch in der aktuellen Phase?
         private int _phaseTicksRemaining = DrivingPhaseSeconds * TicksPerSecond;
@@ -184,6 +184,12 @@ namespace OOPGames
                     }
                 }
             }
+
+            // 4) HUD-Infos ins GameField schreiben
+            string phaseName = _phase == TurnPhase.Driving ? "Driving" : "Aiming";
+            _field.PhaseHUDText = $"Player {_activePlayer}: {phaseName}";
+            _field.PhaseTimeRemainingSeconds = _phaseTicksRemaining / (double)TicksPerSecond;
+
         }
 
         public void DoMove(IPlayMove move)

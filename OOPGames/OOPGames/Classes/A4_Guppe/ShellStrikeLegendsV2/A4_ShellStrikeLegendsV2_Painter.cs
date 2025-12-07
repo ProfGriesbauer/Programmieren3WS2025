@@ -57,7 +57,8 @@ namespace OOPGames
                 {
                     DrawProjectile(canvas, field.Projectile);//Projektil Zeichnen
                 }
-
+                // HUD oben in der Mitte zeichnen
+                DrawHUD(canvas, field, w);
             }
         }
 
@@ -248,7 +249,35 @@ namespace OOPGames
             canvas.Children.Add(ellipse);
             Canvas.SetZIndex(ellipse, 30); // über Tank & Terrain
         }
+        private void DrawHUD(Canvas canvas, A4_ShellStrikeLegendsV2_GameField field, double canvasWidth)
+        {
+            if (field == null) return;
+            if (string.IsNullOrEmpty(field.PhaseHUDText)) return;
 
+            string text = $"{field.PhaseHUDText}  -  {field.PhaseTimeRemainingSeconds:0.0}s";
+
+            var tb = new TextBlock
+            {
+                Text = text,
+                Foreground = Brushes.White,
+                FontSize = 16,
+                FontWeight = FontWeights.Bold,
+                Background = new SolidColorBrush(Color.FromArgb(160, 0, 0, 0)), // halbtransparent schwarz
+                Padding = new Thickness(8, 4, 8, 4),
+                TextAlignment = TextAlignment.Center,
+                Width = 260
+            };
+
+            // oben mittig positionieren
+            double left = (canvasWidth - tb.Width) / 2.0;
+            double top = 5.0;
+
+            Canvas.SetLeft(tb, left);
+            Canvas.SetTop(tb, top);
+
+            canvas.Children.Add(tb);
+            Canvas.SetZIndex(tb, 100); // ganz oben
+        }
     }
 }
 
