@@ -32,8 +32,7 @@ namespace OOPGames
         public static double TankPivotLeftYOffsetScaled => TankPivotLeftYOffsetPx * TankScale;
         public static double TankPivotRightYOffsetScaled => TankPivotRightYOffsetPx * TankScale;
 
-        // Horizontalgeschwindigkeit des Tanks (Pixel pro Move)
-        public static double TankDriveSpeedPx = 6.0;
+        
 
         //Position des Barrels auf dem Tank
         public static double BarrelPivotOffsetX = -2;   // relativ zur Tankmitte
@@ -43,6 +42,10 @@ namespace OOPGames
 
         // Skallierungsfaktor für den Panzer
         public static double TankScale = 1.6;
+        // Horizontalgeschwindigkeit des Tanks (Pixel pro Move)
+        public static double TankDriveSpeedPx = 6.0;
+        // Wie stark das Rohr pro Eingabe (Taste) bewegt wird (Radiant)
+        public static double BarrelAngleStepRad = 0.02;   // ~1.15° pro Tastendruck
 
         // Anfangsgeschwindigkeit des Projektils (Pixel pro Tick)
         public static double ProjectileStartSpeedPx = 10.0;
