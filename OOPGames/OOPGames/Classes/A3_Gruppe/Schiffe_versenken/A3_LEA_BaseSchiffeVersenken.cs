@@ -42,6 +42,10 @@ namespace OOPGames
         public abstract int CheckIfPLayerWon();
         public abstract void ClearField();
         public abstract void DoMove(IPlayMove move);
+        
+        // IGameRules2 methods
+        public abstract void StartedGameCall();
+        public abstract void TickGameCall();
     }
 
     // Abstrakte Basis-Painter
@@ -50,6 +54,9 @@ namespace OOPGames
         public abstract string Name { get; }
         public abstract void PaintSchiffeField(System.Windows.Controls.Canvas canvas, IA3_LEA_SchiffeField field, List<A3_LEA_Ship> ships);
         public abstract void PaintGameField(System.Windows.Controls.Canvas canvas, IGameField currentField);
+        
+        // IPaintGame2 method
+        public abstract void TickPaintGameField(System.Windows.Controls.Canvas canvas, IGameField currentField);
     }
 
     // Abstrakte Basis-Human Player
@@ -68,6 +75,9 @@ namespace OOPGames
                 return GetMove(selection, (IA3_LEA_SchiffeField)field);
             return null;
         }
+        
+        // IHumanGamePlayerWithMouse method
+        public abstract void OnMouseMoved(System.Windows.Input.MouseEventArgs e);
     }
 
     // Abstrakte Basis-Computer Player

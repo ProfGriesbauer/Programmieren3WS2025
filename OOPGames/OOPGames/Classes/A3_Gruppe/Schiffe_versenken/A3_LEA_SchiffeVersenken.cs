@@ -31,7 +31,7 @@ namespace OOPGames
     }
 
     // Schiffeversenken-Rules
-    public class A3_LEA_SchiffeRules : A3_LEA_BaseSchiffeRules, IGameRules2
+    public class A3_LEA_SchiffeRules : A3_LEA_BaseSchiffeRules
     {
         // Zwei Felder: jeweils ein Feld pro Spieler
         private A3_LEA_SchiffeField _field = new A3_LEA_SchiffeField();
@@ -298,12 +298,12 @@ namespace OOPGames
         }
 
         // IGameRules2 Implementation
-        public void StartedGameCall()
+        public override void StartedGameCall()
         {
             ClearField();
         }
 
-        public void TickGameCall()
+        public override void TickGameCall()
         {
             // Update Animation für versenkte Schiffe
             var keysToUpdate = SunkShipAnimationTime.Keys.ToList();
@@ -411,7 +411,7 @@ namespace OOPGames
             }
         }
 
-        public void TickPaintGameField(Canvas canvas, IGameField currentField)
+        public override void TickPaintGameField(Canvas canvas, IGameField currentField)
         {
             // Nutze die gleiche Logik wie PaintGameField für Tick-basiertes Repainting
             PaintGameField(canvas, currentField);
@@ -2716,7 +2716,7 @@ namespace OOPGames
     }
 
     // Human Player
-    public class A3_LEA_HumanSchiffePlayer : A3_LEA_BaseHumanSchiffePlayer, IHumanGamePlayerWithMouse
+    public class A3_LEA_HumanSchiffePlayer : A3_LEA_BaseHumanSchiffePlayer
     {
         private int _playerNumber = 1;
         public override string Name => "A3 LEA Schiffe Human";
@@ -2724,7 +2724,7 @@ namespace OOPGames
         public override void SetPlayerNumber(int playerNumber) => _playerNumber = playerNumber;
         public override IGamePlayer Clone() => new A3_LEA_HumanSchiffePlayer();
 
-        public void OnMouseMoved(System.Windows.Input.MouseEventArgs e)
+        public override void OnMouseMoved(System.Windows.Input.MouseEventArgs e)
         {
             var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_SchiffeRules;
             if (rules != null && rules.IsSetupPhase)

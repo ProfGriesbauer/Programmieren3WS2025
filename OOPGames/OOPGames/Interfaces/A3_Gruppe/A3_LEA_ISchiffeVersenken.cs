@@ -13,7 +13,7 @@ namespace OOPGames
     }
 
     // Interface für die Rules
-    public interface IA3_LEA_SchiffeRules : IGameRules
+    public interface IA3_LEA_SchiffeRules : IGameRules2
     {
         IA3_LEA_SchiffeField SchiffeField { get; }
         List<A3_LEA_Ship> Ships { get; }
@@ -23,13 +23,13 @@ namespace OOPGames
     }
 
     // Interface für Painter
-    public interface IA3_LEA_SchiffePaint : IPaintGame
+    public interface IA3_LEA_SchiffePaint : IPaintGame2
     {
         void PaintSchiffeField(System.Windows.Controls.Canvas canvas, IA3_LEA_SchiffeField field, List<A3_LEA_Ship> ships);
     }
 
     // Interface für den Human Player
-    public interface IA3_LEA_HumanSchiffePlayer : IHumanGamePlayer
+    public interface IA3_LEA_HumanSchiffePlayer : IHumanGamePlayerWithMouse
     {
         IA3_LEA_SchiffeMove GetMove(IMoveSelection selection, IA3_LEA_SchiffeField field);
     }
