@@ -134,10 +134,20 @@ namespace OOPGames
             var p = CurrentPlayer;
             p.ResetTempForNewTurn();
 
-            ApplyIncome(p);
-            ApplyCapacityBoosts(p);
-            ApplyTempBoosts(p);
+            // Base income: Summe der yields
+            int income = Field.AllTiles()
+                .Where(t => t.OwnerID == p.Id)
+                .Sum(t => t.ResourceYield);
+
+            p.AddResources(income);
+
+            // Boosts (OOP)
+            BoostSystem.ApplyOngoing(this, p);
+
+            // Capacity nach Boosts setzen
+            p.SetCapacityBasePlusBoost(BaseCapacity, p.TempCapacityBonus);
         }
+
 
         public void EndTurn()
         {

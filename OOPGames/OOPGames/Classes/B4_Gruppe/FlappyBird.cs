@@ -9,9 +9,23 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using System.Windows.Input;
+using System.Linq;
+using System.Windows.Media.Effects;
 
 namespace OOPGames
 {
+        public class HighscoreEntry
+    {
+        public string Name { get; set; }
+        public int Score { get; set; }
+        public HighscoreEntry() { }
+        public HighscoreEntry(string name, int score)
+        {
+            Name = name;
+            Score = score;
+        }
+    }
+
     public abstract class PipePart
     {
         public abstract void Draw(Canvas canvas, double x, double y, double width, double height, bool isTop);
@@ -242,7 +256,7 @@ namespace OOPGames
             {
                 if (Obstacles.Count == 0) return true;
                 var last = Obstacles[Obstacles.Count - 1];
-                return last.X < 250;
+                return last.X < 250;  // Obstacle spacing
             }
         }
         public int Score { get; set; } = 0;
@@ -251,7 +265,7 @@ namespace OOPGames
         {
             _pipeCount++;
             double gap = 140;
-            double gapY = _rand.Next(50, (int)(FieldHeight - gap - 50));
+            double gapY = _rand.Next(50, (int)(FieldHeight - gap - 50));  //Obstacle gap up to down pipe
             Obstacles.Add(new Obstacle(480, 0, 75, gapY, true));
             double yBottom = gapY + gap;
             double heightBottom = FieldHeight - yBottom;
@@ -454,7 +468,8 @@ namespace OOPGames
             yStart += 20;
             for (int i = 0; i < hs.Count; i++)
             {
-                int score = hs[i];
+                string name = hs[i].Name;
+                int score = hs[i].Score;
                 Brush medalColor;
                 if (score >= 50) medalColor = Brushes.Gold;
                 else if (score >= 20) medalColor = Brushes.Silver;
@@ -471,15 +486,25 @@ namespace OOPGames
                 Canvas.SetLeft(medal, (canvas.ActualWidth / 2) - 70);
                 Canvas.SetTop(medal, yStart + i * 30 - 25);  // - ... = Y-Koordination of Highscore Dots
                 canvas.Children.Add(medal);
-                var tb = new TextBlock()
+                var tb= new TextBlock()
                 {
-                    Text = $"{i + 1}. {score}",
+                    Text = $"{i+1}. {name} - {score}",
                     FontSize = 20,
                     Foreground = Brushes.White,
-                    TextAlignment = TextAlignment.Center
+                    TextAlignment = TextAlignment.Center,
+                    FontWeight = FontWeights.Bold
+                };
+                tb.Effect = new DropShadowEffect()
+                {
+                    Color = Colors.Black,
+                    BlurRadius = 5,
+                    Direction = 0,
+                    ShadowDepth = 0,
+                    Opacity = 1.0,
+                    RenderingBias = RenderingBias.Performance
                 };
                 Canvas.SetLeft(tb, (canvas.ActualWidth / 2) - 40);
-                Canvas.SetTop(tb, yStart + i * 30 - 30);  // - ... = Y-Koordination of Highscore List
+                Canvas.SetTop(tb, yStart + i * 30 - 30);
                 canvas.Children.Add(tb);
             }
         }
@@ -487,6 +512,8 @@ namespace OOPGames
 
     public class FlappyBirdRules : IGameRules2
     {
+
+        
         public static FlappyBirdRules Instance; // Singleton für Zugang
         public string Name => "Flappy Bird Rules";
         public static bool GameStarted = false;
@@ -494,14 +521,15 @@ namespace OOPGames
         public static int FrameCount = 0;
         private FlappyBirdField _field;
         public static SoundManager SoundManagerInstance;
-        private const double Gravity = 2.3;
-        private const double JumpForce = -18;
+        private const double Gravity = 2.3;  // Gravity effect
+        private const double JumpForce = -18;  // Upward force when jumping
         private double _birdVelocity = 0;
         private ImageSource _rocketImage1;
         private ImageSource _rocketImage2;
         public IGameField CurrentField => _field;
         public bool MovesPossible { get; private set; } = true;
-        public static readonly List<int> Highscores = new List<int>();
+        public static readonly List<HighscoreEntry> Highscores = new List<HighscoreEntry>();
+
         public static bool GameOver = false;
         private readonly SoundManager soundManager;
 
@@ -629,12 +657,129 @@ namespace OOPGames
             soundManager.PlayHit();
             soundManager.StopMusic();
             soundManager.StopRocket();
-            Highscores.Add(_field.Score);
-            Highscores.Sort((a, b) => b.CompareTo(a));
-            if (Highscores.Count > 10) Highscores.RemoveAt(Highscores.Count - 1);
-            SaveHighscores();
+
+            int score = _field.Score;
+
+            // Prüfe, ob in Top 10
+            if (Highscores.Count < 10 || score > Highscores.Min(e => e.Score))
+            {
+                    string playerName = PromptForName(); // eigene Methode, z.B. mittels Window, Dialog oder InputBox
+                    if (string.IsNullOrWhiteSpace(playerName)) playerName = "Anonymous";
+                    Highscores.Add(new HighscoreEntry(playerName, score));
+                    Highscores.Sort((a, b) => b.Score.CompareTo(a.Score));
+                    if (Highscores.Count > 10)
+                        Highscores.RemoveAt(Highscores.Count - 1);
+                    SaveHighscores();
+            }
             ActivePlayer = (ActivePlayer == 1 ? 2 : 1);
         }
+
+        // Beispiel für eine einfache Prompteingabe
+        private string PromptForName()
+        {
+            Window dialog = new Window()
+            {
+                Width = 360,
+                Height = 210,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                ResizeMode = ResizeMode.NoResize,
+                WindowStyle = WindowStyle.None,
+                Background = new SolidColorBrush(Color.FromRgb(40, 40, 48)),
+                AllowsTransparency = true,
+                Owner = Application.Current?.MainWindow,
+            };
+
+            Border border = new Border()
+            {
+                Background = new SolidColorBrush(Color.FromRgb(50, 50, 58)),
+                CornerRadius = new CornerRadius(14),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(90, 90, 100)),
+                BorderThickness = new Thickness(2),
+                Padding = new Thickness(20)
+            };
+
+            StackPanel content = new StackPanel()
+            {
+                Margin = new Thickness(0),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            TextBlock title = new TextBlock()
+            {
+                Text = "🏆 Neuer Highscore!",
+                FontSize = 22,
+                FontWeight = FontWeights.Bold,
+                Foreground = Brushes.White,
+                Margin = new Thickness(0, 0, 0, 12)
+            };
+
+            TextBlock message = new TextBlock()
+            {
+                Text = "Bitte gib deinen Namen ein:",
+                FontSize = 16,
+                Foreground = Brushes.White,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+
+            TextBox input = new TextBox()
+            {
+                FontSize = 16,
+                Height = 34,
+                Foreground = Brushes.White,
+                Background = new SolidColorBrush(Color.FromRgb(30, 30, 36)),
+                BorderBrush = new SolidColorBrush(Color.FromRgb(120, 120, 130)),
+                BorderThickness = new Thickness(1.5),
+                Padding = new Thickness(6),
+                Margin = new Thickness(0, 0, 0, 14)
+            };
+
+            Button okButton = new Button()
+            {
+                Content = "OK",
+                FontSize = 16,
+                Height = 38,
+                Background = new SolidColorBrush(Color.FromRgb(0, 150, 80)),
+                Foreground = Brushes.White,
+                FontWeight = FontWeights.SemiBold,
+                Cursor = Cursors.Hand,
+                BorderThickness = new Thickness(0),
+                Padding = new Thickness(12, 0, 12, 0)
+            };
+
+            okButton.Click += (s, e) =>
+            {
+                dialog.DialogResult = true;
+                dialog.Close();
+            };
+
+            // ENTER bestätigt den OK-Button
+            dialog.KeyDown += (s, e) =>
+            {
+                if (e.Key == Key.Enter)
+                {
+                    okButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                }
+                if (e.Key == Key.Escape)
+                {
+                    dialog.DialogResult = false;
+                    dialog.Close();
+                }
+            };
+
+            content.Children.Add(title);
+            content.Children.Add(message);
+            content.Children.Add(input);
+            content.Children.Add(okButton);
+
+            border.Child = content;
+            dialog.Content = border;
+
+            if (dialog.ShowDialog() == true)
+                return input.Text.Trim();
+
+            return "Anonymous";
+        }
+
         public void LoadHighscores()
         {
             string file = System.IO.Path.Combine(GetProjectFolderPath(), "Classes", "B4_Gruppe", "Graphic", "FlappyBirdHighscore.json");
@@ -643,7 +788,7 @@ namespace OOPGames
                 try
                 {
                     string json = File.ReadAllText(file);
-                    var loaded = JsonSerializer.Deserialize<List<int>>(json);
+                    var loaded = JsonSerializer.Deserialize<List<HighscoreEntry>>(json);
                     if (loaded != null)
                     {
                         Highscores.Clear();

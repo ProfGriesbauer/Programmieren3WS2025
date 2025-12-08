@@ -5,6 +5,14 @@ namespace OOPGames
     {
         public A4_ShellStrikeLegendsV2_Terrain Terrain { get; private set; } = new();
         public A4_ShellStrikeLegendsV2_Tank Tank1 { get; private set; }
+        public A4_ShellStrikeLegendsV2_Tank Tank2 { get; private set; }
+        public A4_ShellStrikeLegendsV2_Projectile Projectile { get; private set; }
+
+        // HUD-Infos
+        public string PhaseHUDText { get; set; } = "";
+        public double PhaseTimeRemainingSeconds { get; set; } = 0.0;
+        public string WinnerText { get; set; } = null;
+
 
         // Ensure terrain exists for the current canvas size (fixed map shape)
         //Hier wird das Terrain und der Tank initialisiert!!!
@@ -18,10 +26,24 @@ namespace OOPGames
             {
                 Tank1 = new A4_ShellStrikeLegendsV2_Tank
                 {
-                    X = A4_ShellStrikeLegendsV2_Config.TankSpawnX,
+                    X = A4_ShellStrikeLegendsV2_Config.TankSpawnX_Player1,
                     Y = A4_ShellStrikeLegendsV2_Config.TankSpawnY,
                     FallVelocity = 0
                 };
+            }
+            if (Tank2 == null)
+            {
+                Tank2 = new A4_ShellStrikeLegendsV2_Tank
+                {
+                    X = A4_ShellStrikeLegendsV2_Config.TankSpawnX_Player2,
+                    Y = A4_ShellStrikeLegendsV2_Config.TankSpawnY,
+                    FallVelocity = 0
+                };
+            }
+            // Projektil spawnen
+            if (Projectile == null)
+            {
+                Projectile = new A4_ShellStrikeLegendsV2_Projectile();
             }
 
         }

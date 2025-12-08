@@ -9,6 +9,7 @@
         Closed="Window_Closed" KeyDown="Window_KeyDown" 
         FocusManager.FocusedElement="{Binding ElementName=PaintCanvas}"
         Focusable="True">
+
     
     <Window.Resources>
         <Style TargetType="Button">
@@ -39,7 +40,7 @@
                 <Button x:Name="StartGame" Grid.Column="0" Content="Start New Game" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="5,5,5,5" Click="StartGame_Click"/>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Stretch" VerticalAlignment="Center" Margin="5,5,5,5">
                     <TextBox x:Name="Status" Width="250" HorizontalAlignment="Stretch" VerticalAlignment="Center" FontSize="18"/>
-                    <CheckBox x:Name="AutoRestartCheck" Content="Auto-Restart (3s)" Margin="10,0,0,0" IsChecked="True" VerticalAlignment="Center"/>
+                    <CheckBox x:Name="AutoRestartCheck" Content="Auto-Restart (3s)" Margin="10,0,0,0" IsChecked="False" VerticalAlignment="Center"/>
                 </StackPanel>
             </Grid>
         </Grid>

@@ -59,6 +59,18 @@ namespace OOPGames
                 return cy + sin * lx + cos * ly;
             }
         }
+        public void GetMuzzleWorldPosition(double barrelLength, out double mx, out double my) ///Berechnung der Mündung Position mit Hilfsmethode
+        {
+            double angle = RotationRad + BarrelAngleRad;
+
+            // Startpunkt = Barrel-Pivot
+            double px = BarrelPivotX;
+            double py = BarrelPivotY;
+
+            mx = px + Math.Cos(angle) * barrelLength;
+            my = py + Math.Sin(angle) * barrelLength;
+        }
+
 
         public double BarrelAngleRad { get; set; } = 0;   // 0 = waagrecht rechts
 
@@ -74,6 +86,10 @@ namespace OOPGames
         // Konstanten für Fallgeschwindigkeit und Beschleunigung
         public double FallVelocity = 0.0;
         public double FallAccelerationPx = 0.4;  // kannst du tunen (entspricht g)
+        
+        // Lebenspunkte des Tanks
+        public int Health { get; set; } = A4_ShellStrikeLegendsV2_Config.TankMaxHealth;
+        public bool IsDestroyed => Health <= 0;
 
         public void UpdateFromTerrain(A4_ShellStrikeLegendsV2_Terrain terrain)
         {

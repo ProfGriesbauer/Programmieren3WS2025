@@ -7,6 +7,7 @@ namespace OOPGames
         MoveRight,
         BarrelUp,
         BarrelDown,
+        Fire
     }
 
     public class A4_ShellStrikeLegendsV2_Move : IPlayMove

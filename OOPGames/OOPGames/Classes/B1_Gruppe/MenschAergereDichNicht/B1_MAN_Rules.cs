@@ -3,32 +3,31 @@ using System.Collections.Generic;
 
 namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
 {
-    // Basic rules for the game implementing IGameRules: roll dice, determine valid moves, perform moves.
+    /// <summary>
+    /// Implements game rules for Mensch-ärgere-dich-nicht.
+    /// Handles player initialization, move validation, and dice rolls.
+    /// </summary>
     public class B1_MAN_Rules : OOPGames.IGameRules
     {
-        private readonly B1_MAN_Board _board;
+        #region Fields
+        private B1_MAN_Board _board;
         private readonly Random _rnd = new Random();
-        // last dice rolled by the rules (for convenience)
-        public int LastDice { get; private set; } = 0;
+        private bool _playerCountSelected = false;
+        #endregion
 
-        // indicates whether the last move grants an extra turn (dice == 6)
-        public bool LastMoveGivesExtraTurn { get; private set; } = false;
-
-        public B1_MAN_Rules(B1_MAN_Board board)
-        {
-            _board = board ?? throw new ArgumentNullException(nameof(board));
-        }
-
-        // IGameRules implementation
+        #region Properties
         public string Name => "B1_MAN_Rules";
 
         public OOPGames.IGameField CurrentField => _board;
+
+        public int LastDice { get; private set; } = 0;
+
+        public bool LastMoveGivesExtraTurn { get; private set; } = false;
 
         public bool MovesPossible
         {
             get
             {
-                // A move is possible if any player has a piece on track or a piece in base
                 foreach (var p in _board.Players)
                 {
                     if (p.Pieces.Exists(pc => pc.IsOnTrack)) return true;
@@ -37,10 +36,30 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
                 return false;
             }
         }
+        #endregion
 
+        #region Constructor
+        public B1_MAN_Rules(B1_MAN_Board board)
+        {
+            _board = board ?? throw new ArgumentNullException(nameof(board));
+        }
+        #endregion
+
+        #region IGameRules Implementation
         public void ClearField()
         {
-            _board.Clear();
+            if (!_playerCountSelected)
+            {
+                var config = ShowPlayerCountDialog();
+                if (config.playerCount < 2 || config.playerCount > 4) config.playerCount = 4;
+                _board = new B1_MAN_Board(config.playerCount, config.advancedMode);
+                _playerCountSelected = true;
+            }
+            
+            if (_board != null)
+            {
+                _board.Clear();
+            }
         }
 
         public int CheckIfPLayerWon()
@@ -56,14 +75,14 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
             }
             return -1;
         }
+        #endregion
 
-        // Dice roll helper (1..6)
+        #region Dice and Move Logic
         public int RollDice()
         {
             return _rnd.Next(1, 7);
         }
 
-        // Returns a list of pieces that can be moved given the dice result (simplified)
         public List<B1_MAN_Piece> GetValidMoves(int playerNumber, int dice)
         {
             var result = new List<B1_MAN_Piece>();
@@ -79,7 +98,6 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
             return result;
         }
 
-        // Perform a move expressed as a high-level IPlayMove
         public void DoMove(OOPGames.IPlayMove move)
         {
             if (move == null) return;
@@ -94,11 +112,33 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
             _board.MovePiece(piece, m.Dice);
         }
 
-        // Convenience method used by computer/human players
         public (bool moved, bool captured, B1_MAN_Piece capturedPiece) DoMove(B1_MAN_Piece piece, int dice)
         {
             if (piece == null) return (false, false, null);
             return _board.MovePiece(piece, dice);
         }
+        #endregion
+
+        #region Private Methods
+        private (int playerCount, bool advancedMode) ShowPlayerCountDialog()
+        {
+            try
+            {
+                var dialog = new PlayerCountDialog();
+                bool? result = dialog.ShowDialog();
+                
+                if (result == true && dialog.SelectedPlayerCount >= 2 && dialog.SelectedPlayerCount <= 4)
+                {
+                    return (dialog.SelectedPlayerCount, dialog.AdvancedMode);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Dialog-Fehler: {ex.Message}");
+            }
+            
+            return (4, false);
+        }
+        #endregion
     }
 }

@@ -47,6 +47,11 @@ namespace OOPGames
                     case Key.Down:
                     case Key.S:
                         return new A4_ShellStrikeLegendsV2_Move(SSLV2Action.BarrelDown, _playerNumber);
+
+                    case Key.Space:
+                    case Key.Enter:
+                        return new A4_ShellStrikeLegendsV2_Move(SSLV2Action.Fire, _playerNumber);
+
                 }
             }
 

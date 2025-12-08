@@ -14,9 +14,9 @@ namespace OOPGames
 
         //Tank Spawn Position
         // Tank Startposition (von hier fällt er herunter)
-        public static double TankSpawnX = 50;   // kannst du frei ändern
+        public static double TankSpawnX_Player1 = 80;    // links
+        public static double TankSpawnX_Player2 = 800;   // rechts 
         public static double TankSpawnY = -10;  // negativ = über dem Screen 
-
 
         // Tank wheel pivot points (relative to tank origin: X=center, Y=top)
         // Adjust to match the sprite's track wheel location.
@@ -26,13 +26,10 @@ namespace OOPGames
         public const int TankPivotRightYOffsetPx = 17;   // wheel center ~2px above bottom
 
         // skalierte Ketten-Pivot-Offsets
-        public static double TankPivotLeftXOffsetScaled  => TankPivotLeftXOffsetPx  * TankScale;
+        public static double TankPivotLeftXOffsetScaled => TankPivotLeftXOffsetPx * TankScale;
         public static double TankPivotRightXOffsetScaled => TankPivotRightXOffsetPx * TankScale;
-        public static double TankPivotLeftYOffsetScaled  => TankPivotLeftYOffsetPx  * TankScale;
+        public static double TankPivotLeftYOffsetScaled => TankPivotLeftYOffsetPx * TankScale;
         public static double TankPivotRightYOffsetScaled => TankPivotRightYOffsetPx * TankScale;
-
-        // Horizontalgeschwindigkeit des Tanks (Pixel pro Move)
-        public static double TankDriveSpeedPx = 6.0;
 
         //Position des Barrels auf dem Tank
         public static double BarrelPivotOffsetX = -2;   // relativ zur Tankmitte
@@ -42,5 +39,22 @@ namespace OOPGames
 
         // Skallierungsfaktor für den Panzer
         public static double TankScale = 1.6;
+        // Horizontalgeschwindigkeit des Tanks (Pixel pro Move)
+        public static double TankDriveSpeedPx = 6.0;
+        // Wie stark das Rohr pro Eingabe (Taste) bewegt wird (Radiant)
+        public static double BarrelAngleStepRad = 0.02;   // ~1.15° pro Tastendruck
+
+        // Anfangsgeschwindigkeit des Projektils (Pixel pro Tick)
+        public static double ProjectileStartSpeedPx = 10.0;
+
+        // Gravitation für Projektil (Pixel pro Tick^2)
+        public static double ProjectileGravityPx = 0.35;
+
+        // --- Treffer & Schaden ---
+        // Lebenspunkte pro Tank
+        public static int TankMaxHealth = 100;
+
+        // Schaden bei direktem Treffer (Punkt- oder Rechteck-Treffer)
+        public static int DirectHitDamage = 100;
     }
 }

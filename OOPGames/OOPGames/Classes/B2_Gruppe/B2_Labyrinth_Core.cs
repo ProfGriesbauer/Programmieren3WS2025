@@ -12,18 +12,39 @@ namespace OOPGames
      * - Ziel: Finde den Ausgang
      */
 
-    #region Cell Type Classes
+    #region Base Type Classes
+
+    /// Basis-Klasse für alle Name-basierten Typen
+    /// Enthält gemeinsame Vergleichslogik (Equals, GetHashCode, IsType)
+    public abstract class B2_NamedType
+    {
+        public string Name { get; set; }
+        protected B2_NamedType(string name)
+        {
+            Name = name;
+        }
+        /// Vergleicht zwei Objekte anhand ihres Namens
+        public override bool Equals(object obj)
+        {
+            return obj is B2_NamedType other && Name == other.Name;
+        }
+        /// HashCode basierend auf dem Namen (wichtig für HashSets/Dictionaries)
+        public override int GetHashCode()
+        {
+            return Name.GetHashCode();
+        }
+        /// Prüft ob der Name einem bestimmten Typ entspricht
+        public bool IsType(string typeName) => Name == typeName;
+    }
 
     /// Zellentyp - jede Zelle bekommt ein eigenes Objekt
-    public class B2_MazeCellType
+    public class B2_MazeCellType : B2_NamedType
     {
-        public string Name { get; set; }  // Jetzt änderbar!
         public bool IsWalkable { get; private set; }
 
         /// Konstruktor - öffentlich, damit neue Instanzen erstellt werden können
-        public B2_MazeCellType(string name, bool isWalkable)
+        public B2_MazeCellType(string name, bool isWalkable) : base(name)
         {
-            Name = name;
             IsWalkable = isWalkable;
         }
 
@@ -50,42 +71,28 @@ namespace OOPGames
         public void BecomeVisitedPlayer1() => ChangeType("VisitedPlayer1", true);
         public void BecomeVisitedPlayer2() => ChangeType("VisitedPlayer2", true);
 
-        public override bool Equals(object obj)
-        {
-            return obj is B2_MazeCellType other && Name == other.Name;
-        }
-
-        public override int GetHashCode()
-        {
-            return Name.GetHashCode();
-        }
-
+        /// Operator == (nutzt geerbte Equals-Methode)
         public static bool operator ==(B2_MazeCellType left, B2_MazeCellType right)
         {
             if (ReferenceEquals(left, right)) return true;
             if (left is null || right is null) return false;
             return left.Equals(right);
         }
-
+        /// Operator != (Gegenteil von ==)
         public static bool operator !=(B2_MazeCellType left, B2_MazeCellType right)
         {
             return !(left == right);
         }
-
-        /// Helper-Methode zum Prüfen des Typs
-        public bool IsType(string typeName) => Name == typeName;
     }
 
     /// Bewegungsrichtung
-    public class B2_MazeDirection
+    public class B2_MazeDirection : B2_NamedType
     {
-        public string Name { get; }
         public int DeltaRow { get; }
         public int DeltaCol { get; }
 
-        private B2_MazeDirection(string name, int deltaRow, int deltaCol)
+        private B2_MazeDirection(string name, int deltaRow, int deltaCol) : base(name)
         {
-            Name = name;
             DeltaRow = deltaRow;
             DeltaCol = deltaCol;
         }
@@ -96,16 +103,7 @@ namespace OOPGames
         public static readonly B2_MazeDirection Left = new B2_MazeDirection("Left", 0, -1);
         public static readonly B2_MazeDirection Right = new B2_MazeDirection("Right", 0, 1);
 
-        public override bool Equals(object obj)
-        {
-            return obj is B2_MazeDirection other && Name == other.Name;
-        }
-
-        public override int GetHashCode()
-        {
-            return Name.GetHashCode();
-        }
-
+        /// Operator == (nutzt geerbte Equals-Methode)
         public static bool operator ==(B2_MazeDirection left, B2_MazeDirection right)
         {
             if (ReferenceEquals(left, right)) return true;
@@ -113,6 +111,7 @@ namespace OOPGames
             return left.Equals(right);
         }
 
+        /// Operator != (Gegenteil von ==)
         public static bool operator !=(B2_MazeDirection left, B2_MazeDirection right)
         {
             return !(left == right);
@@ -125,18 +124,17 @@ namespace OOPGames
 
     public abstract class B2_AbstractMazeField : IGameField
     {
-        protected B2_MazeCellType[,] grid;
-        protected int player1Row;
-        protected int player1Col;
-        protected int player2Row;
-        protected int player2Col;
-        protected int goalRow;
-        protected int goalCol;
-        protected int rows;
-        protected int cols;
-        protected HashSet<(int, int)> visitedCells;
-        protected DateTime gameStartTime;
-        protected const double CountdownSeconds = 3.0;
+        // Public für Zugriff durch Rules-Klasse
+        public B2_MazeCellType[,] grid;
+        public int player1Row;
+        public int player1Col;
+        public int player2Row;
+        public int player2Col;
+        public int goalRow;
+        public int goalCol;
+        public int rows;
+        public int cols;
+        public HashSet<(int, int)> visitedCells;
 
         public virtual int Rows => rows;
         public virtual int Cols => cols;
@@ -146,21 +144,6 @@ namespace OOPGames
         public virtual int Player2Col => player2Col;
         public virtual int GoalRow => goalRow;
         public virtual int GoalCol => goalCol;
-        public virtual DateTime GameStartTime => gameStartTime;
-        
-        /// Gibt zurück wie viele Sekunden vom Countdown noch übrig sind (0 wenn vorbei)
-        public virtual double RemainingCountdown
-        {
-            get
-            {
-                double elapsed = (DateTime.Now - gameStartTime).TotalSeconds;
-                double remaining = CountdownSeconds - elapsed;
-                return remaining > 0 ? remaining : 0;
-            }
-        }
-        
-        /// Prüft ob der Countdown noch läuft
-        public virtual bool IsCountdownActive => RemainingCountdown > 0;
 
         /// Zugriff auf Zellentyp
         public virtual B2_MazeCellType this[int r, int c]
@@ -220,19 +203,42 @@ namespace OOPGames
     }
 
     /// Abstrakte Basis für Labyrinth-Regeln
-    public abstract class B2_AbstractMazeRules : IGameRules
+    /// Implementiert IB2_MazeGameState für saubere Entkopplung vom Painter
+    public abstract class B2_AbstractMazeRules : IGameRules, IB2_MazeGameState
     {
         protected B2_AbstractMazeField field;
         protected bool gameEnded = false;
+        protected DateTime gameStartTime;
+        protected const double CountdownSeconds = 3.0;
 
         protected B2_AbstractMazeRules(B2_AbstractMazeField field)
         {
             this.field = field ?? throw new ArgumentNullException(nameof(field));
+            this.gameStartTime = DateTime.Now;
         }
 
         public virtual string Name => "Abstract Maze Rules";
+        
+        // IGameRules Interface
         public virtual IGameField CurrentField => field;
+        
+        // IB2_MazeGameState Interface
+        IGameField IB2_MazeGameState.Field => field;
         public virtual bool GameEnded => gameEnded;
+
+        /// Gibt zurück wie viele Sekunden vom Countdown noch übrig sind (0 wenn vorbei)
+        public virtual double RemainingCountdown
+        {
+            get
+            {
+                double elapsed = (DateTime.Now - gameStartTime).TotalSeconds;
+                double remaining = CountdownSeconds - elapsed;
+                return remaining > 0 ? remaining : 0;
+            }
+        }
+        
+        /// Prüft ob der Countdown noch läuft
+        public virtual bool IsCountdownActive => RemainingCountdown > 0;
 
         /// Prüft ob Spieler das Ziel erreicht hat
         public abstract int CheckIfPLayerWon();
@@ -243,12 +249,61 @@ namespace OOPGames
             get
             {
                 // Countdown muss vorbei sein UND Spiel nicht beendet
-                return !field.IsCountdownActive && CheckIfPLayerWon() == -1;
+                return !IsCountdownActive && CheckIfPLayerWon() == -1;
             }
         }
 
         public abstract void ClearField();
         public abstract void DoMove(IPlayMove move);
+
+        /// Spiellogik: Bewegt den Spieler in eine Richtung um ein einzelnes Kästchen
+        /// Diese Methode gehört zu Rules (Spiellogik), nicht zu Field (Datenstruktur)
+        protected virtual bool MovePlayer(int playerNumber, B2_MazeDirection direction)
+        {
+            int currentRow = playerNumber == 1 ? field.player1Row : field.player2Row;
+            int currentCol = playerNumber == 1 ? field.player1Col : field.player2Col;
+            string playerTypeName = playerNumber == 1 ? "Player1" : "Player2";
+
+            int newRow = currentRow + direction.DeltaRow;
+            int newCol = currentCol + direction.DeltaCol;
+
+            // Prüfe ob Bewegung möglich ist
+            if (!field.IsWalkable(newRow, newCol))
+                return false;
+
+            // Alte Position zurücksetzen (mit spielerspezifischer Spur)
+            if (field.grid[currentRow, currentCol].IsType(playerTypeName))
+            {
+                field.grid[currentRow, currentCol] = playerNumber == 1 ? 
+                    B2_MazeCellType.CreateVisitedPlayer1() : 
+                    B2_MazeCellType.CreateVisitedPlayer2();
+            }
+
+            // Neue Position setzen
+            if (playerNumber == 1)
+            {
+                field.player1Row = newRow;
+                field.player1Col = newCol;
+            }
+            else
+            {
+                field.player2Row = newRow;
+                field.player2Col = newCol;
+            }
+
+            // Markiere als besucht
+            field.MarkVisited(newRow, newCol);
+
+            // Update Grid (außer wenn es das Ziel ist)
+            if (!field.grid[newRow, newCol].IsType("Goal"))
+            {
+                field.grid[newRow, newCol] = playerNumber == 1 ? 
+                    B2_MazeCellType.CreatePlayer1() : 
+                    B2_MazeCellType.CreatePlayer2();
+            }
+
+            return true;
+        }
     }
 
     #endregion
@@ -258,13 +313,12 @@ namespace OOPGames
     /// Konkretes Labyrinth-Spielfeld mit vorgeneriertem Labyrinth
     public class B2_MazeField : B2_AbstractMazeField
     {
-        public B2_MazeField(int rows = 31, int cols = 31)
+        public B2_MazeField(int rows = 25, int cols = 25)
         {
             this.rows = rows;
             this.cols = cols;
             this.grid = new B2_MazeCellType[rows, cols];
             this.visitedCells = new HashSet<(int, int)>();
-            this.gameStartTime = DateTime.Now;
             
             GenerateMaze();
         }
@@ -365,54 +419,6 @@ namespace OOPGames
             
             return walkableNeighbors > 2;
         }
-
-        /// Bewegt den Spieler in eine Richtung um ein einzelnes Kästchen
-        public bool MovePlayer(int playerNumber, B2_MazeDirection direction)
-        {
-            int currentRow = playerNumber == 1 ? player1Row : player2Row;
-            int currentCol = playerNumber == 1 ? player1Col : player2Col;
-            string playerTypeName = playerNumber == 1 ? "Player1" : "Player2";
-
-            int newRow = currentRow + direction.DeltaRow;
-            int newCol = currentCol + direction.DeltaCol;
-
-            // Prüfe ob Bewegung möglich ist
-            if (!IsWalkable(newRow, newCol))
-                return false;
-
-            // Alte Position zurücksetzen (mit spielerspezifischer Spur)
-            if (grid[currentRow, currentCol].IsType(playerTypeName))
-            {
-                grid[currentRow, currentCol] = playerNumber == 1 ? 
-                    B2_MazeCellType.CreateVisitedPlayer1() : 
-                    B2_MazeCellType.CreateVisitedPlayer2();
-            }
-
-            // Neue Position setzen
-            if (playerNumber == 1)
-            {
-                player1Row = newRow;
-                player1Col = newCol;
-            }
-            else
-            {
-                player2Row = newRow;
-                player2Col = newCol;
-            }
-
-            // Markiere als besucht
-            MarkVisited(newRow, newCol);
-
-            // Update Grid (außer wenn es das Ziel ist)
-            if (!grid[newRow, newCol].IsType("Goal"))
-            {
-                grid[newRow, newCol] = playerNumber == 1 ? 
-                    B2_MazeCellType.CreatePlayer1() : 
-                    B2_MazeCellType.CreatePlayer2();
-            }
-
-            return true;
-        }
     }
 
     /// Konkreter Labyrinth-Move (Richtungsbewegung)
@@ -435,7 +441,7 @@ namespace OOPGames
         {
         }
 
-        public override string Name => "B2 - Maze Game Rules";
+        public override string Name => "B2 - Labyrinth Rules";
 
         public override int CheckIfPLayerWon()
         {
@@ -464,18 +470,18 @@ namespace OOPGames
         public override void ClearField()
         {
             // Neues Labyrinth generieren
-            field = new B2_MazeField(21, 21);
+            field = new B2_MazeField(25, 25);
             gameEnded = false;
+            gameStartTime = DateTime.Now;  // Timer zurücksetzen
         }
 
         public override void DoMove(IPlayMove move)
         {
             if (move == null) return;
             if (!(move is B2_AbstractMazeMove mazeMove)) return;
-            if (!(field is B2_MazeField mazeField)) return;
 
-            // Führe Bewegung aus (mit Spielernummer)
-            mazeField.MovePlayer(mazeMove.PlayerNumber, mazeMove.Direction);
+            // Führe Bewegung aus - MovePlayer ist jetzt in Rules (Spiellogik!)
+            MovePlayer(mazeMove.PlayerNumber, mazeMove.Direction);
         }
     }
 
