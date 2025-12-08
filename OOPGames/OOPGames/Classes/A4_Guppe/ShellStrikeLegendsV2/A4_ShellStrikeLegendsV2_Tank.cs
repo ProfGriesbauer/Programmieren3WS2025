@@ -86,6 +86,10 @@ namespace OOPGames
         // Konstanten für Fallgeschwindigkeit und Beschleunigung
         public double FallVelocity = 0.0;
         public double FallAccelerationPx = 0.4;  // kannst du tunen (entspricht g)
+        
+        // Lebenspunkte des Tanks
+        public int Health { get; set; } = A4_ShellStrikeLegendsV2_Config.TankMaxHealth;
+        public bool IsDestroyed => Health <= 0;
 
         public void UpdateFromTerrain(A4_ShellStrikeLegendsV2_Terrain terrain)
         {

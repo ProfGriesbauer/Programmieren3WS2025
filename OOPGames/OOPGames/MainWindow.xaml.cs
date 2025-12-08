@@ -153,7 +153,6 @@ namespace OOPGames
             // register rules with a fresh board (default 4 players) so it appears in list
             OOPGamesManager.Singleton.RegisterRules(new OOPGames.B1_Gruppe.MenschAergereDichNicht.B1_MAN_Rules(new OOPGames.B1_Gruppe.MenschAergereDichNicht.B1_MAN_Board()));
             OOPGamesManager.Singleton.RegisterPlayer(new OOPGames.B1_Gruppe.MenschAergereDichNicht.B1_MAN_HumanPlayer());
-            OOPGamesManager.Singleton.RegisterPlayer(new OOPGames.B1_Gruppe.MenschAergereDichNicht.B1_MAN_ComputerPlayer());
 
             // B2 group (Moritz & Tobias) - Maze Game (2 Players)
             OOPGamesManager.Singleton.RegisterPainter(new B2_MazePainter2Player());
