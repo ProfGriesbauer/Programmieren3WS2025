@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 namespace OOPGames
 {
-    /// <summary>
+
     /// Verwaltet die Schlange und ihre Segmente
-    /// </summary>
+
     public class SnakeEntity
     {
         private readonly List<PixelPosition> _segments;

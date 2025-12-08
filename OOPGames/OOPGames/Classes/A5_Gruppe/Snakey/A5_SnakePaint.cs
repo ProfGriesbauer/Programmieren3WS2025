@@ -6,14 +6,18 @@ using System.Windows;
 
 namespace OOPGames
 {
-    /// <summary>
-    /// Rendering-Klasse für das Snake-Spiel mit OOP-Struktur
-    /// </summary>
+
+    /// Rendering-Klasse für das Snake-Spiel
+    /// Verwaltet visuelle Darstellung von Schlangen, Futter, Scores und Spielstatus
+
     public class A5_SnakePaint : IPaintGame2
     {
         public string Name => "A5 Paint Snake";
 
         private readonly SnakeAssetLoader _assetLoader = new SnakeAssetLoader();
+        
+        /// Hauptmethode für komplettes Rendering des Spielfeldes
+        /// Renderiert Hintergrund, Schlangen, Futter und UI-Elemente
 
         public void PaintGameField(Canvas canvas, IGameField currentField)
         {
@@ -67,6 +71,9 @@ namespace OOPGames
             }
         }
 
+        /// <summary>
+        /// Zeichnet den Grass-Hintergund des Spielfeldes mit Textur oder Farbe
+        /// </summary>
         private void DrawBackground(RenderContext context)
         {
             var bg = context.CreateRectangle(
@@ -79,6 +86,9 @@ namespace OOPGames
             context.Canvas.Children.Add(bg);
         }
 
+        /// <summary>
+        /// Zeichnet eine Schlange mit allen ihren Segmenten (Kopf, Körper, Schwanz)
+        /// </summary>
         private void DrawSnake(A5_SnakeField field, RenderContext context, int playerNumber)
         {
             var snake = playerNumber == 1 ? field.Snake : field.Snake2;
@@ -101,6 +111,10 @@ namespace OOPGames
             }
         }
 
+        /// <summary>
+        /// Gibt die richtige Farbe/Textur für ein Schlangen-Segment zurück
+        /// Unterscheidet zwischen Kopf, Körper und Schwanz sowie zwischen zwei Spielern
+        /// </summary>
         private Brush GetSegmentBrush(int index, int totalCount, int playerNumber)
         {
             // Player 2: Nutze eigene Bilder für visuelle Unterscheidung
@@ -123,6 +137,9 @@ namespace OOPGames
             return _assetLoader.BodyBrush != null ? (Brush)_assetLoader.BodyBrush : Brushes.DarkRed;
         }
 
+        /// <summary>
+        /// Wendet eine Rotations-Transformation auf ein Rectangle an
+        /// </summary>
         private void ApplyRotation(Rectangle rect, double angle)
         {
             if (angle != 0)
@@ -132,6 +149,9 @@ namespace OOPGames
             }
         }
 
+        /// <summary>
+        /// Zeichnet das Futter/die Erdbeere auf dem Spielfeld
+        /// </summary>
         private void DrawFood(A5_SnakeField field, RenderContext context)
         {
             if (field.Food == null) return;
@@ -146,6 +166,9 @@ namespace OOPGames
             context.Canvas.Children.Add(foodRect);
         }
 
+        /// <summary>
+        /// Zeigt den Countdown (3, 2, 1, Start!) vor Spielstart
+        /// </summary>
         private void DrawCountdown(A5_SnakeField field, RenderContext context)
         {
             if (field.CountdownSeconds <= 0) return;
@@ -169,6 +192,9 @@ namespace OOPGames
             context.Canvas.Children.Add(textBlock);
         }
 
+        /// <summary>
+        /// Zeigt Start-Hinweis "Drücke SPACE zum Starten" im idle Zustand
+        /// </summary>
         private void DrawStartHint(RenderContext context)
         {
             string message = "press SPACE to start";
@@ -208,6 +234,9 @@ namespace OOPGames
             context.Canvas.Children.Add(textBlock);
         }
 
+        /// <summary>
+        /// Zeigt Game-Over Screen mit Finalcore
+        /// </summary>
         private void DrawGameOver(RenderContext context, A5_SnakeField field)
         {
             try
@@ -265,16 +294,24 @@ namespace OOPGames
             }
         }
 
-        private void DrawScoreSingleplayer(RenderContext context, A5_SnakeField field)
+        /// <summary>
+        /// Generische Methode zum Zeichnen von Score-Boxen
+        /// </summary>
+        /// <param name="context">Rendering-Kontext</param>
+        /// <param name="scoreText">Anzuzeigende Score-Text</param>
+        /// <param name="highScoreText">Anzuzeigende High-Score-Text</param>
+        /// <param name="isLeftSide">True für linke Seite, False für rechte Seite</param>
+        /// <param name="boxColor">Farbe der Box</param>
+        private void DrawScoreBox(RenderContext context, string scoreText, string highScoreText, bool isLeftSide, Color boxColor)
         {
             try
             {
-                string scoreText = "Score: " + A5_Score.Score1;
-                string highScoreText = "Highscore: " + A5_Score.HighScore1;
                 double padding = 8;
                 double boxWidth = 160;
                 double boxHeight = 55;
-                double left = context.OffsetX + (context.FieldWidth * context.Scale) - boxWidth - padding;
+                double left = isLeftSide 
+                    ? context.OffsetX + padding 
+                    : context.OffsetX + (context.FieldWidth * context.Scale) - boxWidth - padding;
                 double top = context.OffsetY + padding;
 
                 var box = new Rectangle
@@ -283,7 +320,7 @@ namespace OOPGames
                     Height = boxHeight,
                     RadiusX = 6,
                     RadiusY = 6,
-                    Fill = new SolidColorBrush(Color.FromArgb(160, 0, 0, 0))
+                    Fill = new SolidColorBrush(boxColor)
                 };
                 Canvas.SetLeft(box, left);
                 Canvas.SetTop(box, top);
@@ -319,127 +356,47 @@ namespace OOPGames
             {
                 // ignore drawing errors to avoid breaking the entire paint cycle
             }
+        }
+
+        private void DrawScoreSingleplayer(RenderContext context, A5_SnakeField field)
+        {
+            DrawScoreBox(context, 
+                "Score: " + A5_Score.Score1,
+                "Highscore: " + A5_Score.HighScore1,
+                isLeftSide: false,
+                boxColor: Color.FromArgb(160, 0, 0, 0));
         }
 
         private void DrawScorePlayer1Multiplayer(RenderContext context, A5_SnakeField field)
         {
-            try
-            {
-                string scoreText = "P1 Score: " + A5_Score.Score1;
-                string highScoreText = "HS: " + A5_Score.HighScore1;
-                double padding = 8;
-                double boxWidth = 160;
-                double boxHeight = 55;
-                double left = context.OffsetX + padding;
-                double top = context.OffsetY + padding;
-
-                var box = new Rectangle
-                {
-                    Width = boxWidth,
-                    Height = boxHeight,
-                    RadiusX = 6,
-                    RadiusY = 6,
-                    Fill = new SolidColorBrush(Color.FromArgb(160, 200, 0, 0))
-                };
-                Canvas.SetLeft(box, left);
-                Canvas.SetTop(box, top);
-                context.Canvas.Children.Add(box);
-
-                var textBlockScore = new TextBlock
-                {
-                    Text = scoreText,
-                    FontSize = 14,
-                    FontWeight = FontWeights.Bold,
-                    Foreground = Brushes.White,
-                    Width = boxWidth,
-                    TextAlignment = TextAlignment.Center
-                };
-                Canvas.SetLeft(textBlockScore, left);
-                Canvas.SetTop(textBlockScore, top + 4);
-                context.Canvas.Children.Add(textBlockScore);
-
-                var textBlockHighScore = new TextBlock
-                {
-                    Text = highScoreText,
-                    FontSize = 12,
-                    FontWeight = FontWeights.Bold,
-                    Foreground = Brushes.Yellow,
-                    Width = boxWidth,
-                    TextAlignment = TextAlignment.Center
-                };
-                Canvas.SetLeft(textBlockHighScore, left);
-                Canvas.SetTop(textBlockHighScore, top + 25);
-                context.Canvas.Children.Add(textBlockHighScore);
-            }
-            catch
-            {
-                // ignore drawing errors to avoid breaking the entire paint cycle
-            }
+            DrawScoreBox(context,
+                "P1 Score: " + A5_Score.Score1,
+                "HS: " + A5_Score.HighScore1,
+                isLeftSide: true,
+                boxColor: Color.FromArgb(160, 200, 0, 0));
         }
 
         private void DrawScorePlayer2Multiplayer(RenderContext context, A5_SnakeField field)
         {
-            try
-            {
-                string scoreText = "P2 Score: " + A5_Score.Score2;
-                string highScoreText = "HS: " + A5_Score.HighScore2;
-                double padding = 8;
-                double boxWidth = 160;
-                double boxHeight = 55;
-                double left = context.OffsetX + (context.FieldWidth * context.Scale) - boxWidth - padding;
-                double top = context.OffsetY + padding;
-
-                var box = new Rectangle
-                {
-                    Width = boxWidth,
-                    Height = boxHeight,
-                    RadiusX = 6,
-                    RadiusY = 6,
-                    Fill = new SolidColorBrush(Color.FromArgb(160, 0, 0, 200))
-                };
-                Canvas.SetLeft(box, left);
-                Canvas.SetTop(box, top);
-                context.Canvas.Children.Add(box);
-
-                var textBlockScore = new TextBlock
-                {
-                    Text = scoreText,
-                    FontSize = 14,
-                    FontWeight = FontWeights.Bold,
-                    Foreground = Brushes.White,
-                    Width = boxWidth,
-                    TextAlignment = TextAlignment.Center
-                };
-                Canvas.SetLeft(textBlockScore, left);
-                Canvas.SetTop(textBlockScore, top + 4);
-                context.Canvas.Children.Add(textBlockScore);
-
-                var textBlockHighScore = new TextBlock
-                {
-                    Text = highScoreText,
-                    FontSize = 12,
-                    FontWeight = FontWeights.Bold,
-                    Foreground = Brushes.Yellow,
-                    Width = boxWidth,
-                    TextAlignment = TextAlignment.Center
-                };
-                Canvas.SetLeft(textBlockHighScore, left);
-                Canvas.SetTop(textBlockHighScore, top + 25);
-                context.Canvas.Children.Add(textBlockHighScore);
-            }
-            catch
-            {
-                // ignore drawing errors to avoid breaking the entire paint cycle
-            }
+            DrawScoreBox(context,
+                "P2 Score: " + A5_Score.Score2,
+                "HS: " + A5_Score.HighScore2,
+                isLeftSide: false,
+                boxColor: Color.FromArgb(160, 0, 0, 200));
         }
 
+        /// <summary>
+        /// Interface-Implementierung für Timer-basierte Rendering Updates
+        /// Delegiert zu PaintGameField für konsistentes Rendering
+        /// </summary>
         public void TickPaintGameField(Canvas canvas, IGameField currentField)
         {
             PaintGameField(canvas, currentField);
         }
 
         /// <summary>
-        /// Hilfsklasse für Rendering-Kontext
+        /// Hilfsklasse für zentrale Verwaltung von Rendering-Parametern
+        /// Enthält Canvas, Skalierung und Offset-Berechnungen für konsistente Positionierung
         /// </summary>
         private class RenderContext
         {

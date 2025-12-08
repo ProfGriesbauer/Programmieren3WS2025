@@ -1,8 +1,8 @@
 namespace OOPGames
 {
-    /// <summary>
+
     /// Zentrale Konfiguration für das Snake-Spiel
-    /// </summary>
+
     public class SnakeGameConfig
     {
         public int FieldWidth { get; }
