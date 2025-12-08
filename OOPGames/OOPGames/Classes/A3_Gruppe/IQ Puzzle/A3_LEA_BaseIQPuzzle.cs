@@ -8,34 +8,19 @@ using System.Windows.Controls;
 namespace OOPGames
 {
     /**************************************************************************
-     * CLICK SELECTION FOR IQ PUZZLE
+     * BASE CLASSES FÜR IQ PUZZLER PRO
      **************************************************************************/
 
     /// <summary>
-    /// Click selection implementation for IQ Puzzle
+    /// Abstrakte Basisklasse für Click Selection im IQ Puzzle
     /// </summary>
-    public class A3_LEA_ClickSelection : IClickSelection
+    public abstract class A3_LEA_BaseClickSelection : IA3_LEA_ClickSelection
     {
-        private int _clickX;
-        private int _clickY;
-        private int _changedButton;
-
-        public A3_LEA_ClickSelection(int clickX, int clickY, int changedButton)
-        {
-            _clickX = clickX;
-            _clickY = clickY;
-            _changedButton = changedButton;
-        }
-
-        public int XClickPos => _clickX;
-        public int YClickPos => _clickY;
-        public int ChangedButton => _changedButton;
-        public MoveType MoveType => MoveType.click;
+        public abstract int XClickPos { get; }
+        public abstract int YClickPos { get; }
+        public abstract int ChangedButton { get; }
+        public abstract MoveType MoveType { get; }
     }
-
-    /**************************************************************************
-     * BASE CLASSES FÜR IQ PUZZLER PRO
-     **************************************************************************/
 
     /// <summary>
     /// Abstrakte Basisklasse für IQ Puzzle Painter

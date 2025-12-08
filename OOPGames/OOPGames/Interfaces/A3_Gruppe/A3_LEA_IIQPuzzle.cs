@@ -214,6 +214,14 @@ namespace OOPGames
     }
 
     /// <summary>
+    /// Interface für Click Selection im IQ Puzzle
+    /// </summary>
+    public interface IA3_LEA_ClickSelection : IClickSelection
+    {
+        // Erbt alle Members von IClickSelection
+    }
+
+    /// <summary>
     /// Schwierigkeitsgrade für IQ Puzzle
     /// </summary>
     public enum IQPuzzleDifficulty
