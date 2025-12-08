@@ -856,6 +856,12 @@ namespace OOPGames
 
         public override string Name => "A3 LEA IQ Puzzler Pro Paint";
 
+        public override void TickPaintGameField(Canvas canvas, IGameField currentField)
+        {
+            // Nutze die gleiche Logik wie PaintGameField, aber mit Live-Updates
+            PaintGameField(canvas, currentField);
+        }
+
         public override void PaintIQPuzzleField(Canvas canvas, IA3_LEA_IQPuzzleField field,
             List<IA3_LEA_IQPuzzlePiece> availablePieces, IA3_LEA_IQPuzzlePiece selectedPiece)
         {

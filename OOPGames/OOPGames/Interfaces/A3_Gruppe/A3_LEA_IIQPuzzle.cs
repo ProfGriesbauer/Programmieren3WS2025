@@ -187,7 +187,7 @@ namespace OOPGames
     /// <summary>
     /// Interface für IQ Puzzle Zeichnung
     /// </summary>
-    public interface IA3_LEA_PaintIQPuzzle : IPaintGame
+    public interface IA3_LEA_PaintIQPuzzle : IPaintGame, IPaintGame2
     {
         /// <summary>
         /// Zeichnet das IQ Puzzle Spielfeld
@@ -199,7 +199,7 @@ namespace OOPGames
     /// <summary>
     /// Interface für menschlichen IQ Puzzle Spieler
     /// </summary>
-    public interface IA3_LEA_HumanIQPuzzlePlayer : IHumanGamePlayer
+    public interface IA3_LEA_HumanIQPuzzlePlayer : IHumanGamePlayer, IHumanGamePlayerWithMouse
     {
         /// <summary>
         /// Aktuell ausgewähltes Stück
