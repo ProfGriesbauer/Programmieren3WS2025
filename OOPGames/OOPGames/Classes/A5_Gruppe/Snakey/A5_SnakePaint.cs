@@ -54,7 +54,16 @@ namespace OOPGames
             }
             else if (!field.IsGameRunning)
             {
-                DrawStartHint(renderContext);
+                // Show Game Over screen if game just ended and 5 seconds haven't passed yet
+                if (field.GameHasStartedBefore && field.ShouldShowGameOverScreen)
+                {
+                    DrawGameOver(renderContext, field);
+                }
+                else
+                {
+                    // Show start hint for initial state or after game over timeout
+                    DrawStartHint(renderContext);
+                }
             }
         }
 
@@ -197,6 +206,63 @@ namespace OOPGames
             Canvas.SetLeft(textBlock, boxLeft);
             Canvas.SetTop(textBlock, boxTop + (boxHeight / 2) - 22);
             context.Canvas.Children.Add(textBlock);
+        }
+
+        private void DrawGameOver(RenderContext context, A5_SnakeField field)
+        {
+            try
+            {
+                double stripHeight = 150;
+                double centerY = context.OffsetY + (context.FieldHeight * context.Scale / 2);
+                double stripTop = centerY - (stripHeight / 2);
+
+                // Semi-transparent black strip horizontal
+                var stripBox = new Rectangle
+                {
+                    Width = context.FieldWidth * context.Scale ,
+                    Height = stripHeight,
+                    Fill = new SolidColorBrush(Color.FromArgb(220, 0, 0, 0))
+                };
+                Canvas.SetLeft(stripBox, context.OffsetX );
+                Canvas.SetTop(stripBox, stripTop);
+                context.Canvas.Children.Add(stripBox);
+
+                // "Game Over" text (large, red)
+                var gameOverText = new TextBlock
+                {
+                    Text = "Game Over",
+                    FontSize = 72,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = Brushes.Red,
+                    TextAlignment = TextAlignment.Center,
+                    Width = context.FieldWidth * context.Scale
+                };
+                Canvas.SetLeft(gameOverText, context.OffsetX);
+                Canvas.SetTop(gameOverText, stripTop + 8);
+                context.Canvas.Children.Add(gameOverText);
+
+                // "Final Score:" text (smaller, yellow)
+                int finalScore = field.IsTwoPlayerMode ? 
+                    Math.Max(A5_Score.Score1, A5_Score.Score2) : 
+                    A5_Score.Score1;
+                
+                var finalScoreText = new TextBlock
+                {
+                    Text = "Final Score: " + finalScore,
+                    FontSize = 28,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = Brushes.Yellow,
+                    TextAlignment = TextAlignment.Center,
+                    Width = context.FieldWidth * context.Scale
+                };
+                Canvas.SetLeft(finalScoreText, context.OffsetX);
+                Canvas.SetTop(finalScoreText, stripTop + 95);
+                context.Canvas.Children.Add(finalScoreText);
+            }
+            catch
+            {
+                // ignore drawing errors to avoid breaking the entire paint cycle
+            }
         }
 
         private void DrawScoreSingleplayer(RenderContext context, A5_SnakeField field)

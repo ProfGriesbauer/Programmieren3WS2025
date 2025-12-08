@@ -23,6 +23,10 @@ namespace OOPGames
         private readonly FoodManager _foodManager;
         private readonly GameTimerManager _timerManager;
         private readonly bool _isTwoPlayerMode;
+        private bool _gameOverScreenShown = false;
+        private bool _gameHasStartedBefore = false;
+        private DateTime _gameOverTime = DateTime.MinValue;
+        private const int GAME_OVER_DISPLAY_SECONDS = 5;
 
         // Public properties for compatibility
         public List<PixelPosition> Snake => new List<PixelPosition>(_snake1.Segments);
@@ -33,6 +37,9 @@ namespace OOPGames
         public bool IsCountingDown => _timerManager.IsCountingDown;
         public bool IsGameRunning => _timerManager.IsGameRunning;
         public bool IsTwoPlayerMode => _isTwoPlayerMode;
+        public bool GameOverScreenShown => _gameOverScreenShown;
+        public bool GameHasStartedBefore => _gameHasStartedBefore;
+        public bool ShouldShowGameOverScreen => !_gameOverScreenShown && (DateTime.Now - _gameOverTime).TotalSeconds < GAME_OVER_DISPLAY_SECONDS;
 
         public bool CanBePaintedBy(IPaintGame painter)
         {
@@ -70,6 +77,7 @@ namespace OOPGames
 
             _snake1.Initialize(startX, startY);
             _movementController1.Reset();
+            _gameOverScreenShown = false;
             
             if (_isTwoPlayerMode && _snake2 != null)
             {
@@ -129,6 +137,7 @@ namespace OOPGames
                 {
                     _snake1.Kill();
                     _snake2.Kill();
+                    SetGameOverTime();
                     _timerManager.StopGameTimer();
                     System.Threading.Tasks.Task.Delay(500).ContinueWith(_ => 
                     {
@@ -182,6 +191,7 @@ namespace OOPGames
             if (_collisionDetector.IsOutOfBounds(snake.Head) || snake.CheckSelfCollision())
             {
                 snake.Kill();
+                SetGameOverTime();
                 _timerManager.StopGameTimer();
                 System.Threading.Tasks.Task.Delay(500).ContinueWith(_ => 
                 {
@@ -231,7 +241,19 @@ namespace OOPGames
         {
             // Reset score when starting a new game
             A5_Score.Reset();
+            _gameOverScreenShown = false;
+            _gameHasStartedBefore = true;
             _timerManager.StartCountdown(_config.CountdownSeconds);
+        }
+
+        public void AcknowledgeGameOver()
+        {
+            _gameOverScreenShown = true;
+        }
+
+        public void SetGameOverTime()
+        {
+            _gameOverTime = DateTime.Now;
         }
     }
 }
