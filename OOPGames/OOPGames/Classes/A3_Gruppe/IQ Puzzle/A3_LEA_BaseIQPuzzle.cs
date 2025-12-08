@@ -164,4 +164,16 @@ namespace OOPGames
             return null;
         }
     }
+
+    /// <summary>
+    /// Abstrakte Basisklasse für IQ Puzzle Move
+    /// </summary>
+    public abstract class A3_LEA_BaseIQPuzzleMove : IA3_LEA_IQPuzzleMove
+    {
+        public abstract IA3_LEA_IQPuzzlePiece Piece { get; }
+        public abstract int X { get; }
+        public abstract int Y { get; }
+        public abstract int PlayerNumber { get; }
+        public abstract bool IsRemove { get; }
+    }
 }

@@ -271,7 +271,7 @@ namespace OOPGames
     /// <summary>
     /// Ein Zug im IQ Puzzle
     /// </summary>
-    public class A3_LEA_IQPuzzleMove : IA3_LEA_IQPuzzleMove
+    public class A3_LEA_IQPuzzleMove : A3_LEA_BaseIQPuzzleMove
     {
         private IA3_LEA_IQPuzzlePiece _piece;
         private int _x;
@@ -288,11 +288,11 @@ namespace OOPGames
             _isRemove = isRemove;
         }
 
-        public IA3_LEA_IQPuzzlePiece Piece => _piece;
-        public int X => _x;
-        public int Y => _y;
-        public int PlayerNumber => _playerNumber;
-        public bool IsRemove => _isRemove;
+        public override IA3_LEA_IQPuzzlePiece Piece => _piece;
+        public override int X => _x;
+        public override int Y => _y;
+        public override int PlayerNumber => _playerNumber;
+        public override bool IsRemove => _isRemove;
     }
 
     #endregion
