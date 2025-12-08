@@ -4,7 +4,7 @@ namespace OOPGames
 {
     public class A5_SnakeHumanPlayer : IHumanGamePlayer
     {
-        public string Name => "A5  Player 1 Snake";
+        public string Name => "A5 Player 1 Snake";
         public int PlayerNumber { get; private set; } = 1;
 
         public bool CanBeRuledBy(IGameRules rules)

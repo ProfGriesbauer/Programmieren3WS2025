@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 namespace OOPGames
 {
-    /// <summary>
+
     /// Verwaltet die Bewegungslogik der Schlange inkl. Grid-Alignment und Richtungswechsel
-    /// </summary>
+
     public class SnakeMovementController
     {
         private readonly SnakeGameConfig _config;

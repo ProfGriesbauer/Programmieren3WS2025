@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 namespace OOPGames
 {
-    /// <summary>
-    /// Hauptklasse für das Snake-Spielfeld mit OOP-Architektur
-    /// </summary>
+
+    /// Hauptklasse für das Snake-Spielfeld
+
     public class A5_SnakeField : IGameField
     {
         // Legacy constants for compatibility
@@ -91,6 +91,11 @@ namespace OOPGames
             // Countdown wird erst durch Space gestartet
         }
 
+
+        /// Sollte eine Richtungsänderung für eine Schlange vornehmen
+        /// name="dx">Neue X-Richtung (-1, 0, oder 1)
+        /// name="dy">Neue Y-Richtung (-1, 0, oder 1)
+        /// name="playerNumber">Spielernummer (1 oder 2)
         public void ChangeDirection(double dx, double dy, int playerNumber = 1)
         {
             var newDirection = new PixelPosition(dx, dy);
@@ -111,6 +116,9 @@ namespace OOPGames
             }
         }
 
+
+        /// Setzt die primäre Spielschleife in Bewegung (Timer-Callback)
+
         private void OnGameTick()
         {
             MoveSnake();
@@ -120,6 +128,9 @@ namespace OOPGames
         {
             // Countdown managed by GameTimerManager
         }
+
+
+        /// Hauptmethode für Snake-Bewegung und Kollisionserkennung
 
         public void MoveSnake()
         {
@@ -166,6 +177,11 @@ namespace OOPGames
             }
         }
 
+ 
+        /// Verarbeitet interne Bewegung einer Schlange pro Tick
+
+        /// name="snake">Die zu bewegende Schlange
+        /// name="controller">Der Bewegungs-Controller für Richtungswechsel
         private void MoveSnakeInternal(SnakeEntity snake, SnakeMovementController controller)
         {
             if (snake.Head == null || !snake.IsAlive) return;
@@ -205,6 +221,9 @@ namespace OOPGames
             snake.TrimHistory();
         }
 
+
+        /// Prüft Kollisionen zwischen zwei Schlangen (nur im 2-Spieler-Modus relevant)
+
         private bool CheckInterSnakeCollision(SnakeEntity snake1, SnakeEntity snake2)
         {
             // Prüfe ob Kopf von Snake1 mit irgendeinem Segment von Snake2 kollidiert
@@ -232,10 +251,8 @@ namespace OOPGames
             return false;
         }
 
-        public int GetPosition(int x, int y)
-        {
-            return 0; // IGameField interface compatibility
-        }
+
+        /// Startet ein neues Spiel mit Countdown (Space-Taste)
 
         public void StartGame()
         {
