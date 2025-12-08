@@ -11,31 +11,37 @@ Two tanks face each other on randomly generated terrain. Players take turns adju
 ### Controls
 
 **Player Controls (single human controls both tanks sequentially):**
-- **A / Left Arrow**: Move active tank left (max 5 moves before firing)
-- **D / Right Arrow**: Move active tank right (max 5 moves before firing)
+- **A / Left Arrow**: Move active tank left (3 moves for Flat terrain, 7 for others)
+- **D / Right Arrow**: Move active tank right (3 moves for Flat terrain, 7 for others)
 - **W / Up Arrow**: Increase shooting angle (unlimited)
 - **S / Down Arrow**: Decrease shooting angle (unlimited)
 - **Q**: Decrease power (unlimited)
 - **E**: Increase power (unlimited)
-- **F**: Fire projectile (turn will switch only after collision)
+- **Space / Click**: Fire projectile (turn will switch only after collision)
 
 ### Game Rules
 
 1. Players take turns controlling their tank
 2. **During your turn, you can:**
-   - Move your tank left/right up to **5 times** (A/D keys)
+   - Move your tank left/right up to **3 times** (Flat terrain) or **7 times** (other terrains)
    - Adjust cannon angle **unlimited times** (W/S keys)
    - Adjust power **unlimited times** (Q/E keys)
-3. **Your turn ends only after the fired projectile collides** (press **F** to shoot)
+3. **Your turn ends only after the fired projectile collides** (press **Space/Click** to shoot)
 4. Projectile follows realistic physics with gravity and wind
-5. Direct hits deal 50 damage
+5. Direct hits deal 20 damage (5 hits to destroy)
 6. First tank to reach 0 health loses
 7. Wind affects projectile trajectory (shown at top center)
-8. Movement counter shows "Movements: X/5" and resets each turn
+8. Movement counter shows "Movements: X/3" (or X/7) and resets each turn
+9. Health packs spawn randomly (50% chance after each shot) - shoot them for +25 HP healing
 
 ### Terrain Types
 
-- **Flat**: Level battlefield (simplified for testing)
+- **Flat**: Level battlefield with minimal noise (3 movements per turn)
+- **Hill**: Sine-wave based hills (7 movements per turn)
+- **Curvy**: Perlin-noise based varied terrain (7 movements per turn)
+- **Valley**: V-shaped valley terrain (not currently in random rotation)
+
+Terrain is randomly selected at game start.
 
 ## Game Features
 
@@ -45,8 +51,9 @@ Two tanks face each other on randomly generated terrain. Players take turns adju
 - 40ms tick updates for smooth animation
 
 ### Destructible Terrain
-- Destructible terrain temporarily disabled for testing
-- Explosions register but don't modify terrain
+- Projectile impacts create craters (30 pixel radius)
+- Terrain deformation affects tank positioning
+- Tanks automatically adjust to terrain changes
 
 ### Visual Elements
 - Color-coded tanks (Red vs Blue)
@@ -65,10 +72,10 @@ The turn system is tank-centric and delays switching until the projectile has fi
 - **Single human controller**: One human player operates both tanks in alternating turns.
 - **Active tank tracking**: `ActiveTankNumber` in the Field indicates which tank is currently under control.
 - **Direct state mutation**: Movement, angle, and power keys mutate the active tank directly and return `null` moves so the framework does not auto-switch players prematurely.
-- **Shooting flow**: Pressing **F** returns a Shoot move; Rules spawns the projectile and sets a pending turn switch.
-- **Delayed switch**: The actual turn handoff occurs only after the projectile collides (hit ground or tank). At that moment movement count resets to 5 and the other tank becomes active.
+- **Shooting flow**: Pressing **Space/Click** returns a Shoot move; Rules spawns the projectile and sets a pending turn switch.
+- **Delayed switch**: The actual turn handoff occurs only after the projectile collides (hit ground, tank, or health pack). At that moment movement count resets to 3 (Flat) or 7 (other terrains) and the other tank becomes active.
 - **Input blocking**: While a projectile is in flight, all inputs (except internal tick updates) are ignored to prevent mid-flight adjustments.
-- **Movement limit**: Up to 5 left/right moves per turn before firing; angle and power changes are unlimited.
+- **Movement limit**: Up to 3 left/right moves per turn (Flat terrain) or 7 moves (Hill/Curvy); angle and power changes are unlimited.
 
 This approach cleanly decouples the framework's player swapping from game logic and guarantees the turn does not advance until the shot outcome is resolved.
 
@@ -153,12 +160,14 @@ OOPGamesManager.Singleton.RegisterPlayer(new B5_Shellshock_HumanPlayer());
 ## Game Balance
 
 - **Tank Health**: 100 HP
-- **Damage per Hit**: 50 HP (2 hits to destroy)
+- **Damage per Hit**: 20 HP (5 hits to destroy)
+- **Health Pack Healing**: +25 HP (shoot to collect)
 - **Angle Range**: 0° - 180°
 - **Power Range**: 0 - 100
 - **Gravity**: 9.8 m/s²
 - **Wind Range**: -5 to +5
-- **Crater Radius**: 20 units
+- **Crater Radius**: 30 units
+- **Movement per Turn**: 3 (Flat) or 7 (Hill/Curvy)
 
 ## Authors
 
