@@ -146,4 +146,14 @@ namespace OOPGames
         // Erzeugt das UI-Element (X oder O) an der gegebenen Position
         public abstract UIElement BuildElement();
     }
+
+    /**************************************************************************
+     * BASE MOVE - Abstrakte Basisklasse für TicTacToe Spielzüge
+     **************************************************************************/
+    public abstract class A3_LEA_BaseTicTacToeMove : IA3_LEA_TicTacToeMove
+    {
+        public abstract int Row { get; }
+        public abstract int Column { get; }
+        public abstract int PlayerNumber { get; }
+    }
 }

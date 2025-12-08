@@ -1,0 +1,421 @@
+@startuml B5_Shellshock_Framework_Integration
+
+title B5 Shellshock - Framework Integration Architecture\n(How Shellshock Plugs into OOPGames Framework)
+
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FEFEFE
+skinparam roundcorner 5
+skinparam linetype ortho
+
+left to right direction
+
+' ====================================
+' LEGEND
+' ====================================
+
+legend top left
+  **Integration Pattern: Plugin Architecture**
+  • Framework defines contracts (interfaces)
+  • Games implement interfaces as plugins
+  • OOPGamesManager acts as service locator
+  • MainWindow orchestrates game loop
+  
+  **Benefits:**
+  • Add new games without modifying framework
+  • Multiple games coexist in one application
+  • Polymorphic game management
+end legend
+
+' ====================================
+' LAYER 1: FRAMEWORK CORE (TOP)
+' ====================================
+
+package "Framework Core (WPF Application)" #LightCoral {
+    class MainWindow {
+        -_CurrentPlayer : IGamePlayer
+        -_CurrentPainter : IPaintGame
+        -_CurrentRules : IGameRules
+        -_PaintTimer : DispatcherTimer
+        ==Lifecycle==
+        +InitializeComponent()
+        +RegisterAllGames()
+        -Canvas_MouseDown()
+        -Canvas_KeyDown()
+        -Timer_Tick() : 40ms
+        --
+        **Role:** Application entry point
+        **Manages:** Game loop, input routing
+    }
+    
+    class OOPGamesManager {
+        -{static} _OOPGames : Singleton
+        -_Painters : List<IPaintGame>
+        -_Players : List<IGamePlayer>
+        -_Rules : List<IGameRules>
+        ==Registration==
+        +RegisterPainter(painter)
+        +RegisterPlayer(player)
+        +RegisterRules(rules)
+        ==Active Management==
+        +RegisterActivePainter(painter)
+        +RegisterActiveRules(rules)
+        +RegisterActivePlayers(players)
+        --
+        **Pattern:** Singleton + Service Locator
+        **Role:** Plugin registry
+    }
+}
+
+' ====================================
+' LAYER 2: FRAMEWORK INTERFACES
+' ====================================
+
+package "Framework Contracts (Interfaces)" #LightBlue {
+    interface IGameRules {
+        +Name : string
+        +CurrentField : IGameField
+        +MovesPossible : bool
+        ==Core Game Logic==
+        +DoMove(move : IPlayMove)
+        +ClearField()
+        +CheckIfPLayerWon() : int
+        --
+        **Contract:** Defines game logic
+        **Called by:** MainWindow during turns
+    }
+    
+    interface IGameRules2 {
+        +StartedGameCall()
+        +TickGameCall() : void
+        --
+        **Extension:** Real-time games
+        **Called:** Every 40ms by timer
+    }
+    
+    interface IPaintGame {
+        +Name : string
+        +PaintGameField(canvas, field)
+        --
+        **Contract:** Rendering logic
+        **Called by:** MainWindow after moves
+    }
+    
+    interface IPaintGame2 {
+        +TickPaintGameField(canvas, field)
+        --
+        **Extension:** Animated rendering
+        **Called:** Every 40ms by timer
+    }
+    
+    interface IGamePlayer {
+        +Name : string
+        +PlayerNumber : int
+        +SetPlayerNumber(number)
+        +CanBeRuledBy(rules) : bool
+        +Clone() : IGamePlayer
+        --
+        **Contract:** Player abstraction
+        **Types:** Human, Computer, AI
+    }
+    
+    interface IHumanGamePlayer {
+        +GetMove(selection, field) : IPlayMove
+        --
+        **Contract:** User input handling
+        **Called by:** MainWindow on clicks/keys
+    }
+    
+    interface IGameField {
+        --
+        **Contract:** Game state storage
+        **Accessed by:** Rules, Painter, Players
+    }
+    
+    interface IPlayMove {
+        --
+        **Contract:** Represents player action
+        **Validated by:** Rules.DoMove()
+    }
+}
+
+' ====================================
+' LAYER 3: SHELLSHOCK IMPLEMENTATION
+' ====================================
+
+package "Shellshock Implementation (Plugin)" #LightGreen {
+    class B5_Shellshock_Rules {
+        -_field : B5_Shellshock_Field
+        -_gamePhase : GamePhase
+        -_gravity : double
+        -_activeTankNumber : int
+        -_movementsRemaining : int
+        ==IGameRules Implementation==
+        +Name : "B5_Shellshock_Rules"
+        +CurrentField : IGameField
+        +MovesPossible : bool
+        +DoMove(move)
+        +CheckIfPLayerWon() : int
+        ==IGameRules2 Implementation==
+        +StartedGameCall()
+        +TickGameCall()
+        ==Game Logic==
+        -UpdateProjectilePhysics()
+        -CheckCollisions()
+        -SwitchTurn()
+        --
+        **Implements:** Game state machine
+        **Phases:** Setup → PlayerTurn → Flight → GameOver
+    }
+    
+    class B5_Shellshock_Painter {
+        ==IPaintGame2 Implementation==
+        +Name : "B5_Shellshock_Painter"
+        +PaintGameField(canvas, field)
+        +TickPaintGameField(canvas, field)
+        ==Rendering Methods==
+        -DrawTerrain(canvas, terrain, scale)
+        -DrawTank(canvas, tank, scale)
+        -DrawProjectile(canvas, proj, scale)
+        -DrawHealthPack(canvas, pack, scale)
+        -DrawUI(canvas, field)
+        -DrawTrajectoryTrail(canvas)
+        -DrawGameOverScreen(canvas)
+        --
+        **Renders:** All visual elements
+        **Updates:** Every 40ms for animation
+    }
+    
+    class B5_Shellshock_HumanPlayer {
+        -_playerNumber : int
+        ==IHumanGamePlayer Implementation==
+        +Name : "B5_Shellshock_Human_Player"
+        +PlayerNumber : int
+        +SetPlayerNumber(number)
+        +CanBeRuledBy(rules) : bool
+        +Clone() : IGamePlayer
+        +GetMove(selection, field) : IPlayMove
+        ==Input Mapping==
+        -HandleKeyPress(key) : IPlayMove
+        -HandleMouseClick(pos) : IPlayMove
+        --
+        **Converts:** Keyboard/Mouse → Move objects
+        **Controls:** A/D (move), W/S (angle), Q/E (power), Space (fire)
+    }
+    
+    class B5_Shellshock_Field {
+        -_tank1 : Tank
+        -_tank2 : Tank
+        -_terrain : Terrain
+        -_projectile : Projectile
+        -_healthPack : HealthPack
+        -_gamePhase : GamePhase
+        -_activeTankNumber : int
+        --
+        **Role:** Pure game state
+        **Accessed by:** Rules, Painter
+    }
+    
+    class B5_Shellshock_Move {
+        +ActionType : ActionType
+        +PlayerNumber : int
+        --
+        **Types:** MoveLeft, MoveRight,
+        AdjustAngle, AdjustPower, Shoot, StartGame
+    }
+}
+
+package "Game Entity Classes" #LightYellow {
+    class Tank {
+        +X, Y : double
+        +Angle, Power : double
+        +Health : int
+        +Fire() : Projectile
+    }
+    
+    class Projectile {
+        +X, Y : double
+        +VelocityX, VelocityY : double
+        +UpdatePosition(gravity, wind, dt)
+    }
+    
+    class Terrain {
+        -_generator : ITerrainGenerator
+        +GetHeightAt(x) : double
+        +IsCollision(x, y) : bool
+    }
+}
+
+' ====================================
+' LAYER 4: REGISTRATION FLOW
+' ====================================
+
+package "Registration (Startup)" #Lavender {
+    note as N_Registration
+        **MainWindow.InitializeComponent():**
+        
+        1. Create instances:
+           var rules = new B5_Shellshock_Rules();
+           var painter = new B5_Shellshock_Painter();
+           var player = new B5_Shellshock_HumanPlayer();
+        
+        2. Register with framework:
+           OOPGamesManager.Singleton.RegisterRules(rules);
+           OOPGamesManager.Singleton.RegisterPainter(painter);
+           OOPGamesManager.Singleton.RegisterPlayer(player);
+        
+        3. User selects from dropdowns → Activates components
+        
+        **Result:** Shellshock available in game selection
+    end note
+}
+
+' ====================================
+' INHERITANCE & IMPLEMENTATION
+' ====================================
+
+IGameRules <|-- IGameRules2 : extends
+IPaintGame <|-- IPaintGame2 : extends
+IGamePlayer <|-- IHumanGamePlayer : extends
+
+IGameRules2 <|.. B5_Shellshock_Rules : implements
+IPaintGame2 <|.. B5_Shellshock_Painter : implements
+IHumanGamePlayer <|.. B5_Shellshock_HumanPlayer : implements
+
+IGameField <|.. B5_Shellshock_Field : implements
+IPlayMove <|.. B5_Shellshock_Move : implements
+
+' ====================================
+' ASSOCIATIONS & DEPENDENCIES
+' ====================================
+
+MainWindow *-- "1" OOPGamesManager : singleton
+
+MainWindow o-- "0..1" IGameRules : _CurrentRules
+MainWindow o-- "0..1" IPaintGame : _CurrentPainter
+MainWindow o-- "0..2" IGamePlayer : _CurrentPlayer
+
+OOPGamesManager o-- "many" IGameRules : registry
+OOPGamesManager o-- "many" IPaintGame : registry
+OOPGamesManager o-- "many" IGamePlayer : registry
+
+B5_Shellshock_Rules *-- "1" B5_Shellshock_Field : manages
+B5_Shellshock_Field *-- "2" Tank : contains
+B5_Shellshock_Field *-- "1" Terrain : contains
+B5_Shellshock_Field *-- "0..1" Projectile : contains
+
+B5_Shellshock_Painter ..> B5_Shellshock_Field : reads
+B5_Shellshock_HumanPlayer ..> B5_Shellshock_Move : creates
+B5_Shellshock_Rules ..> B5_Shellshock_Move : validates
+
+' ====================================
+' POSITIONED NOTES
+' ====================================
+
+note top of MainWindow
+  **Framework Entry Point**
+  
+  1. Initializes WPF application
+  2. Loads all game plugins via registration
+  3. Provides UI for game/player selection
+  4. Orchestrates game loop:
+     - Captures user input (mouse/keyboard)
+     - Calls Rules.DoMove(move)
+     - Calls Painter.PaintGameField()
+     - Timer ticks every 40ms for animations
+end note
+
+note bottom of OOPGamesManager
+  **Service Locator Pattern**
+  
+  • Singleton instance accessible globally
+  • Maintains registry of all games
+  • Supports multiple painters/rules/players
+  • Enables polymorphic game management
+  
+  **Any game can be activated at runtime**
+  without recompilation of framework
+end note
+
+note right of IGameRules
+  **Framework Contract**
+  
+  All games must implement this interface
+  to integrate with OOPGames framework.
+  
+  **DoMove() is the key method:**
+  MainWindow calls it when player acts,
+  Rules validates and updates field state
+end note
+
+note bottom of B5_Shellshock_Rules
+  **Plugin Implementation**
+  
+  Implements framework interfaces to integrate
+  Shellshock game into OOPGames ecosystem.
+  
+  **Benefits:**
+  • Reuses framework UI (MainWindow)
+  • Reuses timer infrastructure
+  • Reuses input routing
+  • Appears in game selection dropdowns
+  
+  **No framework modification required**
+end note
+
+note left of B5_Shellshock_HumanPlayer
+  **Input Adapter Pattern**
+  
+  Converts framework's generic input events
+  (IMoveSelection) into game-specific actions
+  (B5_Shellshock_Move).
+  
+  **Separation of Concerns:**
+  Framework handles raw input capture,
+  Player translates to game semantics
+end note
+
+note as N_GameLoop
+  **Game Loop (Every 40ms):**
+  
+  Timer_Tick() {
+    1. Rules.TickGameCall()
+       → Update projectile physics
+       → Check collisions
+    
+    2. Painter.TickPaintGameField()
+       → Render updated state
+       → Animate projectile trail
+  }
+  
+  **Input Event Flow:**
+  
+  Canvas_KeyDown(key) {
+    1. selection = new KeySelection(key)
+    2. move = Player.GetMove(selection, field)
+    3. if (move != null) Rules.DoMove(move)
+    4. Painter.PaintGameField() // Immediate feedback
+  }
+end note
+
+N_GameLoop .. MainWindow
+
+' ====================================
+' DATA FLOW ARROWS
+' ====================================
+
+note as N_DataFlow
+  **Data Flow Summary:**
+  
+  User Input → MainWindow
+    → IHumanGamePlayer.GetMove() → IPlayMove
+      → IGameRules.DoMove() → Updates IGameField
+        → IPaintGame.PaintGameField() → Canvas rendering
+  
+  Timer Tick → MainWindow
+    → IGameRules2.TickGameCall() → Physics updates
+      → IPaintGame2.TickPaintGameField() → Animation
+end note
+
+N_DataFlow -[hidden]- N_Registration
+
+@enduml

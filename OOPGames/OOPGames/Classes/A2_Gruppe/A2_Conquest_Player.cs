@@ -15,20 +15,12 @@ namespace OOPGames
         public int CaptureRate { get; set; } = 20;
         public int CapacityMax { get; private set; } = 2;
         public int CapacityUsed { get; private set; } = 0;
+        public int TempCapacityBonus { get; private set; } = 0;
+        private bool _extraApGrantedThisTurn = false;           
 
-        public int AdjacencyBonusPerNeighbour { get; set; } = 3;
+        public Player(int id) => Id = id;
 
-        public Player(int id)
-        {
-            Id = id;
-        }
-
-        // --- Ressourcen / AP / Kapazität ---
-
-        public void AddResources(int amount)
-        {
-            Resources += amount;
-        }
+        public void AddResources(int amount) => Resources += amount;
 
         public bool TrySpendResources(int amount)
         {
@@ -40,20 +32,25 @@ namespace OOPGames
         public void ResetTempForNewTurn()
         {
             TempBonusAP = 0;
+            TempCapacityBonus = 0;
+            _extraApGrantedThisTurn = false;
         }
 
-        public void AddTempAP(int amount)
+        public void AddTempCapacity(int amount) => TempCapacityBonus += amount;
+
+        public void GrantExtraApOnce(int amount)
         {
+            if (_extraApGrantedThisTurn) return;
             TempBonusAP += amount;
+            _extraApGrantedThisTurn = true;
         }
+        
+        public void AddTempAP(int amount) => TempBonusAP += amount;
 
         public void SetCapacityBasePlusBoost(int baseCapacity, int capacityBoost)
         {
             CapacityMax = baseCapacity + capacityBoost;
-            if (CapacityUsed > CapacityMax)
-            {
-                CapacityUsed = CapacityMax;
-            }
+            if (CapacityUsed > CapacityMax) CapacityUsed = CapacityMax;
         }
 
         public bool TryReserveCaptureSlot()

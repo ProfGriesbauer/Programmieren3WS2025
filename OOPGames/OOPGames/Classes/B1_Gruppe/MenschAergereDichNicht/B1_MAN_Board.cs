@@ -4,37 +4,166 @@ using System.Linq;
 
 namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
 {
-    // Simplified board model for "Mensch ärgere dich nicht".
-    // Track positions: 0..39 main ring; each player's home slots are 100 + (player-1)*4 .. 100+(player-1)*4+3
+    /// <summary>
+    /// Special field types for advanced mode
+    /// </summary>
+    public enum SpecialFieldType
+    {
+        None,           // Normal field
+        Skip,           // Aussetzen (miss next turn)
+        RollAgain,      // Nochmal würfeln
+        Forward2,       // 2 Felder vorwärts
+        Backward2,      // 2 Felder rückwärts
+        BackToStart     // Zurück zum Start (in die Basis)
+    }
+
+    /// <summary>
+    /// Board model for "Mensch ärgere dich nicht".
+    /// Manages piece positions, track, home slots, and game state.
+    /// </summary>
     public class B1_MAN_Board : OOPGames.IGameField
     {
+        #region Constants
         public const int TrackLength = 40;
         public const int HomeBaseStart = 100; // home slots start index
+        #endregion
 
-        public List<B1_MAN_Player> Players { get; } = new List<B1_MAN_Player>();
-
-        // Helper map: track index -> piece (only one piece allowed per track square)
+        #region Fields
         private Dictionary<int, B1_MAN_Piece> _trackMap = new Dictionary<int, B1_MAN_Piece>();
+        private Dictionary<int, SpecialFieldType> _specialFields = new Dictionary<int, SpecialFieldType>();
+        #endregion
 
-        public B1_MAN_Board(int players = 4)
+        #region Properties
+        public List<B1_MAN_Player> Players { get; } = new List<B1_MAN_Player>();
+        
+        public B1_MAN_Dice Dice { get; } = new B1_MAN_Dice();
+        
+        public int CurrentPlayer { get; set; } = 1;
+        
+        public B1_MAN_Piece SelectedPiece { get; set; } = null;
+        
+        public bool IsProcessing { get; set; } = false;
+        
+        public int RollAttemptsRemaining { get; set; } = 0;
+        
+        public bool AdvancedMode { get; set; } = false;
+        
+        public bool MustSkipNextTurn { get; set; } = false;
+        
+        public bool CanRollAgain { get; set; } = false;
+        #endregion
+
+        #region Constructor
+        public B1_MAN_Board(int players = 4, bool advancedMode = false)
         {
             if (players < 2 || players > 4) throw new ArgumentException("players must be 2..4");
+            AdvancedMode = advancedMode;
             for (int p = 1; p <= players; p++)
             {
                 Players.Add(new B1_MAN_Player(p, $"Player{p}"));
             }
+            
+            if (AdvancedMode)
+            {
+                InitializeSpecialFields();
+            }
+        }
+        #endregion
+
+        #region Special Fields (Advanced Mode)
+        private void InitializeSpecialFields()
+        {
+            _specialFields[5] = SpecialFieldType.RollAgain;      // Nochmal würfeln
+            _specialFields[12] = SpecialFieldType.Forward2;      // 2 vor
+            _specialFields[18] = SpecialFieldType.Skip;          // Aussetzen
+            _specialFields[25] = SpecialFieldType.Backward2;     // 2 zurück
+            _specialFields[32] = SpecialFieldType.BackToStart;   // Zurück zum Start
+            _specialFields[37] = SpecialFieldType.RollAgain;     // Nochmal würfeln
+        }
+        
+        public SpecialFieldType GetSpecialFieldType(int position)
+        {
+            if (!AdvancedMode || position < 0 || position >= TrackLength) 
+                return SpecialFieldType.None;
+            
+            if (_specialFields.TryGetValue(position, out var fieldType))
+                return fieldType;
+            
+            return SpecialFieldType.None;
         }
 
+        private void ApplySpecialFieldEffect(B1_MAN_Piece piece, int position)
+        {
+            if (!AdvancedMode || !piece.IsOnTrack) return;
+            
+            var fieldType = GetSpecialFieldType(position);
+            
+            switch (fieldType)
+            {
+                case SpecialFieldType.Skip:
+                    MustSkipNextTurn = true;
+                    break;
+                    
+                case SpecialFieldType.RollAgain:
+                    CanRollAgain = true;
+                    break;
+                    
+                case SpecialFieldType.Forward2:
+                    {
+                        int forwardPos = (position + 2) % TrackLength;
+                        if (_trackMap.TryGetValue(forwardPos, out var fwdOcc))
+                        {
+                            if (fwdOcc.Owner != piece.Owner)
+                            {
+                                SendToBase(fwdOcc);
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+                        PlacePiece(piece, forwardPos);
+                        break;
+                    }
+                    
+                case SpecialFieldType.Backward2:
+                    {
+                        int backwardPos = (position - 2 + TrackLength) % TrackLength;
+                        if (_trackMap.TryGetValue(backwardPos, out var bwdOcc))
+                        {
+                            if (bwdOcc.Owner != piece.Owner)
+                            {
+                                SendToBase(bwdOcc);
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+                        PlacePiece(piece, backwardPos);
+                        break;
+                    }
+                    
+                case SpecialFieldType.BackToStart:
+                    SendToBase(piece);
+                    break;
+                    
+                case SpecialFieldType.None:
+                default:
+                    break;
+            }
+        }
+        #endregion
+
+        #region Piece Position Helpers
         public B1_MAN_Piece GetPieceAt(int trackIndex)
         {
             if (_trackMap.TryGetValue(trackIndex, out var piece)) return piece;
             return null;
         }
 
-        // Places a piece to a given position (handles track and home indices). Does not validate moves.
         public void PlacePiece(B1_MAN_Piece piece, int position)
         {
-            // remove from previous track index if present
             var prevKeys = _trackMap.Where(kv => kv.Value == piece).Select(kv => kv.Key).ToList();
             foreach (var k in prevKeys) _trackMap.Remove(k);
 
@@ -45,152 +174,374 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
             }
         }
 
-        // Send piece back to base
         public void SendToBase(B1_MAN_Piece piece)
         {
             PlacePiece(piece, -1);
         }
 
-        // Find a player's piece by id
         public B1_MAN_Piece GetPlayerPiece(int playerNumber, int pieceId)
         {
             var pl = Players.FirstOrDefault(p => p.PlayerNumber == playerNumber);
             return pl?.Pieces.FirstOrDefault(pc => pc.Id == pieceId);
         }
+        #endregion
 
-        // Very small helper: get absolute start index on track for a player (where pieces enter the track)
+        #region Player Entry and Home Base
         public int EntryIndexForPlayer(int playerNumber)
         {
-            // Mapping based on actual track layout (im Uhrzeigersinn):
-            // Player 1 (Rot):     Index 30 -> Feld (4,10)
-            // Player 2 (Schwarz): Index 20 -> Feld (10,6)  
-            // Player 3 (Gelb):    Index 10 -> Feld (6,0)
-            // Player 4 (Grün):    Index 0  -> Feld (0,4)
             switch (playerNumber)
             {
-                case 1: return 30; // Rot starts at (4,10)
-                case 2: return 20; // Schwarz starts at (10,6)
-                case 3: return 10; // Gelb starts at (6,0)
-                case 4: return 0;  // Grün starts at (0,4)
-                default: return 0;
+                case 1: return 30; // Rot
+                case 2: return 20; // Schwarz
+                case 3: return 10; // Gelb
+                case 4: return 0;  // Grün
+                default: return 30;
             }
         }
 
-        // Determine whether a track cell is free (or occupier is opponent -> can be captured)
-        public bool IsTrackFree(int index)
-        {
-            return !_trackMap.ContainsKey(index);
-        }
-
-        // Helper to compute home slot index base for player
         public int HomeBaseForPlayer(int playerNumber)
         {
             return HomeBaseStart + (playerNumber - 1) * 4;
         }
 
-        // Simple move procedure (does not enforce dice or full rules) -- returns capture info
-        // Returns (moved, captured, capturedPiece)
-        public (bool moved, bool captured, B1_MAN_Piece capturedPiece) MovePiece(B1_MAN_Piece piece, int steps)
+        public bool IsTrackFree(int index)
         {
-            // In base: only enter on 6
+            return !_trackMap.ContainsKey(index);
+        }
+        #endregion
+
+        #region Move Validation
+        public bool CanMovePiece(B1_MAN_Piece piece, int diceValue)
+        {
+            if (piece == null) return false;
+            
             if (piece.IsInBase)
             {
-                if (steps != 6) return (false, false, null);
+                if (diceValue != 6) return false;
                 int entry = EntryIndexForPlayer(piece.Owner);
                 if (_trackMap.TryGetValue(entry, out var occ))
                 {
-                    if (occ.Owner == piece.Owner)
-                    {
-                        // blocked by own piece
-                        return (false, false, null);
-                    }
-                    else
-                    {
-                        // capture opponent
-                        SendToBase(occ);
-                        PlacePiece(piece, entry);
-                        return (true, true, occ);
-                    }
+                    if (occ.Owner == piece.Owner) return false;
                 }
-                else
-                {
-                    PlacePiece(piece, entry);
-                    return (true, false, null);
-                }
+                return true;
             }
-
-            // On track: may move along track or enter home
+            
             if (piece.IsOnTrack)
             {
                 int owner = piece.Owner;
-                int homeEntry = (EntryIndexForPlayer(owner) + TrackLength - 1) % TrackLength; // square before entry
+                int homeEntry = (EntryIndexForPlayer(owner) + TrackLength - 1) % TrackLength;
                 int stepsToHomeEntry = (homeEntry - piece.Position + TrackLength) % TrackLength;
-
-                if (steps <= stepsToHomeEntry)
+                
+                if (diceValue <= stepsToHomeEntry)
                 {
-                    // stays on track
-                    int newPos = (piece.Position + steps) % TrackLength;
+                    int newPos = (piece.Position + diceValue) % TrackLength;
                     if (_trackMap.TryGetValue(newPos, out var occ))
                     {
-                        if (occ.Owner == owner)
-                        {
-                            // blocked by own piece
-                            return (false, false, null);
-                        }
-                        else
-                        {
-                            SendToBase(occ);
-                            PlacePiece(piece, newPos);
-                            return (true, true, occ);
-                        }
+                        if (occ.Owner == owner) return false;
                     }
-                    else
-                    {
-                        PlacePiece(piece, newPos);
-                        return (true, false, null);
-                    }
+                    return true;
                 }
                 else
                 {
-                    // attempt to enter home
-                    int stepsIntoHome = steps - stepsToHomeEntry - 1; // 0 = first home slot
-                    if (stepsIntoHome < 0) return (false, false, null);
-                    if (stepsIntoHome > 3) return (false, false, null); // cannot move beyond home
-
+                    int stepsIntoHome = diceValue - stepsToHomeEntry - 1;
+                    if (stepsIntoHome < 0) return false;
+                    
+                    if (stepsIntoHome > 3)
+                    {
+                        int newPos = (piece.Position + diceValue) % TrackLength;
+                        if (_trackMap.TryGetValue(newPos, out var occ))
+                        {
+                            if (occ.Owner == owner) return false;
+                        }
+                        return true;
+                    }
+                    
                     int targetHome = HomeBaseForPlayer(owner) + stepsIntoHome;
-                    // check if target home slot free
                     var pl = Players.FirstOrDefault(p => p.PlayerNumber == owner);
-                    if (pl == null) return (false, false, null);
+                    if (pl == null) return false;
                     bool occupied = pl.Pieces.Exists(pc => pc.IsInHome && pc.Position == targetHome);
-                    if (occupied) return (false, false, null);
-
-                    // moving into home: remove from track map and set position
-                    PlacePiece(piece, targetHome);
-                    return (true, false, null);
+                    if (occupied)
+                    {
+                        int newPos = (piece.Position + diceValue) % TrackLength;
+                        if (_trackMap.TryGetValue(newPos, out var occ))
+                        {
+                            if (occ.Owner == owner) return false;
+                        }
+                        return true;
+                    }
+                    return true;
                 }
             }
-
-            // In home: move within home slots
+            
             if (piece.IsInHome)
             {
                 int owner = piece.Owner;
                 int baseHome = HomeBaseForPlayer(owner);
                 int curSlot = piece.Position - baseHome;
-                int newSlot = curSlot + steps;
-                if (newSlot < 0 || newSlot > 3) return (false, false, null);
-                int targetHome = baseHome + newSlot;
+                int newSlot = curSlot + diceValue;
+                if (newSlot < 0 || newSlot > 3) return false;
+                
                 var pl = Players.FirstOrDefault(p => p.PlayerNumber == owner);
-                if (pl == null) return (false, false, null);
-                bool occupied = pl.Pieces.Exists(pc => pc.IsInHome && pc.Position == targetHome);
-                if (occupied) return (false, false, null);
-                PlacePiece(piece, targetHome);
-                return (true, false, null);
+                if (pl == null) return false;
+                
+                for (int slot = curSlot + 1; slot <= newSlot; slot++)
+                {
+                    int checkPos = baseHome + slot;
+                    bool blocked = pl.Pieces.Exists(pc => pc.IsInHome && pc.Position == checkPos);
+                    if (blocked) return false;
+                }
+                
+                return true;
+            }
+            
+            return false;
+        }
+        #endregion
+
+        #region Move Execution
+        public (bool moved, bool captured, B1_MAN_Piece capturedPiece) MovePiece(B1_MAN_Piece piece, int steps)
+        {
+            if (piece.IsInBase)
+            {
+                return MovePieceFromBase(piece, steps);
+            }
+
+            if (piece.IsOnTrack)
+            {
+                return MovePieceOnTrack(piece, steps);
+            }
+
+            if (piece.IsInHome)
+            {
+                return MovePieceInHome(piece, steps);
             }
 
             return (false, false, null);
         }
 
-        // Clears the board: send all pieces back to base and clear track map
+        private (bool moved, bool captured, B1_MAN_Piece capturedPiece) MovePieceFromBase(B1_MAN_Piece piece, int steps)
+        {
+            if (steps != 6) return (false, false, null);
+            int entry = EntryIndexForPlayer(piece.Owner);
+            if (_trackMap.TryGetValue(entry, out var occ))
+            {
+                if (occ.Owner == piece.Owner)
+                {
+                    return (false, false, null);
+                }
+                else
+                {
+                    SendToBase(occ);
+                    PlacePiece(piece, entry);
+                    return (true, true, occ);
+                }
+            }
+            else
+            {
+                PlacePiece(piece, entry);
+                return (true, false, null);
+            }
+        }
+
+        private (bool moved, bool captured, B1_MAN_Piece capturedPiece) MovePieceOnTrack(B1_MAN_Piece piece, int steps)
+        {
+            int owner = piece.Owner;
+            int homeEntry = (EntryIndexForPlayer(owner) + TrackLength - 1) % TrackLength;
+            int stepsToHomeEntry = (homeEntry - piece.Position + TrackLength) % TrackLength;
+
+            if (steps <= stepsToHomeEntry)
+            {
+                return MoveOnTrackStayOnTrack(piece, steps, owner);
+            }
+            else
+            {
+                return MoveOnTrackToHome(piece, steps, owner, stepsToHomeEntry);
+            }
+        }
+
+        private (bool moved, bool captured, B1_MAN_Piece capturedPiece) MoveOnTrackStayOnTrack(B1_MAN_Piece piece, int steps, int owner)
+        {
+            int newPos = (piece.Position + steps) % TrackLength;
+            if (_trackMap.TryGetValue(newPos, out var occ))
+            {
+                if (occ.Owner == owner)
+                {
+                    return (false, false, null);
+                }
+                else
+                {
+                    SendToBase(occ);
+                    PlacePiece(piece, newPos);
+                    ApplySpecialFieldEffect(piece, newPos);
+                    return (true, true, occ);
+                }
+            }
+            else
+            {
+                PlacePiece(piece, newPos);
+                ApplySpecialFieldEffect(piece, newPos);
+                return (true, false, null);
+            }
+        }
+
+        private (bool moved, bool captured, B1_MAN_Piece capturedPiece) MoveOnTrackToHome(B1_MAN_Piece piece, int steps, int owner, int stepsToHomeEntry)
+        {
+            int stepsIntoHome = steps - stepsToHomeEntry - 1;
+            if (stepsIntoHome < 0) return (false, false, null);
+            
+            if (stepsIntoHome > 3)
+            {
+                return MoveOnTrackPassHome(piece, steps, owner);
+            }
+
+            int targetHome = HomeBaseForPlayer(owner) + stepsIntoHome;
+            var pl = Players.FirstOrDefault(p => p.PlayerNumber == owner);
+            if (pl == null) return (false, false, null);
+            bool occupied = pl.Pieces.Exists(pc => pc.IsInHome && pc.Position == targetHome);
+            if (occupied)
+            {
+                return MoveOnTrackPassHome(piece, steps, owner);
+            }
+
+            PlacePiece(piece, targetHome);
+            return (true, false, null);
+        }
+
+        private (bool moved, bool captured, B1_MAN_Piece capturedPiece) MoveOnTrackPassHome(B1_MAN_Piece piece, int steps, int owner)
+        {
+            int newPos = (piece.Position + steps) % TrackLength;
+            if (_trackMap.TryGetValue(newPos, out var occ))
+            {
+                if (occ.Owner == owner)
+                {
+                    return (false, false, null);
+                }
+                else
+                {
+                    SendToBase(occ);
+                    PlacePiece(piece, newPos);
+                    ApplySpecialFieldEffect(piece, newPos);
+                    return (true, true, occ);
+                }
+            }
+            else
+            {
+                PlacePiece(piece, newPos);
+                ApplySpecialFieldEffect(piece, newPos);
+                return (true, false, null);
+            }
+        }
+
+        private (bool moved, bool captured, B1_MAN_Piece capturedPiece) MovePieceInHome(B1_MAN_Piece piece, int steps)
+        {
+            int owner = piece.Owner;
+            int baseHome = HomeBaseForPlayer(owner);
+            int curSlot = piece.Position - baseHome;
+            int newSlot = curSlot + steps;
+            if (newSlot < 0 || newSlot > 3) return (false, false, null);
+            
+            int targetHome = baseHome + newSlot;
+            var pl = Players.FirstOrDefault(p => p.PlayerNumber == owner);
+            if (pl == null) return (false, false, null);
+            
+            for (int slot = curSlot + 1; slot <= newSlot; slot++)
+            {
+                int checkPos = baseHome + slot;
+                bool blocked = pl.Pieces.Exists(pc => pc.IsInHome && pc.Position == checkPos);
+                if (blocked) return (false, false, null);
+            }
+            
+            PlacePiece(piece, targetHome);
+            return (true, false, null);
+        }
+        #endregion
+
+        #region Turn Management
+        public bool TryMoveSelectedPiece()
+        {
+            if (SelectedPiece == null || !Dice.HasBeenRolled) return false;
+            
+            var result = MovePiece(SelectedPiece, Dice.CurrentValue);
+            return result.moved;
+        }
+        
+        public void EndTurn()
+        {
+            Dice.FullReset();
+            SelectedPiece = null;
+            
+            if (CanRollAgain)
+            {
+                CanRollAgain = false;
+                return;
+            }
+            
+            CurrentPlayer = (CurrentPlayer % Players.Count) + 1;
+            
+            if (MustSkipNextTurn)
+            {
+                MustSkipNextTurn = false;
+                CurrentPlayer = (CurrentPlayer % Players.Count) + 1;
+            }
+            
+            var currentPlayerObj = Players.FirstOrDefault(p => p.PlayerNumber == CurrentPlayer);
+            if (currentPlayerObj != null)
+            {
+                bool allInBase = currentPlayerObj.Pieces.All(pc => pc.IsInBase);
+                
+                if (allInBase)
+                {
+                    RollAttemptsRemaining = 3;
+                }
+                else
+                {
+                    bool anyOnTrack = currentPlayerObj.Pieces.Any(pc => pc.IsOnTrack);
+                    bool anyInBase = currentPlayerObj.Pieces.Any(pc => pc.IsInBase);
+                    
+                    if (!anyOnTrack && anyInBase)
+                    {
+                        int baseHome = HomeBaseForPlayer(CurrentPlayer);
+                        var homePieces = currentPlayerObj.Pieces.Where(pc => pc.IsInHome).ToList();
+                        
+                        bool allHomeOnFinalPositions = true;
+                        
+                        if (homePieces.Count > 0)
+                        {
+                            var sortedHome = homePieces.OrderByDescending(pc => pc.Position).ToList();
+                            
+                            if (sortedHome[0].Position != baseHome + 3)
+                            {
+                                allHomeOnFinalPositions = false;
+                            }
+                            else if (sortedHome.Count >= 2 && sortedHome[1].Position != baseHome + 2)
+                            {
+                                allHomeOnFinalPositions = false;
+                            }
+                            else if (sortedHome.Count >= 3 && sortedHome[2].Position != baseHome + 1)
+                            {
+                                allHomeOnFinalPositions = false;
+                            }
+                        }
+                        
+                        if (allHomeOnFinalPositions)
+                        {
+                            RollAttemptsRemaining = 3;
+                        }
+                        else
+                        {
+                            RollAttemptsRemaining = 0;
+                        }
+                    }
+                    else
+                    {
+                        RollAttemptsRemaining = 0;
+                    }
+                }
+            }
+        }
+        #endregion
+
+        #region Utilities
         public void Clear()
         {
             _trackMap.Clear();
@@ -201,13 +552,14 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
                     pc.SetPosition(-1);
                 }
             }
+            Dice.Reset();
+            CurrentPlayer = 1;
+            SelectedPiece = null;
         }
 
-        // IGameField implementation: simple painter acceptance check
         public bool CanBePaintedBy(OOPGames.IPaintGame painter)
         {
             if (painter == null) return false;
-            // Accept painter that we provide (B1_MAN_Paint) or any painter that contains "MAN" in its name
             try
             {
                 if (!string.IsNullOrEmpty(painter.Name) && painter.Name.Contains("MAN")) return true;
@@ -215,5 +567,6 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
             catch { }
             return false;
         }
+        #endregion
     }
 }

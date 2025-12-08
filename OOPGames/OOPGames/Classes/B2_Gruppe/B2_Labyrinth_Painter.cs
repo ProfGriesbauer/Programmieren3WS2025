@@ -10,14 +10,12 @@ namespace OOPGames
      * B2 Labyrinth Game - Painter Component (2 Players)
      * 
      * Zeichnet das Labyrinth mit 2 Spielern in Vogelperspektive
-     * - Helles, freundliches Design
-     * - Männchen statt Punkte für Spieler
-     * - Sichtfelder für beide Spieler
-     * - Ziel in der Mitte
+     
      ******************************************************************************/
 
     #region Abstract Base Classes
     /// Abstrakte Basis für Labyrinth-Painter
+    /// Verwendet IB2_MazeGameState Interface für saubere Entkopplung von Rules
     public abstract class B2_AbstractMazePainter : IPaintGame2
     {
         public abstract string Name { get; }
@@ -25,19 +23,28 @@ namespace OOPGames
         public void PaintGameField(Canvas canvas, IGameField currentField)
         {
             if (canvas == null) return;
-            if (currentField is B2_AbstractMazeField mazeField)
+            
+            // Hole Rules vom Framework (OOPGamesManager verwaltet aktive Rules-Instanz)
+            var rules = OOPGamesManager.Singleton.ActiveRules;
+            
+            if (currentField is B2_AbstractMazeField mazeField && rules is IB2_MazeGameState gameState)
             {
-                PaintMazeField(canvas, mazeField);
+                // Nutze neue Überladung mit IB2_MazeGameState Interface (saubere Entkopplung!)
+                PaintMazeField(canvas, mazeField, gameState);
             }
         }
 
         public void TickPaintGameField(Canvas canvas, IGameField currentField)
         {
-            // Tick-basiertes Zeichnen für automatisches Update
+            // Tick-basiertes Zeichnen für automatisches Update (40ms)
             PaintGameField(canvas, currentField);
         }
 
-        protected abstract void PaintMazeField(Canvas canvas, B2_AbstractMazeField field);
+        /// Abgeleitete Klassen müssen das Labyrinth zeichnen
+        /// <param name="canvas">Zeichenfläche</param>
+        /// <param name="field">Spielfeld mit Labyrinth-Daten</param>
+        /// <param name="gameState">Interface für Countdown/GameEnded - KEINE zirkuläre Referenz!</param>
+        protected abstract void PaintMazeField(Canvas canvas, B2_AbstractMazeField field, IB2_MazeGameState gameState);
     }
 
     #endregion
@@ -48,9 +55,9 @@ namespace OOPGames
     {
         private const int ViewRadius = 2; // Sichtradius um Spieler (2 = 5x5 Sichtfeld)
         
-        public override string Name => "B2 - Maze Painter (2 Players)";
+        public override string Name => "B2 - Labyrinth Painter (2 Players)";
 
-        protected override void PaintMazeField(Canvas canvas, B2_AbstractMazeField field)
+        protected override void PaintMazeField(Canvas canvas, B2_AbstractMazeField field, IB2_MazeGameState gameState)
         {
             if (canvas == null || field == null) return;
 
@@ -61,6 +68,13 @@ namespace OOPGames
             double canvasW = canvas.ActualWidth > 0 ? canvas.ActualWidth : 600;
             double canvasH = canvas.ActualHeight > 0 ? canvas.ActualHeight : 600;
 
+            // Prüfe ob Countdown läuft - dann nur Countdown anzeigen
+            if (gameState.IsCountdownActive)
+            {
+                DrawCountdown(canvas, canvasW, canvasH, gameState.RemainingCountdown);
+                return;
+            }
+
             // Gesamtes Feld zeichnen (Vogelperspektive)
             double cellW = canvasW / field.Cols;
             double cellH = canvasH / field.Rows;
@@ -70,16 +84,8 @@ namespace OOPGames
             double offsetX = (canvasW - (field.Cols * cellSize)) / 2;
             double offsetY = (canvasH - (field.Rows * cellSize)) / 2;
 
-            // Prüfe ob Spiel beendet ist (für Rules-Cast)
-            bool gameEnded = false;
-            if (field is B2_AbstractMazeField)
-            {
-                // Suche nach der Rules-Instanz über CanBeRuledBy
-                var rulesType = typeof(B2_MazeRules);
-                // Wir nutzen einen Workaround: Prüfe ob ein Spieler am Ziel ist
-                gameEnded = (field.Player1Row == field.GoalRow && field.Player1Col == field.GoalCol) ||
-                           (field.Player2Row == field.GoalRow && field.Player2Col == field.GoalCol);
-            }
+            // Nutze IB2_MazeGameState statt field.rules (saubere Entkopplung!)
+            bool gameEnded = gameState.GameEnded;
 
             // Zeichne Sichtfelder nur wenn Spiel noch läuft
             if (!gameEnded)
@@ -163,12 +169,6 @@ namespace OOPGames
                         canvas.Children.Add(goalStar);
                     }
                 }
-            }
-
-            // Zeichne Countdown wenn aktiv
-            if (field.IsCountdownActive)
-            {
-                DrawCountdown(canvas, canvasW, canvasH, field.RemainingCountdown);
             }
             
             // Zeichne HUD
