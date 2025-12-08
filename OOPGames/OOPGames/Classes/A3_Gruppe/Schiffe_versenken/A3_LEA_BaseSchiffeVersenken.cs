@@ -87,4 +87,19 @@ namespace OOPGames
             return null;
         }
     }
+
+    // Abstrakte Basis-Move
+    public abstract class A3_LEA_BaseSchiffeMove : IA3_LEA_SchiffeMove
+    {
+        public abstract int X { get; }
+        public abstract int Y { get; }
+        public abstract int PlayerNumber { get; }
+        public abstract MoveType MoveType { get; }
+
+        // IRowMove Implementation
+        public int Row => Y;
+
+        // IColumnMove Implementation
+        public int Column => X;
+    }
 }

@@ -3126,12 +3126,12 @@ namespace OOPGames
     }
 
     // Move-Klasse
-    public class A3_LEA_SchiffeMove : IA3_LEA_SchiffeMove
+    public class A3_LEA_SchiffeMove : A3_LEA_BaseSchiffeMove
     {
-        public int X { get; }
-        public int Y { get; }
-        public int PlayerNumber { get; }
-        public MoveType MoveType => MoveType.click;
+        public override int X { get; }
+        public override int Y { get; }
+        public override int PlayerNumber { get; }
+        public override MoveType MoveType => MoveType.click;
 
         public A3_LEA_SchiffeMove(int x, int y, int playerNumber)
         {

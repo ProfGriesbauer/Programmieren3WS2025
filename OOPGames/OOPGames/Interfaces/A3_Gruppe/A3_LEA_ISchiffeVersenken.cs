@@ -41,7 +41,7 @@ namespace OOPGames
     }
 
     // Interface für einen Zug
-    public interface IA3_LEA_SchiffeMove : IPlayMove
+    public interface IA3_LEA_SchiffeMove : IPlayMove, IRowMove, IColumnMove
     {
         int X { get; }
         int Y { get; }
