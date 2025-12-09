@@ -3,9 +3,9 @@ using System.Windows.Threading;
 
 namespace OOPGames
 {
-    /// <summary>
+
     /// Verwaltet Game-Timer und Countdown
-    /// </summary>
+
     public class GameTimerManager
     {
         private readonly DispatcherTimer _gameTimer;

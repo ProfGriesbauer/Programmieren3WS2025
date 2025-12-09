@@ -1,8 +1,8 @@
 namespace OOPGames
 {
-    /// <summary>
+
     /// Score-Counter für das Snake-Spiel mit Unterstützung für zwei Spieler und Highscore
-    /// </summary>
+
     public static class A5_Score
     {
         private static int _score1 = 0;
