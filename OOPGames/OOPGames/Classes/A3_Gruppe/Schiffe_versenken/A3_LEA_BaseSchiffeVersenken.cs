@@ -26,6 +26,45 @@ namespace OOPGames
         }
     }
 
+    // Abstrakte Basis-Implementierung für das Spielfeld
+    public abstract class A3_LEA_BaseSchiffeField : IA3_LEA_SchiffeField
+    {
+        protected int[,] _grid;
+        public virtual int Width { get; protected set; }
+        public virtual int Height { get; protected set; }
+
+        public virtual int this[int x, int y]
+        {
+            get => IsValidPosition(x, y) ? _grid[x, y] : -1;
+            set { if (IsValidPosition(x, y)) _grid[x, y] = value; }
+        }
+
+        public virtual bool IsValidPosition(int x, int y) => x >= 0 && x < Width && y >= 0 && y < Height;
+
+        public virtual List<(int x, int y, int shipId)> GetOccupiedCells()
+        {
+            var occ = new List<(int x, int y, int shipId)>();
+            for (int xx = 0; xx < Width; xx++)
+            {
+                for (int yy = 0; yy < Height; yy++)
+                {
+                    if (_grid[xx, yy] != 0)
+                        occ.Add((xx, yy, _grid[xx, yy]));
+                }
+            }
+            return occ;
+        }
+
+        public virtual bool CanBePaintedBy(IPaintGame painter) => painter is IA3_LEA_SchiffePaint;
+
+        protected A3_LEA_BaseSchiffeField(int width, int height)
+        {
+            Width = width;
+            Height = height;
+            _grid = new int[width, height];
+        }
+    }
+
     // ============= ABSTRACT BASE CLASSES =============
     
     // Abstrakte Basis-Rules
@@ -42,6 +81,10 @@ namespace OOPGames
         public abstract int CheckIfPLayerWon();
         public abstract void ClearField();
         public abstract void DoMove(IPlayMove move);
+        
+        // IGameRules2 methods
+        public abstract void StartedGameCall();
+        public abstract void TickGameCall();
     }
 
     // Abstrakte Basis-Painter
@@ -50,6 +93,9 @@ namespace OOPGames
         public abstract string Name { get; }
         public abstract void PaintSchiffeField(System.Windows.Controls.Canvas canvas, IA3_LEA_SchiffeField field, List<A3_LEA_Ship> ships);
         public abstract void PaintGameField(System.Windows.Controls.Canvas canvas, IGameField currentField);
+        
+        // IPaintGame2 method
+        public abstract void TickPaintGameField(System.Windows.Controls.Canvas canvas, IGameField currentField);
     }
 
     // Abstrakte Basis-Human Player
@@ -68,6 +114,9 @@ namespace OOPGames
                 return GetMove(selection, (IA3_LEA_SchiffeField)field);
             return null;
         }
+        
+        // IHumanGamePlayerWithMouse method
+        public abstract void OnMouseMoved(System.Windows.Input.MouseEventArgs e);
     }
 
     // Abstrakte Basis-Computer Player
@@ -86,5 +135,49 @@ namespace OOPGames
                 return GetMove((IA3_LEA_SchiffeField)field);
             return null;
         }
+    }
+
+    // Abstrakte Basis-Move
+    public abstract class A3_LEA_BaseSchiffeMove : IA3_LEA_SchiffeMove
+    {
+        public abstract int X { get; }
+        public abstract int Y { get; }
+        public abstract int PlayerNumber { get; }
+        public abstract MoveType MoveType { get; }
+
+        // IRowMove Implementation
+        public int Row => Y;
+
+        // IColumnMove Implementation
+        public int Column => X;
+    }
+
+    // ============= SHIP VISUALIZER =============
+
+    // Abstrakte Basis-Klasse für Schiff-Visualisierung
+    public abstract class A3_LEA_BaseShipVisualizer : IA3_LEA_ShipVisualizer
+    {
+        protected A3_LEA_Ship _ship;
+        protected double _x;
+        protected double _y;
+        protected double _cellSize;
+        protected bool _isHorizontal;
+
+        public virtual double X => _x;
+        public virtual double Y => _y;
+        public virtual double CellSize => _cellSize;
+        public virtual bool IsHorizontal => _isHorizontal;
+        public virtual int ShipSize => _ship?.Size ?? 0;
+
+        protected A3_LEA_BaseShipVisualizer(A3_LEA_Ship ship, double x, double y, double cellSize, bool isHorizontal)
+        {
+            _ship = ship;
+            _x = x;
+            _y = y;
+            _cellSize = cellSize;
+            _isHorizontal = isHorizontal;
+        }
+
+        public abstract System.Windows.UIElement BuildElement();
     }
 }

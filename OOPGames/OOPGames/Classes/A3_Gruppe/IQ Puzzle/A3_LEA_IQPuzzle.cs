@@ -12,6 +12,28 @@ namespace OOPGames
      * IQ PUZZLER PRO 2D - Vollständige Implementierung
      **************************************************************************/
 
+    #region Click Selection
+
+    /// <summary>
+    /// Click selection implementation for IQ Puzzle
+    /// </summary>
+    public class A3_LEA_ClickSelection : A3_LEA_BaseClickSelection
+    {
+        public A3_LEA_ClickSelection(int clickX, int clickY, int changedButton)
+        {
+            XClickPos = clickX;
+            YClickPos = clickY;
+            ChangedButton = changedButton;
+        }
+
+        public override int XClickPos { get; }
+        public override int YClickPos { get; }
+        public override int ChangedButton { get; }
+        public override MoveType MoveType => MoveType.click;
+    }
+
+    #endregion
+
     #region Puzzle Pieces (Polyominos)
 
     /// <summary>
@@ -271,28 +293,22 @@ namespace OOPGames
     /// <summary>
     /// Ein Zug im IQ Puzzle
     /// </summary>
-    public class A3_LEA_IQPuzzleMove : IA3_LEA_IQPuzzleMove
+    public class A3_LEA_IQPuzzleMove : A3_LEA_BaseIQPuzzleMove
     {
-        private IA3_LEA_IQPuzzlePiece _piece;
-        private int _x;
-        private int _y;
-        private int _playerNumber;
-        private bool _isRemove;
-
         public A3_LEA_IQPuzzleMove(IA3_LEA_IQPuzzlePiece piece, int x, int y, int playerNumber, bool isRemove = false)
         {
-            _piece = piece;
-            _x = x;
-            _y = y;
-            _playerNumber = playerNumber;
-            _isRemove = isRemove;
+            Piece = piece;
+            X = x;
+            Y = y;
+            PlayerNumber = playerNumber;
+            IsRemove = isRemove;
         }
 
-        public IA3_LEA_IQPuzzlePiece Piece => _piece;
-        public int X => _x;
-        public int Y => _y;
-        public int PlayerNumber => _playerNumber;
-        public bool IsRemove => _isRemove;
+        public override IA3_LEA_IQPuzzlePiece Piece { get; }
+        public override int X { get; }
+        public override int Y { get; }
+        public override int PlayerNumber { get; }
+        public override bool IsRemove { get; }
     }
 
     #endregion
@@ -839,6 +855,12 @@ namespace OOPGames
         private bool _winAnimationComplete = false;
 
         public override string Name => "A3 LEA IQ Puzzler Pro Paint";
+
+        public override void TickPaintGameField(Canvas canvas, IGameField currentField)
+        {
+            // Nutze die gleiche Logik wie PaintGameField, aber mit Live-Updates
+            PaintGameField(canvas, currentField);
+        }
 
         public override void PaintIQPuzzleField(Canvas canvas, IA3_LEA_IQPuzzleField field,
             List<IA3_LEA_IQPuzzlePiece> availablePieces, IA3_LEA_IQPuzzlePiece selectedPiece)

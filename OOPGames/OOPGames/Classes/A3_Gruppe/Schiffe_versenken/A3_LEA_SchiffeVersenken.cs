@@ -7,31 +7,14 @@ using System.Windows.Shapes;
 
 namespace OOPGames
 {
-    // 10x10 Spielfeld
-    public class A3_LEA_SchiffeField : IA3_LEA_SchiffeField
+    // 10x10 Spielfeld (konkrete Implementierung, leitet von der neuen Basis ab)
+    public class A3_LEA_SchiffeField : A3_LEA_BaseSchiffeField
     {
-        private int[,] _grid = new int[10, 10];
-        public int Width => 10;
-        public int Height => 10;
-        public int this[int x, int y]
-        {
-            get => IsValidPosition(x, y) ? _grid[x, y] : -1;
-            set { if (IsValidPosition(x, y)) _grid[x, y] = value; }
-        }
-        public bool IsValidPosition(int x, int y) => x >= 0 && x < 10 && y >= 0 && y < 10;
-        public List<(int x, int y, int shipId)> GetOccupiedCells()
-        {
-            var occ = new List<(int x, int y, int shipId)>();
-            for (int x = 0; x < 10; x++)
-                for (int y = 0; y < 10; y++)
-                    if (_grid[x, y] > 0) occ.Add((x, y, _grid[x, y]));
-            return occ;
-        }
-        public bool CanBePaintedBy(IPaintGame painter) => painter is IA3_LEA_SchiffePaint;
+        public A3_LEA_SchiffeField() : base(10, 10) { }
     }
 
     // Schiffeversenken-Rules
-    public class A3_LEA_SchiffeRules : A3_LEA_BaseSchiffeRules, IGameRules2
+    public class A3_LEA_SchiffeRules : A3_LEA_BaseSchiffeRules
     {
         // Zwei Felder: jeweils ein Feld pro Spieler
         private A3_LEA_SchiffeField _field = new A3_LEA_SchiffeField();
@@ -298,12 +281,12 @@ namespace OOPGames
         }
 
         // IGameRules2 Implementation
-        public void StartedGameCall()
+        public override void StartedGameCall()
         {
             ClearField();
         }
 
-        public void TickGameCall()
+        public override void TickGameCall()
         {
             // Update Animation für versenkte Schiffe
             var keysToUpdate = SunkShipAnimationTime.Keys.ToList();
@@ -411,7 +394,7 @@ namespace OOPGames
             }
         }
 
-        public void TickPaintGameField(Canvas canvas, IGameField currentField)
+        public override void TickPaintGameField(Canvas canvas, IGameField currentField)
         {
             // Nutze die gleiche Logik wie PaintGameField für Tick-basiertes Repainting
             PaintGameField(canvas, currentField);
@@ -467,7 +450,8 @@ namespace OOPGames
                 {
                     if (ship.X >= 0 && ship.Y >= 0)
                     {
-                        DrawWarship(canvas, ship, baseX, baseY, cellSize, ship.IsHorizontal);
+                        var visualizer = new A3_LEA_ShipVisualizer(ship, baseX, baseY, cellSize, ship.IsHorizontal);
+                        canvas.Children.Add(visualizer.BuildElement());
                     }
                 }
 
@@ -722,7 +706,8 @@ namespace OOPGames
                 {
                     if (s.X >= 0 && s.Y >= 0 && s.Hits < s.Size) // Nur nicht-versenkte Schiffe
                     {
-                        DrawWarship(canvas, s, topBaseX, topBaseY, smallCell, s.IsHorizontal);
+                        var viz = new A3_LEA_ShipVisualizer(s, topBaseX, topBaseY, smallCell, s.IsHorizontal);
+                        canvas.Children.Add(viz.BuildElement());
                     }
                 }
             }
@@ -823,7 +808,8 @@ namespace OOPGames
                         double fadeAlpha = (animTime - 1.5) / 1.0; // 0 bis 1
                         fadeAlpha = System.Math.Min(1.0, fadeAlpha);
                         
-                        DrawWarship(canvas, s, topBaseX, topBaseY, smallCell, s.IsHorizontal);
+                        var viz = new A3_LEA_ShipVisualizer(s, topBaseX, topBaseY, smallCell, s.IsHorizontal);
+                        canvas.Children.Add(viz.BuildElement());
                         
                         // Weißer Fade-Overlay
                         if (fadeAlpha < 1.0)
@@ -848,7 +834,8 @@ namespace OOPGames
                     // Phase 3 (2.5s+): Schiff vollständig sichtbar
                     else
                     {
-                        DrawWarship(canvas, s, topBaseX, topBaseY, smallCell, s.IsHorizontal);
+                        var viz = new A3_LEA_ShipVisualizer(s, topBaseX, topBaseY, smallCell, s.IsHorizontal);
+                        canvas.Children.Add(viz.BuildElement());
                     }
                 }
             }
@@ -1298,7 +1285,8 @@ namespace OOPGames
                 {
                     if (s.X >= 0 && s.Y >= 0 && s.Hits < s.Size) // Nur nicht-versenkte Schiffe
                     {
-                        DrawWarship(canvas, s, bottomBaseX, bottomBaseY, smallCell, s.IsHorizontal);
+                        var viz = new A3_LEA_ShipVisualizer(s, bottomBaseX, bottomBaseY, smallCell, s.IsHorizontal);
+                        canvas.Children.Add(viz.BuildElement());
                     }
                 }
             }
@@ -1398,7 +1386,8 @@ namespace OOPGames
                         double fadeAlpha = (animTime - 1.5) / 1.0; // 0 bis 1
                         fadeAlpha = System.Math.Min(1.0, fadeAlpha);
                         
-                        DrawWarship(canvas, s, bottomBaseX, bottomBaseY, smallCell, s.IsHorizontal);
+                        var viz = new A3_LEA_ShipVisualizer(s, bottomBaseX, bottomBaseY, smallCell, s.IsHorizontal);
+                        canvas.Children.Add(viz.BuildElement());
                         
                         // Weißer Fade-Overlay
                         if (fadeAlpha < 1.0)
@@ -1423,7 +1412,8 @@ namespace OOPGames
                     // Phase 3 (2.5s+): Schiff vollständig sichtbar
                     else
                     {
-                        DrawWarship(canvas, s, bottomBaseX, bottomBaseY, smallCell, s.IsHorizontal);
+                        var viz = new A3_LEA_ShipVisualizer(s, bottomBaseX, bottomBaseY, smallCell, s.IsHorizontal);
+                        canvas.Children.Add(viz.BuildElement());
                     }
                 }
             }
@@ -1452,21 +1442,9 @@ namespace OOPGames
             Canvas.SetLeft(btn2Text, btn2X); Canvas.SetTop(btn2Text, btn2Y + 7); canvas.Children.Add(btn2Text);
         }
 
-        // Hilfsmethode um Elemente mit IsHitTestVisible = false zum Canvas hinzuzufügen
-        private void AddNonInteractiveElement(Canvas canvas, System.Windows.UIElement element, double left, double top, int zIndex)
+        // Statische Hilfs-Methode für detailliertes Warship-Rendering
+        public static void RenderWarship(Canvas canvas, A3_LEA_Ship ship, double startX, double startY, double cellSize, bool horizontal)
         {
-            element.IsHitTestVisible = false;
-            Canvas.SetLeft(element, left);
-            Canvas.SetTop(element, top);
-            Canvas.SetZIndex(element, zIndex);
-            canvas.Children.Add(element);
-        }
-
-        private void DrawWarship(Canvas canvas, A3_LEA_Ship ship, double baseX, double baseY, double cellSize, bool horizontal)
-        {
-            // Merke die Anzahl der Elemente vor dem Zeichnen des Schiffs
-            int childrenCountBefore = canvas.Children.Count;
-            
             // Realistische Kriegsschiff-Farben (Vogelperspektive)
             var hullColor = new LinearGradientBrush(
                 Color.FromRgb(55, 65, 75),    // Dunkel
@@ -1480,8 +1458,6 @@ namespace OOPGames
             var orangeColor = new SolidColorBrush(Color.FromRgb(220, 140, 60)); // Orange für Rettungsboote
             
             int shipSize = ship.Size;
-            double startX = baseX + ship.X * cellSize;
-            double startY = baseY + ship.Y * cellSize;
 
             if (horizontal)
             {
@@ -2622,12 +2598,16 @@ namespace OOPGames
                     canvas.Children.Add(flag);
                 }
             }
-            
-            // Setze alle Schiffs-Elemente auf IsHitTestVisible = false, damit Klicks durchgehen
-            for (int i = childrenCountBefore; i < canvas.Children.Count; i++)
-            {
-                canvas.Children[i].IsHitTestVisible = false;
-            }
+        }
+
+        // Helper für AddNonInteractiveElement
+        private static void AddNonInteractiveElement(Canvas canvas, System.Windows.UIElement element, double x, double y, int zIndex)
+        {
+            Canvas.SetLeft(element, x);
+            Canvas.SetTop(element, y);
+            Canvas.SetZIndex(element, zIndex);
+            element.IsHitTestVisible = false;
+            canvas.Children.Add(element);
         }
 
         private void DrawMiniWarship(Canvas canvas, A3_LEA_Ship ship, double startX, double startY, double cellSize, bool horizontal, bool isPlaced)
@@ -2716,7 +2696,7 @@ namespace OOPGames
     }
 
     // Human Player
-    public class A3_LEA_HumanSchiffePlayer : A3_LEA_BaseHumanSchiffePlayer, IHumanGamePlayerWithMouse
+    public class A3_LEA_HumanSchiffePlayer : A3_LEA_BaseHumanSchiffePlayer
     {
         private int _playerNumber = 1;
         public override string Name => "A3 LEA Schiffe Human";
@@ -2724,7 +2704,7 @@ namespace OOPGames
         public override void SetPlayerNumber(int playerNumber) => _playerNumber = playerNumber;
         public override IGamePlayer Clone() => new A3_LEA_HumanSchiffePlayer();
 
-        public void OnMouseMoved(System.Windows.Input.MouseEventArgs e)
+        public override void OnMouseMoved(System.Windows.Input.MouseEventArgs e)
         {
             var rules = OOPGamesManager.Singleton.ActiveRules as A3_LEA_SchiffeRules;
             if (rules != null && rules.IsSetupPhase)
@@ -3126,12 +3106,12 @@ namespace OOPGames
     }
 
     // Move-Klasse
-    public class A3_LEA_SchiffeMove : IA3_LEA_SchiffeMove
+    public class A3_LEA_SchiffeMove : A3_LEA_BaseSchiffeMove
     {
-        public int X { get; }
-        public int Y { get; }
-        public int PlayerNumber { get; }
-        public MoveType MoveType => MoveType.click;
+        public override int X { get; }
+        public override int Y { get; }
+        public override int PlayerNumber { get; }
+        public override MoveType MoveType => MoveType.click;
 
         public A3_LEA_SchiffeMove(int x, int y, int playerNumber)
         {
@@ -3141,5 +3121,63 @@ namespace OOPGames
         }
 
         
+    }
+
+    // ============= SHIP VISUALIZER =============
+
+    // Konkrete Klasse für Schiff-Visualisierung
+    public class A3_LEA_ShipVisualizer : A3_LEA_BaseShipVisualizer
+    {
+        private double _sunkAnimationTime = 0;
+
+        public A3_LEA_ShipVisualizer(A3_LEA_Ship ship, double x, double y, double cellSize, bool isHorizontal)
+            : base(ship, x, y, cellSize, isHorizontal)
+        {
+        }
+
+        public void SetSunkAnimationTime(double time)
+        {
+            _sunkAnimationTime = time;
+        }
+
+        public override System.Windows.UIElement BuildElement()
+        {
+            var canvas = new Canvas();
+            
+            if (_ship == null) return canvas;
+
+            // Berechne absolute Positionen
+            double shipX = _x;
+            double shipY = _y;
+
+            // Zeichne das Schiff mit der aktuellen DrawWarship-Logik
+            DrawShip(canvas, _ship, shipX, shipY, _cellSize, _isHorizontal, _sunkAnimationTime);
+
+            return canvas;
+        }
+
+        /// <summary>
+        /// Zeichnet ein Schiff - verwendet jetzt die Painter DrawWarship Logik
+        /// </summary>
+        private void DrawShip(Canvas canvas, A3_LEA_Ship ship, double baseX, double baseY, double cellSize, bool horizontal, double sunkAnimationTime)
+        {
+            if (ship == null) return;
+
+            // Verwende die vollständige DrawWarship-Rendering-Logik vom Painter
+            // Note: Die Koordinaten baseX/baseY sind bereits absolute Positionen
+            int childrenCountBefore = canvas.Children.Count;
+            
+            double startX = baseX + ship.X * cellSize;
+            double startY = baseY + ship.Y * cellSize;
+            
+            // Rufe die statische Helper-Methode auf (diese wird gleich aus dem Painter verschoben)
+            A3_LEA_SchiffePaint.RenderWarship(canvas, ship, startX, startY, cellSize, horizontal);
+            
+            // Setze alle Schiffs-Elemente auf IsHitTestVisible = false
+            for (int i = childrenCountBefore; i < canvas.Children.Count; i++)
+            {
+                canvas.Children[i].IsHitTestVisible = false;
+            }
+        }
     }
 }
