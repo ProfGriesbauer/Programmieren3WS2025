@@ -743,7 +743,8 @@ namespace OOPGames.B1_Gruppe.MenschAergereDichNicht
                 FontSize = 40,
                 FontWeight = FontWeights.Bold,
                 Foreground = Brushes.Black,
-                TextAlignment = TextAlignment.Center
+                TextAlignment = TextAlignment.Center,
+                IsHitTestVisible = false  // Klicks fallen durch zum Rectangle
             };
             diceValue.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
             Canvas.SetLeft(diceValue, diceX + diceSize/2 - diceValue.DesiredSize.Width/2);
