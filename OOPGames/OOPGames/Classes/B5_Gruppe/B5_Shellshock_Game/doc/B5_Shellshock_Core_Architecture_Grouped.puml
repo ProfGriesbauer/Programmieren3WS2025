@@ -1,0 +1,97 @@
+@startuml B5_Shellshock_Core_Architecture_Grouped
+
+title B5 Shellshock - Core Architecture (Grouped)
+
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FEFEFE
+skinparam roundcorner 5
+skinparam linetype ortho
+skinparam nodesep 80
+skinparam ranksep 80
+
+top to bottom direction
+
+package "Framework Interfaces" #E6F3FF {
+    interface IGameRules2
+    interface IGameField
+    interface IPaintGame2
+    interface IHumanGamePlayer
+    interface IPlayerMove
+}
+
+package "Game Classes" #FFE6E6 {
+    
+    package "World Generation" #D4E6F1 {
+        interface ITerrainGenerator
+        abstract class B5_Shellshock_TerrainGeneratorBase
+        class B5_Shellshock_TerrainGeneratorFactory
+        class B5_Shellshock_FlatTerrainGenerator
+        class B5_Shellshock_HillTerrainGenerator
+        class B5_Shellshock_MountainTerrainGenerator
+    }
+    
+    package "Game Entities" #D5F4E6 {
+        interface IRenderable
+        interface ICollidable
+        abstract class B5_Shellshock_GameEntity
+        abstract class B5_Shellshock_CollidableEntity
+        class B5_Shellshock_Tank
+        class B5_Shellshock_HealthPack
+        class B5_Shellshock_Projectile
+    }
+    
+    package "Game Management" #F9E6E6 {
+        class B5_Shellshock_Rules
+        class B5_Shellshock_Field
+        class B5_Shellshock_Painter
+        class B5_Shellshock_Terrain
+        class B5_Shellshock_HumanPlayer
+        class B5_Shellshock_Move
+        class B5_Shellshock_Point
+    }
+}
+
+' Force Framework Interfaces to top
+IGameRules2 -[hidden]down-> "Game Classes"
+IGameField -[hidden]down-> "Game Classes"
+IPaintGame2 -[hidden]down-> "Game Classes"
+IHumanGamePlayer -[hidden]down-> "Game Classes"
+IPlayerMove -[hidden]down-> "Game Classes"
+
+' Framework Implementation (Only Game Management interfaces with Framework)
+IGameRules2 <|.. B5_Shellshock_Rules
+IGameField <|.. B5_Shellshock_Field
+IPaintGame2 <|.. B5_Shellshock_Painter
+IHumanGamePlayer <|.. B5_Shellshock_HumanPlayer
+IPlayerMove <|.. B5_Shellshock_Move
+
+' World Generation Hierarchy
+ITerrainGenerator <|.. B5_Shellshock_TerrainGeneratorBase
+B5_Shellshock_TerrainGeneratorBase <|-- B5_Shellshock_FlatTerrainGenerator
+B5_Shellshock_TerrainGeneratorBase <|-- B5_Shellshock_HillTerrainGenerator
+B5_Shellshock_TerrainGeneratorBase <|-- B5_Shellshock_MountainTerrainGenerator
+B5_Shellshock_TerrainGeneratorFactory ..> ITerrainGenerator
+
+' Game Entities Hierarchy
+IRenderable <|.. B5_Shellshock_GameEntity
+B5_Shellshock_GameEntity <|-- B5_Shellshock_Projectile
+ICollidable <|.. B5_Shellshock_CollidableEntity
+B5_Shellshock_GameEntity <|-- B5_Shellshock_CollidableEntity
+B5_Shellshock_CollidableEntity <|-- B5_Shellshock_Tank
+B5_Shellshock_CollidableEntity <|-- B5_Shellshock_HealthPack
+
+' Game Management Composition
+B5_Shellshock_Rules *-- B5_Shellshock_Field
+B5_Shellshock_Painter ..> B5_Shellshock_Field
+B5_Shellshock_Field *-- B5_Shellshock_Tank
+B5_Shellshock_Field *-- B5_Shellshock_Terrain
+B5_Shellshock_Field *-- B5_Shellshock_Projectile
+B5_Shellshock_Field *-- B5_Shellshock_HealthPack
+B5_Shellshock_Field *-- B5_Shellshock_Point
+B5_Shellshock_Terrain o-- ITerrainGenerator
+B5_Shellshock_Tank ..> B5_Shellshock_Projectile
+B5_Shellshock_HumanPlayer ..> B5_Shellshock_Move
+B5_Shellshock_Rules ..> B5_Shellshock_Move
+B5_Shellshock_Rules ..> B5_Shellshock_HumanPlayer
+
+@enduml

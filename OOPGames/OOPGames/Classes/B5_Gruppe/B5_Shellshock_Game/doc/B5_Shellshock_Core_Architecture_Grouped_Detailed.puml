@@ -1,0 +1,304 @@
+@startuml B5_Shellshock_Core_Architecture_Grouped_Detailed
+
+title B5 Shellshock - Core Architecture (Detailed)
+
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FEFEFE
+skinparam roundcorner 5
+skinparam linetype ortho
+skinparam nodesep 80
+skinparam ranksep 80
+
+top to bottom direction
+
+package "Framework Interfaces" #E6F3FF {
+    interface IGameRules2 {
+        +CurrentField : IGameField
+        +CurrentPlayerNumber : int
+        +MovesPossible : bool
+        +LastMoveGivesExtraTurn : bool
+        +DoMove(move : IPlayMove)
+        +CheckIfPlayerWon() : int
+        +TickGameCall()
+    }
+    
+    interface IGameField {
+    }
+    
+    interface IPaintGame2 {
+        +Name : string
+        +PaintGameField(canvas : Canvas, field : IGameField)
+        +TickPaintGameField(canvas : Canvas, field : IGameField)
+    }
+    
+    interface IHumanGamePlayer {
+        +Name : string
+        +PlayerNumber : int
+        +SetPlayerNumber(playerNumber : int)
+        +CanBeRuledBy(rules : IGameRules) : bool
+        +Clone() : IGamePlayer
+    }
+    
+    interface IPlayerMove {
+    }
+}
+
+package "Game Classes" #FFE6E6 {
+    
+    package "World Generation" #D4E6F1 {
+        interface ITerrainGenerator {
+            +Name : string
+            +Generate(heightMap : double[], width : int)
+        }
+        
+        abstract class B5_Shellshock_TerrainGeneratorBase {
+            +{abstract} Name : string
+            #SmoothingPasses : int
+            +Generate(heightMap : double[], width : int)
+            #{abstract} GenerateRaw(heightMap : double[], width : int)
+            #ApplySmoothing(heightMap : double[], width : int, passes : int)
+            #ClampValues(heightMap : double[], width : int)
+        }
+        
+        class B5_Shellshock_TerrainGeneratorFactory {
+            +{static} Create(type : TerrainType) : ITerrainGenerator
+            +{static} CreateRandom() : ITerrainGenerator
+        }
+        
+        class B5_Shellshock_FlatTerrainGenerator {
+            +Name : string
+            #GenerateRaw(heightMap : double[], width : int)
+        }
+        
+        class B5_Shellshock_HillTerrainGenerator {
+            +Name : string
+            #GenerateRaw(heightMap : double[], width : int)
+        }
+        
+        class B5_Shellshock_MountainTerrainGenerator {
+            +Name : string
+            #GenerateRaw(heightMap : double[], width : int)
+        }
+    }
+    
+    package "Game Entities" #D5F4E6 {
+        interface IRenderable {
+            +X : double
+            +Y : double
+            +IsActive : bool
+        }
+        
+        interface ICollidable {
+            +CollidesWith(projectile : Projectile) : bool
+        }
+        
+        abstract class B5_Shellshock_GameEntity {
+            #_x : double
+            #_y : double
+            #_isActive : bool
+            +X : double
+            +Y : double
+            +IsActive : bool
+            +{abstract} EntityType : string
+            +DistanceTo(other : GameEntity) : double
+        }
+        
+        abstract class B5_Shellshock_CollidableEntity {
+            +CollidesWith(proj : Projectile) : bool
+            #{abstract} GetCollisionBounds() : (double, double, double, double)
+        }
+        
+        class B5_Shellshock_Tank {
+            -{static} CollisionWidth : double = 28
+            -{static} CollisionHeight : double = 0.03
+            -_angle : double
+            -_power : double
+            -_health : int
+            -_color : TankColor
+            +EntityType : string
+            +Angle : double
+            +Power : double
+            +Health : int
+            +Color : TankColor
+            +IsAlive : bool
+            +Fire(playerNumber : int) : Projectile
+            +TakeDamage(damage : int)
+            +Heal(amount : int)
+            #GetCollisionBounds() : (double, double, double, double)
+        }
+        
+        class B5_Shellshock_HealthPack {
+            +{static} PackSize : double = 30
+            +{static} HealAmount : int = 40
+            +EntityType : string
+            #GetCollisionBounds() : (double, double, double, double)
+        }
+        
+        class B5_Shellshock_Projectile {
+            -{static} BaseGravityFactor : double = 0.025
+            -{static} PowerExponent : double = 1.6
+            -{static} LaunchSpeed : double = 300.0
+            -_velocityX : double
+            -_velocityY : double
+            -_playerNumber : int
+            -_powerNorm : double
+            +EntityType : string
+            +VelocityX : double
+            +VelocityY : double
+            +PlayerNumber : int
+            +UpdatePosition(gravity : double, wind : double, dt : double)
+        }
+    }
+    
+    package "Game Management" #F9E6E6 {
+        class B5_Shellshock_Rules {
+            -_field : Field
+            -_gamePhase : GamePhase
+            -_gravity : double
+            -_activeTankNumber : int
+            -_movementsRemaining : int
+            -_pendingTurnSwitch : bool
+            -_lastMoveKeepsTurn : bool
+            +Name : string
+            +CurrentField : IGameField
+            +CurrentPlayerNumber : int
+            +LastMoveGivesExtraTurn : bool
+            +MovesPossible : bool
+            +DoMove(move : IPlayMove)
+            +CheckIfPlayerWon() : int
+            +TickGameCall()
+            -ProcessPlayerAction(move : Move)
+            -HandleShooting(tank : Tank)
+            -SimulateProjectile()
+            -HandleCollisions()
+            -SwitchTurn()
+            -SpawnHealthPack()
+        }
+        
+        class B5_Shellshock_Field {
+            -_tank1 : Tank
+            -_tank2 : Tank
+            -_terrain : Terrain
+            -_projectile : Projectile
+            -_healthPack : HealthPack
+            -_wind : double
+            -_movementsRemaining : int
+            -_maxMovesPerTurn : int
+            -_activeTankNumber : int
+            -_gamePhase : GamePhase
+            -_lastTrajectoryP1 : List<Point>
+            -_lastTrajectoryP2 : List<Point>
+            +Tank1 : Tank
+            +Tank2 : Tank
+            +Terrain : Terrain
+            +Projectile : Projectile
+            +HealthPack : HealthPack
+            +Wind : double
+            +MovementsRemaining : int
+            +MaxMovesPerTurn : int
+            +ActiveTankNumber : int
+            +GamePhase : GamePhase
+            +ProjectileInFlight : bool
+            +LastTrajectoryP1 : List<Point>
+            +LastTrajectoryP2 : List<Point>
+            +Reset()
+        }
+        
+        class B5_Shellshock_Painter {
+            +Name : string
+            +PaintGameField(canvas : Canvas, field : IGameField)
+            +TickPaintGameField(canvas : Canvas, field : IGameField)
+            -DrawTerrain(canvas : Canvas, terrain : Terrain, scaleX : double, scaleY : double)
+            -DrawTank(canvas : Canvas, tank : Tank, scaleX : double, scaleY : double)
+            -DrawProjectile(canvas : Canvas, proj : Projectile, scaleX : double, scaleY : double)
+            -DrawHealthPack(canvas : Canvas, pack : HealthPack, scaleX : double, scaleY : double)
+            -DrawUI(canvas : Canvas, field : Field, width : double, height : double)
+            -DrawOverlay(canvas : Canvas, field : Field, width : double, height : double)
+            -DrawTrajectory(canvas : Canvas, points : List<Point>, scaleX : double, scaleY : double, color : Brush)
+        }
+        
+        class B5_Shellshock_Terrain {
+            -_heightMap : double[]
+            -_width : int
+            -_terrainType : TerrainType
+            -_generator : ITerrainGenerator
+            +HeightMap : double[]
+            +Width : int
+            +TerrainType : TerrainType
+            +GetHeightAt(x : double) : double
+            +IsCollision(x : double, y : double) : bool
+            +DestroyTerrain(x : double, radius : double)
+            -GenerateTerrain()
+        }
+        
+        class B5_Shellshock_HumanPlayer {
+            -_playerNumber : int
+            +Name : string
+            +PlayerNumber : int
+            +SetPlayerNumber(playerNumber : int)
+            +CanBeRuledBy(rules : IGameRules) : bool
+            +Clone() : IGamePlayer
+            +DoMove(field : IGameField) : IPlayMove
+            +PaintGameField(canvas : Canvas, field : IGameField)
+        }
+        
+        class B5_Shellshock_Move {
+            -_playerNumber : int
+            -_actionType : ActionType
+            -_value : double
+            +PlayerNumber : int
+            +ActionType : ActionType
+            +Value : double
+        }
+        
+        class B5_Shellshock_Point {
+            +X : double
+            +Y : double
+        }
+    }
+}
+
+' Force Framework Interfaces to top
+IGameRules2 -[hidden]down-> "Game Classes"
+IGameField -[hidden]down-> "Game Classes"
+IPaintGame2 -[hidden]down-> "Game Classes"
+IHumanGamePlayer -[hidden]down-> "Game Classes"
+IPlayerMove -[hidden]down-> "Game Classes"
+
+' Framework Implementation (Only Game Management interfaces with Framework)
+IGameRules2 <|.. B5_Shellshock_Rules
+IGameField <|.. B5_Shellshock_Field
+IPaintGame2 <|.. B5_Shellshock_Painter
+IHumanGamePlayer <|.. B5_Shellshock_HumanPlayer
+IPlayerMove <|.. B5_Shellshock_Move
+
+' World Generation Hierarchy
+ITerrainGenerator <|.. B5_Shellshock_TerrainGeneratorBase
+B5_Shellshock_TerrainGeneratorBase <|-- B5_Shellshock_FlatTerrainGenerator
+B5_Shellshock_TerrainGeneratorBase <|-- B5_Shellshock_HillTerrainGenerator
+B5_Shellshock_TerrainGeneratorBase <|-- B5_Shellshock_MountainTerrainGenerator
+B5_Shellshock_TerrainGeneratorFactory ..> ITerrainGenerator
+
+' Game Entities Hierarchy
+IRenderable <|.. B5_Shellshock_GameEntity
+B5_Shellshock_GameEntity <|-- B5_Shellshock_Projectile
+ICollidable <|.. B5_Shellshock_CollidableEntity
+B5_Shellshock_GameEntity <|-- B5_Shellshock_CollidableEntity
+B5_Shellshock_CollidableEntity <|-- B5_Shellshock_Tank
+B5_Shellshock_CollidableEntity <|-- B5_Shellshock_HealthPack
+
+' Game Management Composition
+B5_Shellshock_Rules *-- B5_Shellshock_Field
+B5_Shellshock_Painter ..> B5_Shellshock_Field
+B5_Shellshock_Field *-- B5_Shellshock_Tank
+B5_Shellshock_Field *-- B5_Shellshock_Terrain
+B5_Shellshock_Field *-- B5_Shellshock_Projectile
+B5_Shellshock_Field *-- B5_Shellshock_HealthPack
+B5_Shellshock_Field *-- B5_Shellshock_Point
+B5_Shellshock_Terrain o-- ITerrainGenerator
+B5_Shellshock_Tank ..> B5_Shellshock_Projectile
+B5_Shellshock_HumanPlayer ..> B5_Shellshock_Move
+B5_Shellshock_Rules ..> B5_Shellshock_Move
+B5_Shellshock_Rules ..> B5_Shellshock_HumanPlayer
+
+@enduml
