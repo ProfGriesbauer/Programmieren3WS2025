@@ -26,6 +26,45 @@ namespace OOPGames
         }
     }
 
+    // Abstrakte Basis-Implementierung für das Spielfeld
+    public abstract class A3_LEA_BaseSchiffeField : IA3_LEA_SchiffeField
+    {
+        protected int[,] _grid;
+        public virtual int Width { get; protected set; }
+        public virtual int Height { get; protected set; }
+
+        public virtual int this[int x, int y]
+        {
+            get => IsValidPosition(x, y) ? _grid[x, y] : -1;
+            set { if (IsValidPosition(x, y)) _grid[x, y] = value; }
+        }
+
+        public virtual bool IsValidPosition(int x, int y) => x >= 0 && x < Width && y >= 0 && y < Height;
+
+        public virtual List<(int x, int y, int shipId)> GetOccupiedCells()
+        {
+            var occ = new List<(int x, int y, int shipId)>();
+            for (int xx = 0; xx < Width; xx++)
+            {
+                for (int yy = 0; yy < Height; yy++)
+                {
+                    if (_grid[xx, yy] != 0)
+                        occ.Add((xx, yy, _grid[xx, yy]));
+                }
+            }
+            return occ;
+        }
+
+        public virtual bool CanBePaintedBy(IPaintGame painter) => painter is IA3_LEA_SchiffePaint;
+
+        protected A3_LEA_BaseSchiffeField(int width, int height)
+        {
+            Width = width;
+            Height = height;
+            _grid = new int[width, height];
+        }
+    }
+
     // ============= ABSTRACT BASE CLASSES =============
     
     // Abstrakte Basis-Rules
@@ -111,5 +150,34 @@ namespace OOPGames
 
         // IColumnMove Implementation
         public int Column => X;
+    }
+
+    // ============= SHIP VISUALIZER =============
+
+    // Abstrakte Basis-Klasse für Schiff-Visualisierung
+    public abstract class A3_LEA_BaseShipVisualizer : IA3_LEA_ShipVisualizer
+    {
+        protected A3_LEA_Ship _ship;
+        protected double _x;
+        protected double _y;
+        protected double _cellSize;
+        protected bool _isHorizontal;
+
+        public virtual double X => _x;
+        public virtual double Y => _y;
+        public virtual double CellSize => _cellSize;
+        public virtual bool IsHorizontal => _isHorizontal;
+        public virtual int ShipSize => _ship?.Size ?? 0;
+
+        protected A3_LEA_BaseShipVisualizer(A3_LEA_Ship ship, double x, double y, double cellSize, bool isHorizontal)
+        {
+            _ship = ship;
+            _x = x;
+            _y = y;
+            _cellSize = cellSize;
+            _isHorizontal = isHorizontal;
+        }
+
+        public abstract System.Windows.UIElement BuildElement();
     }
 }
