@@ -31,7 +31,17 @@ namespace OOPGames
                 case "S": _field.ChangeDirection(0, 1, playerNumber); break;
                 case "A": _field.ChangeDirection(-1, 0, playerNumber); break;
                 case "D": _field.ChangeDirection(1, 0, playerNumber); break;
-                case "SPACE": _field.StartGame(); break;
+                case "SPACE": 
+                    // If game over screen is shown, acknowledge it and prepare for restart
+                    if (!_field.IsGameRunning && _field.GameOverScreenShown == false)
+                    {
+                        _field.AcknowledgeGameOver();
+                    }
+                    else
+                    {
+                        _field.StartGame();
+                    }
+                    break;
             }
             
             // Nicht blockieren - Framework kann sofort nächsten Move verarbeiten

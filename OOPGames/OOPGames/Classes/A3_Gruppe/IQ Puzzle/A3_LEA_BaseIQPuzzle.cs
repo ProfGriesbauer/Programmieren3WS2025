@@ -8,44 +8,31 @@ using System.Windows.Controls;
 namespace OOPGames
 {
     /**************************************************************************
-     * CLICK SELECTION FOR IQ PUZZLE
-     **************************************************************************/
-
-    /// <summary>
-    /// Click selection implementation for IQ Puzzle
-    /// </summary>
-    public class A3_LEA_ClickSelection : IClickSelection
-    {
-        private int _clickX;
-        private int _clickY;
-        private int _changedButton;
-
-        public A3_LEA_ClickSelection(int clickX, int clickY, int changedButton)
-        {
-            _clickX = clickX;
-            _clickY = clickY;
-            _changedButton = changedButton;
-        }
-
-        public int XClickPos => _clickX;
-        public int YClickPos => _clickY;
-        public int ChangedButton => _changedButton;
-        public MoveType MoveType => MoveType.click;
-    }
-
-    /**************************************************************************
      * BASE CLASSES FÜR IQ PUZZLER PRO
      **************************************************************************/
 
     /// <summary>
+    /// Abstrakte Basisklasse für Click Selection im IQ Puzzle
+    /// </summary>
+    public abstract class A3_LEA_BaseClickSelection : IA3_LEA_ClickSelection
+    {
+        public abstract int XClickPos { get; }
+        public abstract int YClickPos { get; }
+        public abstract int ChangedButton { get; }
+        public abstract MoveType MoveType { get; }
+    }
+
+    /// <summary>
     /// Abstrakte Basisklasse für IQ Puzzle Painter
     /// </summary>
-    public abstract class A3_LEA_BaseIQPuzzlePaint : IA3_LEA_PaintIQPuzzle, IPaintGame2
+    public abstract class A3_LEA_BaseIQPuzzlePaint : IA3_LEA_PaintIQPuzzle
     {
         public abstract string Name { get; }
 
         public abstract void PaintIQPuzzleField(Canvas canvas, IA3_LEA_IQPuzzleField field,
             List<IA3_LEA_IQPuzzlePiece> availablePieces, IA3_LEA_IQPuzzlePiece selectedPiece);
+
+        public abstract void TickPaintGameField(Canvas canvas, IGameField currentField);
 
         public void PaintGameField(Canvas canvas, IGameField currentField)
         {
@@ -70,12 +57,6 @@ namespace OOPGames
 
                 PaintIQPuzzleField(canvas, field, availablePieces, selectedPiece);
             }
-        }
-
-        public void TickPaintGameField(Canvas canvas, IGameField currentField)
-        {
-            // Nutze die gleiche Logik wie PaintGameField, aber mit Live-Updates
-            PaintGameField(canvas, currentField);
         }
     }
 
@@ -136,7 +117,7 @@ namespace OOPGames
     /// <summary>
     /// Abstrakte Basisklasse für menschlichen IQ Puzzle Spieler
     /// </summary>
-    public abstract class A3_LEA_BaseHumanIQPuzzlePlayer : IA3_LEA_HumanIQPuzzlePlayer, IHumanGamePlayerWithMouse
+    public abstract class A3_LEA_BaseHumanIQPuzzlePlayer : IA3_LEA_HumanIQPuzzlePlayer
     {
         public abstract string Name { get; }
         public abstract int PlayerNumber { get; }
@@ -163,5 +144,17 @@ namespace OOPGames
             }
             return null;
         }
+    }
+
+    /// <summary>
+    /// Abstrakte Basisklasse für IQ Puzzle Move
+    /// </summary>
+    public abstract class A3_LEA_BaseIQPuzzleMove : IA3_LEA_IQPuzzleMove
+    {
+        public abstract IA3_LEA_IQPuzzlePiece Piece { get; }
+        public abstract int X { get; }
+        public abstract int Y { get; }
+        public abstract int PlayerNumber { get; }
+        public abstract bool IsRemove { get; }
     }
 }

@@ -3,9 +3,9 @@ using System.Collections.Generic;
 
 namespace OOPGames
 {
-    /// <summary>
-    /// Hauptklasse für das Snake-Spielfeld mit OOP-Architektur
-    /// </summary>
+
+    /// Hauptklasse für das Snake-Spielfeld
+
     public class A5_SnakeField : IGameField
     {
         // Legacy constants for compatibility
@@ -23,6 +23,10 @@ namespace OOPGames
         private readonly FoodManager _foodManager;
         private readonly GameTimerManager _timerManager;
         private readonly bool _isTwoPlayerMode;
+        private bool _gameOverScreenShown = false;
+        private bool _gameHasStartedBefore = false;
+        private DateTime _gameOverTime = DateTime.MinValue;
+        private const int GAME_OVER_DISPLAY_SECONDS = 5;
 
         // Public properties for compatibility
         public List<PixelPosition> Snake => new List<PixelPosition>(_snake1.Segments);
@@ -33,6 +37,9 @@ namespace OOPGames
         public bool IsCountingDown => _timerManager.IsCountingDown;
         public bool IsGameRunning => _timerManager.IsGameRunning;
         public bool IsTwoPlayerMode => _isTwoPlayerMode;
+        public bool GameOverScreenShown => _gameOverScreenShown;
+        public bool GameHasStartedBefore => _gameHasStartedBefore;
+        public bool ShouldShowGameOverScreen => !_gameOverScreenShown && (DateTime.Now - _gameOverTime).TotalSeconds < GAME_OVER_DISPLAY_SECONDS;
 
         public bool CanBePaintedBy(IPaintGame painter)
         {
@@ -70,6 +77,7 @@ namespace OOPGames
 
             _snake1.Initialize(startX, startY);
             _movementController1.Reset();
+            _gameOverScreenShown = false;
             
             if (_isTwoPlayerMode && _snake2 != null)
             {
@@ -83,6 +91,11 @@ namespace OOPGames
             // Countdown wird erst durch Space gestartet
         }
 
+
+        /// Sollte eine Richtungsänderung für eine Schlange vornehmen
+        /// name="dx">Neue X-Richtung (-1, 0, oder 1)
+        /// name="dy">Neue Y-Richtung (-1, 0, oder 1)
+        /// name="playerNumber">Spielernummer (1 oder 2)
         public void ChangeDirection(double dx, double dy, int playerNumber = 1)
         {
             var newDirection = new PixelPosition(dx, dy);
@@ -103,6 +116,9 @@ namespace OOPGames
             }
         }
 
+
+        /// Setzt die primäre Spielschleife in Bewegung (Timer-Callback)
+
         private void OnGameTick()
         {
             MoveSnake();
@@ -112,6 +128,9 @@ namespace OOPGames
         {
             // Countdown managed by GameTimerManager
         }
+
+
+        /// Hauptmethode für Snake-Bewegung und Kollisionserkennung
 
         public void MoveSnake()
         {
@@ -129,6 +148,7 @@ namespace OOPGames
                 {
                     _snake1.Kill();
                     _snake2.Kill();
+                    SetGameOverTime();
                     _timerManager.StopGameTimer();
                     System.Threading.Tasks.Task.Delay(500).ContinueWith(_ => 
                     {
@@ -157,6 +177,11 @@ namespace OOPGames
             }
         }
 
+ 
+        /// Verarbeitet interne Bewegung einer Schlange pro Tick
+
+        /// name="snake">Die zu bewegende Schlange
+        /// name="controller">Der Bewegungs-Controller für Richtungswechsel
         private void MoveSnakeInternal(SnakeEntity snake, SnakeMovementController controller)
         {
             if (snake.Head == null || !snake.IsAlive) return;
@@ -182,6 +207,7 @@ namespace OOPGames
             if (_collisionDetector.IsOutOfBounds(snake.Head) || snake.CheckSelfCollision())
             {
                 snake.Kill();
+                SetGameOverTime();
                 _timerManager.StopGameTimer();
                 System.Threading.Tasks.Task.Delay(500).ContinueWith(_ => 
                 {
@@ -194,6 +220,9 @@ namespace OOPGames
             snake.UpdateTailPositions();
             snake.TrimHistory();
         }
+
+
+        /// Prüft Kollisionen zwischen zwei Schlangen (nur im 2-Spieler-Modus relevant)
 
         private bool CheckInterSnakeCollision(SnakeEntity snake1, SnakeEntity snake2)
         {
@@ -222,16 +251,26 @@ namespace OOPGames
             return false;
         }
 
-        public int GetPosition(int x, int y)
-        {
-            return 0; // IGameField interface compatibility
-        }
+
+        /// Startet ein neues Spiel mit Countdown (Space-Taste)
 
         public void StartGame()
         {
             // Reset score when starting a new game
             A5_Score.Reset();
+            _gameOverScreenShown = false;
+            _gameHasStartedBefore = true;
             _timerManager.StartCountdown(_config.CountdownSeconds);
+        }
+
+        public void AcknowledgeGameOver()
+        {
+            _gameOverScreenShown = true;
+        }
+
+        public void SetGameOverTime()
+        {
+            _gameOverTime = DateTime.Now;
         }
     }
 }
